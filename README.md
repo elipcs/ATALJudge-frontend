@@ -25,4 +25,4 @@ npm run dev
 ## Próximos passos
 - Configurar shadcn/ui
 - Implementar autenticação
-- Criar páginas de login, dashboard, CRUD de usuários, lista, questões e submissões
+- Criar páginas de login, CRUD de usuários, lista, questões e submissões

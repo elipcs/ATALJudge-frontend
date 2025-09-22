@@ -1,0 +1,68 @@
+[
+  {
+    "_id": { "$oid": "65120000000000000080001" },
+    "role": "student",
+    "token": "abc123def456",
+    "link": "http://localhost:3000/cadastro?token=abc123def456",
+    "created_at": "2025-09-10T10:00:00Z",
+    "expires_at": "2025-09-17T10:00:00Z",
+    "used": false,
+    "max_uses": 5,
+    "current_uses": 2,
+    "class_id": { "$oid": "6500000000000000003001" },
+    "class_name": "Turma 1",
+    "created_by": { "$oid": "6500000000000000002001" }
+  },
+  {
+    "_id": { "$oid": "65120000000000000080002" },
+    "role": "assistant",
+    "token": "xyz789ghi012",
+    "link": "http://localhost:3000/cadastro?token=xyz789ghi012",
+    "created_at": "2025-09-09T14:30:00Z",
+    "expires_at": "2025-09-16T14:30:00Z",
+    "used": true,
+    "max_uses": 1,
+    "current_uses": 1,
+    "created_by": { "$oid": "6500000000000000002001" }
+  },
+  {
+    "_id": { "$oid": "65120000000000000080003" },
+    "role": "student",
+    "token": "qwe456rty789",
+    "link": "http://localhost:3000/cadastro?token=qwe456rty789",
+    "created_at": "2025-09-08T09:15:00Z",
+    "expires_at": "2025-09-15T09:15:00Z",
+    "used": false,
+    "max_uses": 10,
+    "current_uses": 0,
+    "class_id": { "$oid": "6500000000000000003001" },
+    "class_name": "Turma 1",
+    "created_by": { "$oid": "6500000000000000002001" }
+  },
+  {
+    "_id": { "$oid": "65120000000000000080004" },
+    "role": "teacher",
+    "token": "uio123cvb456",
+    "link": "http://localhost:3000/cadastro?token=uio123cvb456",
+    "created_at": "2025-09-07T16:45:00Z",
+    "expires_at": "2025-09-14T16:45:00Z",
+    "used": false,
+    "max_uses": 1,
+    "current_uses": 0,
+    "created_by": { "$oid": "6500000000000000003001" }
+  },
+  {
+    "_id": { "$oid": "65120000000000000080005" },
+    "role": "student",
+    "token": "mnb789poi012",
+    "link": "http://localhost:3000/cadastro?token=mnb789poi012",
+    "created_at": "2025-09-06T11:20:00Z",
+    "expires_at": "2025-09-13T11:20:00Z",
+    "used": true,
+    "max_uses": 3,
+    "current_uses": 3,
+    "class_id": { "$oid": "6500000000000000003002" },
+    "class_name": "Turma 2",
+    "created_by": { "$oid": "6500000000000000002002" }
+  }
+]

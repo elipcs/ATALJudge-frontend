@@ -1,0 +1,172 @@
+[
+  {
+    "_id": { "$oid": "65000000000000000010001" },
+    "title": "Lista 1: Introdução",
+    "description": "Primeira lista de exercícios de lógica e algoritmos.",
+    "class_ids": [ { "$oid": "6500000000000000003001" }, { "$oid": "6500000000000000003002" } ],
+    "questions": [
+      {
+        "_id": { "$oid": "65000000000000000020001" },
+        "title": "Soma Simples",
+        "description": "Calcule a soma de dois números.",
+        "statement": "Dado dois números inteiros, calcule e imprima a soma deles.",
+        "input": "Dois inteiros A e B.",
+        "output": "Um inteiro representando a soma de A e B.",
+        "examples": [
+          { "input": "2 3", "output": "5" },
+          { "input": "10 -2", "output": "8" }
+        ],
+        "note": "Os valores podem ser negativos.",
+        "tags": ["soma", "iniciante"],
+        "time_limit": "1000 ms",
+        "memory_limit": "256 MB",
+        "editorial": "https://exemplo.com/editorial-soma",
+        "letter": "A",
+        "origin": "AtalJudge",
+        "code": "1001A",
+        "stats": { "solved": 49, "total": 95 },
+        "status": "Resolvido",
+        "difficulty": "fácil",
+        "last_score": 10
+      },
+      {
+        "_id": { "$oid": "65000000000000000020002" },
+        "title": "Maior Número",
+        "description": "Encontre o maior entre três números.",
+        "statement": "Dado três números inteiros, imprima o maior deles.",
+        "input": "Três inteiros X, Y, Z.",
+        "output": "O maior valor dentre X, Y e Z.",
+        "examples": [
+          { "input": "1 2 3", "output": "3" },
+          { "input": "-5 0 -2", "output": "0" }
+        ],
+        "note": "Pode haver números iguais.",
+        "tags": ["comparação", "iniciante"],
+        "time_limit": "1000 ms",
+        "memory_limit": "256 MB",
+        "editorial": "https://exemplo.com/editorial-maior",
+        "letter": "B",
+        "origin": "AtalJudge",
+        "code": "1002B",
+        "stats": { "solved": 47, "total": 79 },
+        "status": "Resolvido",
+        "difficulty": "fácil",
+        "last_score": 8
+      }
+    ],
+    "start_date": "2024-08-20T09:05:00Z",
+    "end_date": "2024-08-27T09:05:00Z",
+    "status": "published"
+  },
+  {
+    "_id": { "$oid": "65000000000000000010002" },
+    "title": "Lista 2: Estruturas de Dados",
+    "description": "Exercícios sobre arrays, lista e filas.",
+    "class_ids": [ { "$oid": "6500000000000000003002" } ],
+    "questions": [
+      {
+        "_id": { "$oid": "65000000000000000020005" },
+        "title": "Busca Linear",
+        "description": "Implemente a busca linear em um array.",
+        "statement": "Dado um array de N inteiros e um valor X, determine se X está presente no array.",
+        "input": "O primeiro inteiro N, seguido de N inteiros do array, e depois o inteiro X.",
+        "output": "'SIM' se X estiver no array, 'NAO' caso contrário.",
+        "examples": [
+          { "input": "5\n1 2 3 4 5\n3", "output": "SIM" },
+          { "input": "4\n10 20 30 40\n25", "output": "NAO" }
+        ],
+        "note": "A busca deve ser linear, não use métodos de busca binária.",
+        "tags": ["busca", "array"],
+        "time_limit": "1000 ms",
+        "memory_limit": "256 MB",
+        "editorial": "https://exemplo.com/editorial-busca",
+        "letter": "A",
+        "origin": "AtalJudge",
+        "code": "2001A",
+        "stats": { "solved": 22, "total": 185 },
+        "status": "Resolvido",
+        "difficulty": "fácil"
+      },
+      {
+        "_id": { "$oid": "65000000000000000020006" },
+        "title": "Fila Circular",
+        "description": "Implemente uma fila circular.",
+        "statement": "Implemente uma estrutura de fila circular com operações de inserção e remoção.",
+        "input": "Número de operações seguido das operações (push X, pop).",
+        "output": "Resultado das operações de remoção.",
+        "examples": [
+          { "input": "5\npush 1\npush 2\npop\npush 3\npop", "output": "1\n2" }
+        ],
+        "note": "A fila deve ser circular, ou seja, reutilizar posições vazias.",
+        "tags": ["fila", "estrutura de dados"],
+        "time_limit": "2000 ms",
+        "memory_limit": "256 MB",
+        "editorial": "https://exemplo.com/editorial-fila",
+        "letter": "B",
+        "origin": "AtalJudge",
+        "code": "2002B",
+        "stats": { "solved": 18, "total": 60 },
+        "status": "Resolvido",
+        "difficulty": "média"
+      }
+    ],
+    "start_date": "2024-09-01T10:00:00Z",
+    "end_date": "2024-09-08T10:00:00Z",
+    "status": "published"
+  },
+  {
+    "_id": { "$oid": "65000000000000000010003" },
+    "title": "Lista 3: Algoritmos de Ordenação",
+    "description": "Problemas de ordenação clássicos.",
+    "class_ids": [ { "$oid": "6500000000000000003002" } ],
+    "questions": [
+      {
+        "_id": { "$oid": "65000000000000000020007" },
+        "title": "Bubble Sort",
+        "description": "Implemente o algoritmo Bubble Sort.",
+        "statement": "Dado um array de N inteiros, ordene-o usando o algoritmo Bubble Sort.",
+        "input": "O inteiro N seguido de N inteiros.",
+        "output": "O array ordenado em ordem crescente.",
+        "examples": [
+          { "input": "5\n5 4 3 2 1", "output": "1 2 3 4 5" }
+        ],
+        "note": "Implemente o algoritmo manualmente.",
+        "tags": ["ordenação", "bubble sort"],
+        "time_limit": "2000 ms",
+        "memory_limit": "256 MB",
+        "editorial": "https://exemplo.com/editorial-bubble",
+        "letter": "A",
+        "origin": "AtalJudge",
+        "code": "3001A",
+        "stats": { "solved": 10, "total": 50 },
+        "status": "Resolvido",
+        "difficulty": "fácil"
+      },
+      {
+        "_id": { "$oid": "65000000000000000020008" },
+        "title": "Quick Sort",
+        "description": "Implemente o algoritmo Quick Sort.",
+        "statement": "Dado um array de N inteiros, ordene-o usando o algoritmo Quick Sort.",
+        "input": "O inteiro N seguido de N inteiros.",
+        "output": "O array ordenado em ordem crescente.",
+        "examples": [
+          { "input": "5\n3 1 4 2 5", "output": "1 2 3 4 5" }
+        ],
+        "note": "Implemente o algoritmo manualmente.",
+        "tags": ["ordenação", "quick sort"],
+        "time_limit": "2000 ms",
+        "memory_limit": "256 MB",
+        "editorial": "https://exemplo.com/editorial-quick",
+        "letter": "B",
+        "origin": "AtalJudge",
+        "code": "3002B",
+        "stats": { "solved": 5, "total": 40 },
+        "status": "Resolvido",
+        "difficulty": "difícil"
+      }
+    ],
+    "start_date": "2024-09-15T14:00:00Z",
+    "end_date": "2024-09-15T16:00:00Z",
+    "status": "Draft"
+  }
+]

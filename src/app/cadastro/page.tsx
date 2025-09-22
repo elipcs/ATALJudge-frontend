@@ -1,0 +1,586 @@
+"use client";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Button } from "../../components/ui/button";
+import { Input } from "../../components/ui/input";
+import { useState, useEffect, Suspense } from "react";
+
+interface TokenInfo {
+  role: 'aluno' | 'monitor' | 'professor';
+  class?: string;
+  professor?: string;
+  valid: boolean;
+  expires: string;
+}
+
+function CadastroContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [token, setToken] = useState<string>("");
+  const [tokenInfo, setTokenInfo] = useState<TokenInfo | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [initializing, setInitializing] = useState(true); // Novo estado para controlar carregamento inicial
+  const [error, setError] = useState("");
+  const [cadastroConcluido, setCadastroConcluido] = useState(false);
+  
+  // Dados do formulário
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    studentId: "",
+    password: "",
+    confirmPassword: ""
+  });
+
+  useEffect(() => {
+    const urlToken = searchParams.get('token');
+    if (urlToken) {
+      setToken(urlToken);
+      validateToken(urlToken);
+    } else {
+      setInitializing(false);
+    }
+  }, [searchParams]);
+
+  async function validateToken(tokenValue: string) {
+    setLoading(true);
+    setError("");
+    
+    try {
+      const response = await fetch('/api/convites/validar', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ token: tokenValue }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.valid) {
+        setTokenInfo({
+          role: 'aluno',
+          valid: false,
+          expires: ''
+        });
+        setError(result.error || "Token inválido ou expirado");
+        return;
+      }
+
+      // Mapear tipo do token para role
+      const roleMap: { [key: string]: 'aluno' | 'monitor' | 'professor' } = {
+        'student': 'aluno',
+        'monitor': 'monitor',
+        'professor': 'professor'
+      };
+
+      const role = roleMap[result.data.type] || 'aluno';
+
+      setTokenInfo({
+        role: role,
+        class: result.data.class_name,
+        professor: result.data.creator_name,
+        valid: true,
+        expires: new Date(result.data.expires_at).toLocaleDateString('pt-BR')
+      });
+
+    } catch (err) {
+      setError("Erro ao validar token");
+      setTokenInfo({
+        role: 'aluno',
+        valid: false,
+        expires: ''
+      });
+    } finally {
+      setLoading(false);
+      setInitializing(false);
+    }
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+
+    // Validações
+    if (!formData.name.trim()) {
+      setError("Nome é obrigatório");
+      return;
+    }
+    if (!formData.email.trim()) {
+      setError("Email é obrigatório");
+      return;
+    }
+    if (tokenInfo?.role === 'aluno' && !formData.studentId.trim()) {
+      setError("Matrícula é obrigatória");
+      return;
+    }
+    
+    // Validar formato da matrícula (apenas para alunos)
+    if (tokenInfo?.role === 'aluno' && formData.studentId.trim()) {
+      const matriculaNumeros = formData.studentId.replace(/\D/g, ''); // Remove caracteres não numéricos
+      if (matriculaNumeros.length !== 9 && matriculaNumeros.length !== 11) {
+        setError("Matrícula deve ter exatamente 9 ou 11 dígitos");
+        return;
+      }
+    }
+    
+    const senhaValidacao = validatePassword(formData.password);
+    if (!senhaValidacao.minLength) {
+      setError("Senha deve ter pelo menos 8 caracteres");
+      return;
+    }
+    if (!senhaValidacao.hasLetters) {
+      setError("Senha deve conter letras");
+      return;
+    }
+    if (!senhaValidacao.hasNumbers) {
+      setError("Senha deve conter números");
+      return;
+    }
+    if (!senhaValidacao.hasUppercase) {
+      setError("Senha deve conter pelo menos 1 letra maiúscula");
+      return;
+    }
+    
+    if (formData.password !== formData.confirmPassword) {
+      setError("Senhas não conferem");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // Simular cadastro
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Mostrar tela de sucesso
+      setCadastroConcluido(true);
+      
+      // Redirecionar após 3 segundos
+      setTimeout(() => {
+        router.push('/login');
+      }, 3000);
+      
+    } catch (err) {
+      setError("Erro ao realizar cadastro");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function handleInputChange(field: string, value: string) {
+    // Se for matrícula, permitir apenas números
+    if (field === 'matricula') {
+      value = value.replace(/\D/g, ''); // Remove qualquer caractere que não seja dígito
+    }
+    
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  }
+
+  function validatePassword(password: string) {
+    return {
+      minLength: password.length >= 8,
+      hasLetters: /[a-zA-Z]/.test(password),
+      hasNumbers: /[0-9]/.test(password),
+      hasUppercase: /[A-Z]/.test(password)
+    };
+  }
+
+  const passwordValidation = validatePassword(formData.password);
+
+  // Tela de loading durante inicialização
+  if (initializing) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-slate-800 border-t-transparent mx-auto mb-4"></div>
+          <h2 className="text-xl font-semibold text-slate-900 mb-2">Verificando acesso...</h2>
+          <p className="text-slate-600">Aguarde enquanto validamos o token</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Se cadastro foi concluído, mostrar tela de sucesso
+  if (cadastroConcluido) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 flex items-center justify-center p-4">
+        <div className="w-full max-w-md mx-auto">
+          <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/20 p-8 sm:p-12 text-center">
+            <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-6">
+              <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            
+            <h1 className="text-2xl font-bold text-green-900 mb-4">
+              Cadastro Realizado!
+            </h1>
+            
+            <div className="text-center mb-6">
+              <p className="text-green-800 mb-2">
+                Seu cadastro foi concluído com sucesso.
+              </p>
+              <p className="text-green-700 text-sm">
+                Você será redirecionado para a página de login em alguns segundos...
+              </p>
+            </div>
+
+            <Button 
+              onClick={() => router.push('/login')} 
+              size="lg"
+              className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
+            >
+              Ir para Login Agora
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Se não há token, mostrar mensagem
+  if (!token) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 flex items-center justify-center p-4">
+        <div className="w-full max-w-md mx-auto">
+          <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/20 p-8 sm:p-12">
+            {/* Logo */}
+            <div className="mb-8 flex justify-center">
+              <svg 
+                width="160" 
+                height="60" 
+                viewBox="0 0 666 375" 
+                fill="currentColor" 
+                className="text-slate-900"
+                xmlns="http://www.w3.org/2000/svg" 
+                aria-label="Logo ATAL JUDGE"
+              >
+                <g transform="translate(0.000000,375.000000) scale(0.100000,-0.100000)" fill="currentColor" stroke="none">
+                    <path d="M1267 2914 c-60 -40 -97 -99 -97 -153 l0 -45 258 -259 c141 -142 269-265 284-273 15-8 43-14 63-14 32 0 47 9 106 66 75 73 91 111 69 163 -6 16 -71 85 -143 153 -268 252-393 365-414 376-36 19-86 14-126-14z"/>
+                    <path d="M3016 2802 c-3 -5 -66 -171 -141 -368 -74 -198 -140-370 -146-384-19 -43 -79 -212 -79 -221 0 -5 51 -9 114 -9 l114 0 35 98 35 97 192 0 193 0 32 -95 32 -95 122 -3 c114 -2 122 -1 117 15 -3 10 -86 232 -184 493 l-179 475-126 3 c-69 1-128-1-131-6z m193 -414 c32 -97 57 -179 53 -182 -3 -3 -59-6 -124-6 -89 0 -118 3 -118 13 0 15 105 330 115 347 4 6 9 10 11 8 2 -2 30-83 63-180z"/>
+                    <path d="M3560 2715 l0 -95 150 0 150 0 0 -400 0 -400 115 0 115 0 0 400 0 400 145 0 145 0 0 95 0 95 -410 0 -410 0 0 -95z"/>
+                    <path d="M4675 2768 c-9 -24 -75 -196 -145 -383 -70 -187 -147 -388 -169 -448-23 -59 -41 -110 -41 -112 0 -3 52 -4 116 -3 l116 3 35 98 35 97 193 0 193 0 33 -100 33 -100 118 0 c78 0 118 4 118 11 0 9 -40 118 -235 629-35 91-78 207-96 257 l-34 93-126 0 -127 0 -17 -42z m204 -372 c33 -99 58 -183 55 -188 -6 -10 -244 -11 -244 0 0 12 122 373 126 370 1 -2 30-84 63-182z"/>
+                    <path d="M5440 2315 l0 -495 340 0 340 0 0 95 0 95 -225 0 -225 0 0 400 0 400-115 0 -115 0 0 -495z"/>
+                    <path d="M957 2392 l-207 -207 214 -214 c117 -117 218 -212 224 -210 18 7 422 391 422 402 0 10 -430 436 -440 437-3 0 -99 -93 -213 -208z"/>
+                    <path d="M473 2107 c-62 -63 -73 -78 -73 -108 0 -19 7 -46 17 -59 28 -42 506-521 535-536 60 -31 107 -13 186 69 43 46 52 62 52 92 0 20 -6 48 -14 63 -22 41 -517 529 -549 541 -58 22 -77 15 -154 -62z"/>
+                    <path d="M1447 1902 l-88 -88 248 -265 c136 -145 297 -315 358 -376 l110 -113 53 0 c49 0 56 3 103 47 58 55 79 89 79 133 0 49 -23 81 -112 161 -45 41 -139 126 -208 189-310 284-441 400-448 400-4 0 -47 -40 -95 -88z"/>
+                    <path d="M5054 1561 c-58 -15 -128 -55 -171 -97 -149 -149 -149 -436 0 -585 85 -86 204 -122 328 -101 84 15 131 37 182 89 66 65 90 124 95 231 l4 92 -171 0 -171 0 0 -60 0 -60 90 0 c87 0 90 -1 90 -23 0 -31 -43 -88 -83 -109 -45 -24 -137 -23 -186 2 -114 58 -154 227 -87 364 36 74 88 109 170 114 52 3 66 0 96-20 19-13 44-38 55-55 20-32 20-32 108-33 l87 0 -6 28 c-20 88 -73 151-167 199-42 21-68 27-142 29-49 2-104 0-121-5z"/>
+                    <path d="M2888 1254 l-3 -296 -24 -19 c-31 -26 -95 -25 -121 1 -11 11 -23 38 -26 60 l-7 41 -76 -3 -76 -3 -3 -32 c-9 -96 69 -199 168 -223 138 -33 292 34 320 140 5 19 10 169 12 333 l3 297 -82 0 -82 0 -3 -296z"/>
+                    <path d="M3202 1263 c3 -278 4 -290 26 -335 30 -60 90 -112 156 -135 76 -27 245 -25 306 3 66 31 110 72 136 129 23 49 24 57 24 338 l0 287 -80 0 -80 0 0 -265 c0 -293-4 -315 -64 -351 -42 -26 -160 -27 -199 -1 -61 40 -61 44 -58 343 l2 274 -86 0 -87 0 4 -287z"/>
+                    <path d="M4000 1166 l0 -386 153 0 c83 0 179 4 211 10 126 20 226 95 280 210 27 59 30 75 31 165 0 80 -4 112 -23 160 -32 85 -86 145 -169 186 l-68 34 -207 3 -208 4 0 -386z m392 216 c89 -44 135 -162 109 -283-25 -117 -105 -169 -263 -169 l-78 0 0 233 c0 129 3 237 8 241 4 5 45 6 92 4 62-3 98-10 132-26z"/>
+                    <path d="M5630 1165 l0 -385 243 0 c134 0 246 2 248 4 2 2 3 36 1 75 l-4 71 -169 0 -169 0 0 80 0 80 149 0 149 0 6 31 c3 17 6 49 6 70 l0 39 -150 0 -150 0 0 90 0 90 164 0 163 0 7 38 c3 20 6 52 6 70 l0 32 -250 0 -250 0 0 -385z"/>
+                    <path d="M516 1134 c-12 -11 -16 -36 -16 -90 l0 -74 -44 0 c-63 0 -76 -22 -76 -123 0 -130 -67 -117 585 -117 653 0 585 -14 585 123 0 99-12 117-78 117l-42 0 0 74 c0 54-4 79-16 90-14 14-68 16-449 16-381 0-435-2-449-16z"/>
+                  </g>
+                </svg>
+            </div>
+            
+            <div className="text-center">
+              <h1 className="text-3xl font-extrabold text-slate-900 mb-4">Cadastro por Convite</h1>
+              
+              <div className="bg-slate-50 border border-slate-200 rounded-lg p-6 mb-6">
+                <div className="flex items-center justify-center mb-3">
+                  <svg className="w-12 h-12 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                </div>
+                
+                <h2 className="text-xl font-semibold text-slate-900 mb-3">
+                  Token de Acesso Necessário
+                </h2>
+                
+                <p className="text-slate-700 mb-4 leading-relaxed">
+                  Para acessar esta página, você precisa de um link com token de cadastro 
+                  fornecido pelo seu professor.
+                </p>
+                
+                <div className="bg-white rounded-md p-4 border border-slate-200">
+                  <p className="text-sm text-slate-600">
+                    <strong>Como obter acesso:</strong><br/>
+                    Entre em contato com seu professor para receber o link de cadastro 
+                    específico para sua turma e tipo de usuário.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="w-full flex justify-center">
+              <Button 
+                onClick={() => router.push('/login')} 
+                variant="outline"
+                size="lg"
+                className="w-full border-slate-300 text-slate-700 hover:bg-slate-50"
+              >
+                Voltar para Login
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Se há token mas está sendo validado
+  if (loading && !tokenInfo) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 flex items-center justify-center p-4">
+        <div className="w-full max-w-md mx-auto">
+          <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/20 p-8 sm:p-12 text-center">
+            <div className="animate-spin w-12 h-12 border-4 border-slate-800 border-t-transparent rounded-full mb-4 mx-auto"></div>
+            <h2 className="text-xl font-semibold text-slate-900 mb-2">Validando Token</h2>
+            <p className="text-slate-600">Aguarde enquanto verificamos seu token de acesso...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Se token é inválido
+  if (tokenInfo && !tokenInfo.valid) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 flex items-center justify-center p-4">
+        <div className="w-full max-w-md mx-auto">
+          <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/20 p-8 sm:p-12 text-center">
+            <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-6">
+              <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            
+            <h2 className="text-xl font-semibold text-red-900 mb-3">
+              Token Inválido
+            </h2>
+            
+            <p className="text-red-800 mb-6">
+              O token fornecido é inválido ou já expirou.
+            </p>
+
+            <Button 
+              onClick={() => router.push('/login')} 
+              variant="outline"
+              size="lg"
+              className="w-full border-red-300 text-red-700 hover:bg-red-50"
+            >
+              Voltar para Login
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Formulário de cadastro
+  const getRoleTitle = () => {
+    switch (tokenInfo?.role) {
+      case 'aluno': return 'Cadastro de Aluno';
+      case 'monitor': return 'Cadastro de Monitor';
+      case 'professor': return 'Cadastro de Professor';
+      default: return 'Cadastro';
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 flex items-center justify-center p-2 sm:p-4">
+      <div className="w-full max-w-sm sm:max-w-md lg:max-w-lg mx-auto">
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl sm:rounded-3xl shadow-2xl border border-white/20 p-4 sm:p-6 md:p-8">
+          {/* Logo */}
+          <div className="mb-4 sm:mb-6 flex justify-center text-slate-900">
+            <svg 
+              width="120" 
+              height="45" 
+              viewBox="0 0 666 375" 
+              fill="currentColor" 
+              className="w-24 h-9 sm:w-32 sm:h-12 md:w-40 md:h-15"
+              xmlns="http://www.w3.org/2000/svg" 
+              aria-label="Logo ATAL JUDGE"
+            >
+                <g transform="translate(0.000000,375.000000) scale(0.100000,-0.100000)" fill="currentColor" stroke="none">
+                  <path d="M1267 2914 c-60 -40 -97 -99 -97 -153 l0 -45 258 -259 c141 -142 269-265 284-273 15-8 43-14 63-14 32 0 47 9 106 66 75 73 91 111 69 163 -6 16 -71 85 -143 153 -268 252-393 365-414 376-36 19-86 14-126-14z"/>
+                  <path d="M3016 2802 c-3 -5 -66 -171 -141 -368 -74 -198 -140-370 -146-384-19 -43 -79 -212 -79 -221 0 -5 51 -9 114 -9 l114 0 35 98 35 97 192 0 193 0 32 -95 32 -95 122 -3 c114 -2 122 -1 117 15 -3 10 -86 232 -184 493 l-179 475-126 3 c-69 1-128-1-131-6z m193 -414 c32 -97 57 -179 53 -182 -3 -3 -59-6 -124-6 -89 0 -118 3 -118 13 0 15 105 330 115 347 4 6 9 10 11 8 2 -2 30-83 63-180z"/>
+                  <path d="M3560 2715 l0 -95 150 0 150 0 0 -400 0 -400 115 0 115 0 0 400 0 400 145 0 145 0 0 95 0 95 -410 0 -410 0 0 -95z"/>
+                  <path d="M4675 2768 c-9 -24 -75 -196 -145 -383 -70 -187 -147 -388 -169 -448-23 -59 -41 -110 -41 -112 0 -3 52 -4 116 -3 l116 3 35 98 35 97 193 0 193 0 33 -100 33 -100 118 0 c78 0 118 4 118 11 0 9 -40 118 -235 629-35 91-78 207-96 257 l-34 93-126 0 -127 0 -17 -42z m204 -372 c33 -99 58 -183 55 -188 -6 -10 -244 -11 -244 0 0 12 122 373 126 370 1 -2 30-84 63-182z"/>
+                  <path d="M5440 2315 l0 -495 340 0 340 0 0 95 0 95 -225 0 -225 0 0 400 0 400-115 0 -115 0 0 -495z"/>
+                  <path d="M957 2392 l-207 -207 214 -214 c117 -117 218 -212 224 -210 18 7 422 391 422 402 0 10 -430 436 -440 437-3 0 -99 -93 -213 -208z"/>
+                  <path d="M473 2107 c-62 -63 -73 -78 -73 -108 0 -19 7 -46 17 -59 28 -42 506-521 535-536 60 -31 107 -13 186 69 43 46 52 62 52 92 0 20 -6 48 -14 63 -22 41 -517 529 -549 541 -58 22 -77 15 -154 -62z"/>
+                  <path d="M1447 1902 l-88 -88 248 -265 c136 -145 297 -315 358 -376 l110 -113 53 0 c49 0 56 3 103 47 58 55 79 89 79 133 0 49 -23 81 -112 161 -45 41 -139 126 -208 189-310 284-441 400-448 400-4 0 -47 -40 -95 -88z"/>
+                  <path d="M5054 1561 c-58 -15 -128 -55 -171 -97 -149 -149 -149 -436 0 -585 85 -86 204 -122 328 -101 84 15 131 37 182 89 66 65 90 124 95 231 l4 92 -171 0 -171 0 0 -60 0 -60 90 0 c87 0 90 -1 90 -23 0 -31 -43 -88 -83 -109 -45 -24 -137 -23 -186 2 -114 58 -154 227 -87 364 36 74 88 109 170 114 52 3 66 0 96-20 19-13 44-38 55-55 20-32 20-32 108-33 l87 0 -6 28 c-20 88 -73 151-167 199-42 21-68 27-142 29-49 2-104 0-121-5z"/>
+                  <path d="M2888 1254 l-3 -296 -24 -19 c-31 -26 -95 -25 -121 1 -11 11 -23 38 -26 60 l-7 41 -76 -3 -76 -3 -3 -32 c-9 -96 69 -199 168 -223 138 -33 292 34 320 140 5 19 10 169 12 333 l3 297 -82 0 -82 0 -3 -296z"/>
+                  <path d="M3202 1263 c3 -278 4 -290 26 -335 30 -60 90 -112 156 -135 76 -27 245 -25 306 3 66 31 110 72 136 129 23 49 24 57 24 338 l0 287 -80 0 -80 0 0 -265 c0 -293-4 -315 -64 -351 -42 -26 -160 -27 -199 -1 -61 40 -61 44 -58 343 l2 274 -86 0 -87 0 4 -287z"/>
+                  <path d="M4000 1166 l0 -386 153 0 c83 0 179 4 211 10 126 20 226 95 280 210 27 59 30 75 31 165 0 80 -4 112 -23 160 -32 85 -86 145 -169 186 l-68 34 -207 3 -208 4 0 -386z m392 216 c89 -44 135 -162 109 -283-25 -117 -105 -169 -263 -169 l-78 0 0 233 c0 129 3 237 8 241 4 5 45 6 92 4 62-3 98-10 132-26z"/>
+                  <path d="M5630 1165 l0 -385 243 0 c134 0 246 2 248 4 2 2 3 36 1 75 l-4 71 -169 0 -169 0 0 80 0 80 149 0 149 0 6 31 c3 17 6 49 6 70 l0 39 -150 0 -150 0 0 90 0 90 164 0 163 0 7 38 c3 20 6 52 6 70 l0 32 -250 0 -250 0 0 -385z"/>
+                  <path d="M516 1134 c-12 -11 -16 -36 -16 -90 l0 -74 -44 0 c-63 0 -76 -22 -76 -123 0 -130 -67 -117 585 -117 653 0 585 -14 585 123 0 99-12 117-78 117l-42 0 0 74 c0 54-4 79-16 90-14 14-68 16-449 16-381 0-435-2-449-16z"/>
+                </g>
+              </svg>
+          </div>
+
+          {/* Header */}
+          <div className="text-center mb-4 sm:mb-6">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-2">{getRoleTitle()}</h1>
+          </div>
+
+          {tokenInfo?.role === 'aluno' && tokenInfo?.class && (
+            <div className="bg-slate-50 border border-slate-200 rounded-lg p-2 sm:p-3 mb-3 sm:mb-4">
+              <div className="flex justify-center items-center gap-1">
+                <span className="text-xs sm:text-sm text-slate-600 font-medium">Turma:</span>
+                <span className="text-xs sm:text-sm font-bold text-slate-900">{tokenInfo.class}</span>
+              </div>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
+            <div className="space-y-2 sm:space-y-3">
+              <div>
+                <Input
+                  placeholder="Nome completo"
+                  value={formData.name}
+                  onChange={(e) => handleInputChange('nome', e.target.value)}
+                  required
+                  className="w-full h-10 sm:h-12 bg-slate-50 border-slate-200 focus:border-slate-400 focus:ring-slate-400/20 text-slate-900 placeholder:text-slate-500"
+                />
+              </div>
+
+              <div>
+                <Input
+                  type="email"
+                  placeholder="Email institucional"
+                  value={formData.email}
+                  onChange={(e) => handleInputChange('email', e.target.value)}
+                  required
+                  className="w-full h-10 sm:h-12 bg-slate-50 border-slate-200 focus:border-slate-400 focus:ring-slate-400/20 text-slate-900 placeholder:text-slate-500"
+                />
+              </div>
+
+              {tokenInfo?.role === 'aluno' && (
+                <div>
+                  <Input
+                    type="tel"
+                    inputMode="numeric"
+                    placeholder="Matrícula"
+                    value={formData.studentId}
+                    onChange={(e) => handleInputChange('matricula', e.target.value)}
+                    required
+                    className="w-full h-10 sm:h-12 bg-slate-50 border-slate-200 focus:border-slate-400 focus:ring-slate-400/20 text-slate-900 placeholder:text-slate-500"
+                  />
+                </div>
+              )}
+
+              <div>
+                <Input
+                  type="password"
+                  placeholder="Senha"
+                  value={formData.password}
+                  onChange={(e) => handleInputChange('senha', e.target.value)}
+                  required
+                  className="w-full h-10 sm:h-12 bg-slate-50 border-slate-200 focus:border-slate-400 focus:ring-slate-400/20 text-slate-900 placeholder:text-slate-500"
+                />
+                
+                {/* Requisitos da senha - mostrar apenas se o usuário começou a digitar */}
+                {formData.password && (
+                  <div className="mt-2 sm:mt-3 p-2 sm:p-3 bg-slate-50 rounded-lg border border-slate-200">
+                    <p className="text-xs sm:text-sm font-medium text-slate-700 mb-2">Requisitos da senha:</p>
+                    <div className="space-y-1">
+                      <div className={`flex items-center gap-2 text-xs sm:text-sm ${passwordValidation.minLength ? 'text-green-600' : 'text-red-600'}`}>
+                        <span className={`w-3 h-3 sm:w-4 sm:h-4 rounded-full flex items-center justify-center text-xs ${passwordValidation.minLength ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                          {passwordValidation.minLength ? '✓' : '✗'}
+                        </span>
+                        Mínimo 8 caracteres
+                      </div>
+                      <div className={`flex items-center gap-2 text-xs sm:text-sm ${passwordValidation.hasLetters ? 'text-green-600' : 'text-red-600'}`}>
+                        <span className={`w-3 h-3 sm:w-4 sm:h-4 rounded-full flex items-center justify-center text-xs ${passwordValidation.hasLetters ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                          {passwordValidation.hasLetters ? '✓' : '✗'}
+                        </span>
+                        Deve conter letras
+                      </div>
+                      <div className={`flex items-center gap-2 text-xs sm:text-sm ${passwordValidation.hasNumbers ? 'text-green-600' : 'text-red-600'}`}>
+                        <span className={`w-3 h-3 sm:w-4 sm:h-4 rounded-full flex items-center justify-center text-xs ${passwordValidation.hasNumbers ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                          {passwordValidation.hasNumbers ? '✓' : '✗'}
+                        </span>
+                        Deve conter números
+                      </div>
+                      <div className={`flex items-center gap-2 text-xs sm:text-sm ${passwordValidation.hasUppercase ? 'text-green-600' : 'text-red-600'}`}>
+                        <span className={`w-3 h-3 sm:w-4 sm:h-4 rounded-full flex items-center justify-center text-xs ${passwordValidation.hasUppercase ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                          {passwordValidation.hasUppercase ? '✓' : '✗'}
+                        </span>
+                        Pelo menos 1 letra maiúscula
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <Input
+                  type="password"
+                  placeholder="Confirmar senha"
+                  value={formData.confirmPassword}
+                  onChange={(e) => handleInputChange('confirmarSenha', e.target.value)}
+                  required
+                  className="w-full h-10 sm:h-12 bg-slate-50 border-slate-200 focus:border-slate-400 focus:ring-slate-400/20 text-slate-900 placeholder:text-slate-500"
+                />
+              </div>
+            </div>
+
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-2 sm:p-3">
+                <div className="flex items-center">
+                  <svg className="w-5 h-5 text-red-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span className="text-red-700 text-xs sm:text-sm font-medium">{error}</span>
+                </div>
+              </div>
+            )}
+
+            <Button 
+              type="submit" 
+              disabled={loading}
+              size="lg"
+              className="w-full bg-gradient-to-r from-slate-800 to-slate-900 hover:from-slate-900 hover:to-slate-950 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? (
+                <div className="flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-2"></div>
+                  Cadastrando...
+                </div>
+              ) : (
+                <>
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                  </svg>
+                  Finalizar Cadastro
+                </>
+              )}
+            </Button>
+          </form>
+
+          <div className="text-center mt-6">
+            <button 
+              type="button" 
+              className="text-slate-600 hover:text-slate-800 hover:underline text-sm transition-colors"
+              onClick={() => router.push('/login')}
+            >
+              Já possui conta? Fazer login
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function CadastroPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-900 mx-auto mb-4"></div>
+          <p className="text-slate-600">Carregando...</p>
+        </div>
+      </div>
+    }>
+      <CadastroContent />
+    </Suspense>
+  );
+}

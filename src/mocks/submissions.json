@@ -1,0 +1,80 @@
+[
+  {
+    "_id": { "$oid": "66000000000000000050001" },
+    "questionListId": { "$oid": "65000000000000000010001" },
+    "questionId": { "$oid": "65000000000000000020001" },
+    "studentId": { "$oid": "6500000000000000001001" },
+    "studentName": "João da Silva",
+    "status": "submitted",
+    "score": 10,
+    "language": "python",
+    "code": "print(int(input()) + int(input()))",
+    "submittedAt": "2024-08-21T10:15:00Z",
+    "verdict": "Accepted"
+  },
+  {
+    "_id": { "$oid": "66000000000000000050002" },
+    "questionListId": { "$oid": "65000000000000000010001" },
+    "questionId": { "$oid": "65000000000000000020002" },
+    "studentId": { "$oid": "6500000000000000001002" },
+    "studentName": "Maria Oliveira",
+    "status": "failed",
+    "score": 0,
+    "language": "cpp",
+    "code": "#include <bits/stdc++.h>\\nusing namespace std;\\nint main(){int x,y,z;cin>>x>>y>>z;cout<<max({x,y,z})<<\"\\n\";}",
+    "submittedAt": "2024-08-21T11:05:00Z",
+    "verdict": "Wrong Answer"
+  },
+  {
+    "_id": { "$oid": "66000000000000000050003" },
+    "questionListId": { "$oid": "65000000000000000010002" },
+    "questionId": { "$oid": "65000000000000000020005" },
+    "studentId": { "$oid": "6500000000000000001003" },
+    "studentName": "Carlos Souza",
+    "status": "submitted",
+    "score": 8,
+    "language": "java",
+    "code": "import java.util.*;class Main{public static void main(String[]a){Scanner s=new Scanner(System.in);int n=s.nextInt();int[]arr=new int[n];for(int i=0;i<n;i++)arr[i]=s.nextInt();int x=s.nextInt();for(int v:arr)if(v==x){System.out.println(\"SIM\");return;}System.out.println(\"NAO\");}}",
+    "submittedAt": "2024-09-02T09:45:00Z",
+    "verdict": "Accepted"
+  },
+  {
+    "_id": { "$oid": "66000000000000000050004" },
+    "questionListId": { "$oid": "65000000000000000010002" },
+    "questionId": { "$oid": "65000000000000000020006" },
+    "studentId": { "$oid": "6500000000000000001004" },
+    "studentName": "Fernanda Lima",
+    "status": "failed",
+    "score": 5,
+    "language": "python",
+    "code": "# implementação de fila circular (incompleta)",
+    "submittedAt": "2024-09-02T10:20:00Z",
+    "verdict": "Runtime Error"
+  },
+  {
+    "_id": { "$oid": "66000000000000000050005" },
+    "questionListId": { "$oid": "65000000000000000010003" },
+    "questionId": { "$oid": "65000000000000000020007" },
+    "studentId": { "$oid": "6500000000000000001005" },
+    "studentName": "Lucas Pereira",
+    "status": "submitted",
+    "score": 9,
+    "language": "cpp",
+    "code": "// bubble sort implementation",
+    "submittedAt": "2024-09-15T14:30:00Z",
+    "verdict": "Accepted"
+  },
+  {
+    "_id": { "$oid": "66000000000000000050006" },
+    "questionListId": { "$oid": "65000000000000000010003" },
+    "questionId": { "$oid": "65000000000000000020008" },
+    "studentId": { "$oid": "6500000000000000001006" },
+    "studentName": "Patricia Gomes",
+    "status": "failed",
+    "score": 6,
+    "language": "java",
+    "code": "// quick sort attempt",
+    "submittedAt": "2024-09-15T15:05:00Z",
+    "verdict": "Time Limit Exceeded"
+  }
+]
