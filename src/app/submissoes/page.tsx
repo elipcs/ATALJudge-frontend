@@ -1,92 +1,275 @@
 "use client";
-import { useState, useEffect } from "react";
-import Link from "next/link";
+
+import { useState, useEffect, useCallback } from "react";
+
 import { Button } from "../../components/ui/button";
 import { Card } from "../../components/ui/card";
 import { Input } from "../../components/ui/input";
 import { useUserRoleContext } from "../../contexts/UserRoleContext";
-import submissoesData from "../../mocks/submissions.json";
-
-// Dados dos mocks
-const mockSubmissions = submissoesData;
+import { getMockData, clearMockDataCache } from "../../services/mockData";
 import PageHeader from "../../components/PageHeader";
 import LoadingSpinner from "../../components/LoadingSpinner";
-import StatsCard from "../../components/StatsCard";
+import { getSubmissionStatusColor, getVerdictColor, normalizeStatus } from "../../utils/statusUtils";
+import { SUBMISSION_STATUS_OPTIONS, MESSAGES } from "../../constants";
 
-interface Submissao {
+// Interface baseada na nova estrutura do mock
+interface Submission {
   id: string;
-  estudanteId: string;
-  estudanteNome: string;
-  estudanteEmail: string;
-  listaId: string;
-  listaTitulo: string;
-  questaoId: string;
-  questaoTitulo: string;
-  turmaId: string;
-  turmaNome: string;
-  codigo: string;
-  linguagem: string;
-  status: 'pendente' | 'aceita' | 'erro_compilacao' | 'erro_runtime' | 'timeout' | 'rejeitada';
-  pontuacao: number;
-  tempoExecucao?: number;
-  memoriaUsada?: number;
-  submissaoEm: string;
-  avaliadoEm?: string;
-  feedback?: string;
+  questionList: {
+    id: string;
+    name: string;
+  };
+  questionListId: string;
+  question: {
+    id: string;
+    name: string;
+  };
+  student: {
+    id: string;
+    name: string;
+  };
+  status: 'submitted' | 'failed';
+  score: number;
+  language: string;
+  code: string;
+  submittedAt: string;
+  verdict: string;
+  classId: string;
+  className: string;
 }
 
-interface Turma {
+interface Class {
   id: string;
-  nome: string;
-  codigo: string;
+  name: string;
+  code: string;
 }
 
-interface Lista {
+interface QuestionList {
   id: string;
-  titulo: string;
-  turmaId: string;
+  title: string;
+  classId: string;
+}
+
+// Interface para dados mock
+interface MockSubmission {
+  id: string;
+  questionList?: {
+    id: string;
+    name: string;
+  };
+  questionListId?: string;
+  question?: {
+    id: string;
+    name: string;
+  };
+  student?: {
+    id: string;
+    name: string;
+    class?: {
+      id: string;
+      name: string;
+    };
+  };
+  status: string;
+  score?: number;
+  language?: string;
+  code?: string;
+  submittedAt: string;
+  verdict?: string;
+}
+
+interface MockClass {
+  id: string;
+  name: string;
+}
+
+interface MockQuestionList {
+  id: string;
+  title: string;
+  classIds?: string[];
 }
 
 export default function SubmissoesPage() {
   const { userRole } = useUserRoleContext();
-  const [submissoes, setSubmissoes] = useState<Submissao[]>([]);
-  const [turmas, setTurmas] = useState<Turma[]>([]);
-  const [listas, setListas] = useState<Lista[]>([]);
+  const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [classes, setClasses] = useState<Class[]>([]);
+  const [questionLists, setQuestionLists] = useState<QuestionList[]>([]);
   const [loading, setLoading] = useState(true);
   
   // Estados do popup
-  const [selectedSubmissao, setSelectedSubmissao] = useState<Submissao | null>(null);
+  const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   
   // Filtros
-  const [filtroTurma, setFiltroTurma] = useState('');
-  const [filtroLista, setFiltroLista] = useState('');
-  const [filtroStatus, setFiltroStatus] = useState<'todas' | 'pendente' | 'aceita' | 'erro_compilacao' | 'erro_runtime' | 'timeout' | 'rejeitada'>('todas');
-  const [filtroEstudante, setFiltroEstudante] = useState('');
-  const [filtroLinguagem, setFiltroLinguagem] = useState('');
-  const [filtroQuestao, setFiltroQuestao] = useState('');
-  const [dataInicio, setDataInicio] = useState('');
-  const [dataFim, setDataFim] = useState('');
+  const [filterClass, setFilterClass] = useState('');
+  const [filterList, setFilterList] = useState('');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'submitted' | 'failed'>('all');
+  const [filterStudent, setFilterStudent] = useState('');
+  const [filterLanguage, setFilterLanguage] = useState('');
+  const [filterQuestion, setFilterQuestion] = useState('');
+  
+  // Estados dos dropdowns
+  const [isClassDropdownOpen, setIsClassDropdownOpen] = useState(false);
+  const [isListDropdownOpen, setIsListDropdownOpen] = useState(false);
+  const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
+  const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState(false);
+  const [isQuestionDropdownOpen, setIsQuestionDropdownOpen] = useState(false);
+
+  const loadData = useCallback(async () => {
+    try {
+      setLoading(true);
+      
+      // Limpar cache para garantir dados atualizados
+      clearMockDataCache();
+      
+      // Simular carregamento
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Forçar recarregamento completo dos dados
+      const mockSubmissions = getMockData.submissions() as unknown as MockSubmission[];
+      const classesData = getMockData.classes() as unknown as MockClass[];
+      const questionListsData = getMockData.questionLists() as unknown as MockQuestionList[];
+      
+      // Converter submissões do mock para formato esperado
+      const submissionsConverted: Submission[] = mockSubmissions.map((sub) => {
+        // Determinar o ID da lista (pode estar em questionList ou questionListId)
+        const listId = sub.questionList?.id || sub.questionListId || '';
+        
+        // Encontrar a lista correspondente nos dados
+        const questionList = questionListsData.find((ql) => ql.id === listId);
+        
+        // Usar informações da turma diretamente do student com verificação mais robusta
+        let classId = 'unknown';
+        let className = 'Turma não encontrada';
+        
+        // Verificar se student.class existe e tem os dados necessários
+        if (sub.student?.class?.id && sub.student?.class?.name) {
+          classId = sub.student.class.id;
+          className = sub.student.class.name;
+        } else if (sub.student?.class) {
+          // Se class existe mas não tem id/name, usar valores padrão
+          classId = sub.student.class.id || 'unknown';
+          className = sub.student.class.name || 'Turma não encontrada';
+        } else {
+          // Fallback: buscar turma através da lista
+          const fallbackClassId = questionList?.classIds?.[0] || '';
+          const fallbackClassData = classesData.find((cls) => cls.id === fallbackClassId);
+          if (fallbackClassData) {
+            classId = fallbackClassId;
+            className = fallbackClassData.name;
+          }
+        }
+        
+        return {
+          id: String(sub.id),
+          questionList: {
+            id: listId,
+            name: sub.questionList?.name || questionList?.title || 'Lista não encontrada'
+          },
+          questionListId: listId,
+          question: {
+            id: sub.question?.id || 'unknown',
+            name: sub.question?.name || 'Questão não encontrada'
+          },
+          student: {
+            id: sub.student?.id || 'unknown',
+            name: sub.student?.name || 'Nome não disponível'
+          },
+          status: sub.status as 'submitted' | 'failed',
+          score: sub.score || 0,
+          language: sub.language || 'unknown',
+          code: sub.code || '',
+          submittedAt: sub.submittedAt,
+          verdict: sub.verdict || 'Unknown',
+          classId: classId,
+          className: className
+        };
+      });
+      
+      // Filtrar submissões baseado no tipo de usuário
+      let filteredSubmissions = submissionsConverted;
+      
+      if (userRole === 'student') {
+        // Aluno só vê suas próprias submissões (João da Silva)
+        filteredSubmissions = submissionsConverted.filter((s) => 
+          s.student.id === "6500000000000000001001"
+        );
+      }
+      // Professor e Monitor veem todas as submissões (mesma interface)
+      
+      setSubmissions(filteredSubmissions);
+      
+      // Configurar turmas e listas
+      const classesDataFormatted: Class[] = classesData.map((cls) => ({
+        id: String(cls.id),
+        name: String(cls.name),
+        code: String(cls.id).substring(0, 8)
+      }));
+      setClasses(classesDataFormatted);
+      
+      const questionListsDataFormatted: QuestionList[] = questionListsData.map((list) => ({
+        id: String(list.id),
+        title: String(list.title),
+        classId: list.classIds?.[0] || ''
+      }));
+      setQuestionLists(questionListsDataFormatted);
+      
+    } catch (error) {
+      console.error('Erro ao carregar dados:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [userRole]);
 
   useEffect(() => {
-    carregarDados();
+    loadData();
     // Limpar filtro de estudante se for aluno (não é aplicável)
-    if (userRole === 'aluno') {
-      setFiltroEstudante('');
+    if (userRole === 'student') {
+      setFilterStudent('');
     }
-  }, [userRole]); // Recarregar quando o tipo de usuário mudar
+  }, [userRole, loadData]);
+
+  // Fechar dropdowns quando clicar fora
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest('.class-dropdown-container')) {
+        setIsClassDropdownOpen(false);
+      }
+      if (!target.closest('.list-dropdown-container')) {
+        setIsListDropdownOpen(false);
+      }
+      if (!target.closest('.status-dropdown-container')) {
+        setIsStatusDropdownOpen(false);
+      }
+      if (!target.closest('.language-dropdown-container')) {
+        setIsLanguageDropdownOpen(false);
+      }
+      if (!target.closest('.question-dropdown-container')) {
+        setIsQuestionDropdownOpen(false);
+      }
+    };
+
+    if (isClassDropdownOpen || isListDropdownOpen || isStatusDropdownOpen || isLanguageDropdownOpen || isQuestionDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isClassDropdownOpen, isListDropdownOpen, isStatusDropdownOpen, isLanguageDropdownOpen, isQuestionDropdownOpen]);
 
   // Fechar popup com ESC
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isPopupOpen) {
-        fecharPopup();
+        closePopup();
       }
     };
 
     if (isPopupOpen) {
       document.addEventListener('keydown', handleEscape);
-      document.body.style.overflow = 'hidden'; // Prevenir scroll da página
+      document.body.style.overflow = 'hidden';
     }
 
     return () => {
@@ -95,50 +278,7 @@ export default function SubmissoesPage() {
     };
   }, [isPopupOpen]);
 
-  async function carregarDados() {
-    try {
-      setLoading(true);
-      
-      // Simular carregamento com dados mockados
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Filtrar submissões baseado no tipo de usuário
-      let submissoesFiltradas = mockSubmissions;
-      
-      if (userRole === 'aluno') {
-        // Aluno só vê suas próprias submissões (simulando ID do usuário logado como "aluno_001")
-        submissoesFiltradas = mockSubmissions.filter(s => s.estudanteId === "aluno_001");
-      } else if (userRole === 'monitor') {
-        // Monitor vê submissões das turmas que monitora (simulando só turma_001)
-        submissoesFiltradas = mockSubmissions.filter(s => s.turmaId === "turma_001");
-      }
-      // Professor vê todas as submissões
-      
-      setSubmissoes(submissoesFiltradas as Submissao[]);
-      
-      // Mock de turmas
-      const turmasData = [
-        { id: "turma_001", nome: "Programação I - 2024.1", codigo: "PROG1" },
-        { id: "turma_002", nome: "Programação II - 2024.1", codigo: "PROG2" }
-      ];
-      setTurmas(turmasData);
-      
-      // Mock de listas
-      const listasData = [
-        { id: "lista_001", titulo: "Lista 1 - Introdução", turmaId: "turma_001" },
-        { id: "lista_002", titulo: "Lista 2 - Estruturas Condicionais", turmaId: "turma_001" },
-        { id: "lista_003", titulo: "Lista 3 - Estruturas de Repetição", turmaId: "turma_002" }
-      ];
-      setListas(listasData);
-      
-    } catch (error) {
-      console.error('Erro ao carregar dados:', error);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function reavaliarSubmissao(id: string) {
+  async function revaluateSubmission(id: string) {
     try {
       const response = await fetch(`/api/submissoes/${id}/reavaliar`, {
         method: 'POST',
@@ -147,31 +287,29 @@ export default function SubmissoesPage() {
       if (!response.ok) throw new Error('Erro ao reavaliar submissão');
 
       // Recarregar dados para atualizar o status
-      carregarDados();
+      loadData();
     } catch (error) {
       alert('Erro ao reavaliar submissão: ' + error);
     }
   }
 
-  function abrirPopup(submissao: Submissao) {
-    setSelectedSubmissao(submissao);
+  function openPopup(submission: Submission) {
+    setSelectedSubmission(submission);
     setIsPopupOpen(true);
   }
 
-  function fecharPopup() {
-    setSelectedSubmissao(null);
+  function closePopup() {
+    setSelectedSubmission(null);
     setIsPopupOpen(false);
   }
 
-  async function exportarRelatorio() {
+  async function exportReport() {
     try {
       const params = new URLSearchParams();
-      if (filtroTurma) params.append('turmaId', filtroTurma);
-      if (filtroLista) params.append('listaId', filtroLista);
-      if (filtroStatus !== 'todas') params.append('status', filtroStatus);
-      if (filtroEstudante) params.append('estudante', filtroEstudante);
-      if (dataInicio) params.append('dataInicio', dataInicio);
-      if (dataFim) params.append('dataFim', dataFim);
+      if (filterClass) params.append('classId', filterClass);
+      if (filterList) params.append('listId', filterList);
+      if (filterStatus !== 'all') params.append('status', filterStatus);
+      if (filterStudent) params.append('student', filterStudent);
 
       const response = await fetch(`/api/submissoes/relatorio?${params}`);
       
@@ -192,128 +330,400 @@ export default function SubmissoesPage() {
   }
 
   // Filtrar submissões
-  const submissoesFiltradas = submissoes.filter(submissao => {
-    const matchTurma = !filtroTurma || submissao.turmaId === filtroTurma;
-    const matchLista = !filtroLista || submissao.listaId === filtroLista;
-    const matchStatus = filtroStatus === 'todas' || submissao.status === filtroStatus;
-    const matchEstudante = !filtroEstudante || 
-      submissao.estudanteNome.toLowerCase().includes(filtroEstudante.toLowerCase()) ||
-      submissao.estudanteEmail.toLowerCase().includes(filtroEstudante.toLowerCase());
-    const matchLinguagem = !filtroLinguagem || submissao.linguagem.toLowerCase() === filtroLinguagem.toLowerCase();
-    const matchQuestao = !filtroQuestao || 
-      submissao.questaoTitulo.toLowerCase().includes(filtroQuestao.toLowerCase()) ||
-      submissao.questaoId === filtroQuestao;
+  const filteredSubmissions = submissions.filter(submission => {
+    const matchClass = !filterClass || submission.classId === filterClass;
+    const matchList = !filterList || submission.questionListId === filterList;
+    const matchStatus = filterStatus === 'all' || submission.status === filterStatus;
+    const matchStudent = !filterStudent || 
+      submission.student.name.toLowerCase().includes(filterStudent.toLowerCase());
+    const matchLanguage = !filterLanguage || submission.language.toLowerCase() === filterLanguage.toLowerCase();
+    const matchQuestion = !filterQuestion || 
+      submission.question.name.toLowerCase().includes(filterQuestion.toLowerCase()) ||
+      submission.question.id === filterQuestion;
     
-    let matchData = true;
-    if (dataInicio || dataFim) {
-      const submissaoData = new Date(submissao.submissaoEm);
-      if (dataInicio) matchData = matchData && submissaoData >= new Date(dataInicio);
-      if (dataFim) matchData = matchData && submissaoData <= new Date(dataFim + 'T23:59:59');
-    }
-    
-    return matchTurma && matchLista && matchStatus && matchEstudante && matchLinguagem && matchQuestao && matchData;
+    return matchClass && matchList && matchStatus && matchStudent && matchLanguage && matchQuestion;
   });
 
   // Filtrar listas pela turma selecionada
-  const listasFiltradas = listas.filter(lista => 
-    !filtroTurma || lista.turmaId === filtroTurma
+  const filteredQuestionLists = questionLists.filter(list => 
+    !filterClass || list.classId === filterClass
   );
 
   // Obter linguagens únicas das submissões
-  const linguagensUnicas = Array.from(new Set(submissoes.map(s => s.linguagem))).sort();
+  const uniqueLanguages = Array.from(new Set(submissions.map(s => s.language))).sort();
 
   // Obter questões únicas das submissões
-  const questoesUnicas = Array.from(new Set(submissoes.map(s => ({
-    id: s.questaoId,
-    titulo: s.questaoTitulo
-  }))), (questao) => questao.id).map(id => 
-    submissoes.find(s => s.questaoId === id)!
-  ).sort((a, b) => a.questaoTitulo.localeCompare(b.questaoTitulo));
-
-  function getStatusColor(status: string) {
-    switch (status) {
-      case 'pendente': return 'bg-yellow-100 text-yellow-800';
-      case 'aceita': return 'bg-green-100 text-green-800';
-      case 'erro_compilacao': return 'bg-red-100 text-red-800';
-      case 'erro_runtime': return 'bg-red-100 text-red-800';
-      case 'timeout': return 'bg-orange-100 text-orange-800';
-      case 'rejeitada': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  }
+  const uniqueQuestions = Array.from(new Set(submissions
+    .filter(s => s.question && s.question.id && s.question.name)
+    .map(s => ({
+      id: s.question.id,
+      name: s.question.name
+    }))), (question) => question.id).map(id => 
+    submissions.find(s => s.question && s.question.id === id)!
+  ).sort((a, b) => a.question.name.localeCompare(b.question.name));
 
   function getStatusLabel(status: string) {
-    switch (status) {
-      case 'pendente': return 'Pendente';
-      case 'aceita': return 'Aceita';
-      case 'erro_compilacao': return 'Erro de Compilação';
-      case 'erro_runtime': return 'Erro de Runtime';
-      case 'timeout': return 'Timeout';
-      case 'rejeitada': return 'Rejeitada';
-      default: return status;
-    }
+    return normalizeStatus(status);
   }
 
   if (loading) {
-    return <LoadingSpinner message="Carregando submissões..." />;
+    return <LoadingSpinner message={MESSAGES.ERROR_LOADING_SUBMISSIONS} />;
   }
 
   return (
-    <div className="p-6">
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white p-6">
       <PageHeader
-        title={userRole === 'aluno' ? 'Minhas Submissões' : 'Submissões'}
-        description={userRole === 'aluno' 
+        title={userRole === 'student' ? 'Minhas Submissões' : 'Submissões'}
+        description={userRole === 'student' 
           ? 'Acompanhe suas submissões e resultados.'
           : 'Acompanhe e gerencie as submissões dos estudantes.'
         }
+        icon={
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+        }
+        iconColor="green"
       >
-        {(userRole === 'professor' || userRole === 'monitor') && (
-          <Button onClick={exportarRelatorio}>Exportar Relatório</Button>
+        {(userRole === 'professor' || userRole === 'assistant') && (
+          <Button 
+            onClick={exportReport}
+            className="bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 border border-blue-200 shadow-sm hover:shadow-md font-semibold transition-all duration-200 transform hover:scale-[1.02]"
+          >
+            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Exportar Relatório
+          </Button>
         )}
       </PageHeader>
 
+      {/* Filtros */}
+      <Card className="bg-white border-slate-200 rounded-3xl shadow-lg p-6 mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-slate-900">Filtros</h3>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              setFilterClass('');
+              setFilterList('');
+              setFilterStatus('all');
+              setFilterLanguage('');
+              setFilterQuestion('');
+              if (userRole === 'professor' || userRole === 'assistant') {
+                setFilterStudent('');
+              }
+            }}
+            className="text-sm border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold transition-all duration-200 rounded-xl"
+          >
+            Limpar Filtros
+          </Button>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+          {/* Filtro por Estudante (apenas para professores/monitores) */}
+          {(userRole === 'professor' || userRole === 'assistant') && (
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Estudante</label>
+              <Input
+                placeholder="Nome do aluno..."
+                value={filterStudent}
+                onChange={(e) => setFilterStudent(e.target.value)}
+                className="h-10 text-sm bg-white border-slate-200 focus:border-blue-400 focus:ring-blue-400/20 text-slate-900 placeholder:text-slate-500 rounded-xl"
+              />
+            </div>
+          )}
 
+          {/* Filtro por Turma (apenas para professores/monitores) */}
+          {(userRole === 'professor' || userRole === 'assistant') && (
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Turma</label>
+              <div className="relative class-dropdown-container">
+                <button
+                  type="button"
+                  onClick={() => setIsClassDropdownOpen(!isClassDropdownOpen)}
+                  className="w-full h-10 px-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-400 focus:border-blue-400 bg-white text-left flex items-center justify-between text-sm"
+                >
+                  <span className={filterClass ? 'text-slate-900' : 'text-slate-500'}>
+                    {filterClass ? classes.find(cls => cls.id === filterClass)?.name : 'Todas as turmas'}
+                  </span>
+                  <svg 
+                    className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
+                      isClassDropdownOpen ? 'rotate-180' : ''
+                    }`} 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                
+                {isClassDropdownOpen && (
+                  <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-60 overflow-auto">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFilterClass('');
+                        setFilterList(''); // Resetar lista quando mudar turma
+                        setIsClassDropdownOpen(false);
+                      }}
+                      className="w-full px-4 py-3 text-left text-slate-500 hover:bg-slate-50 border-b border-slate-100"
+                    >
+                      Todas as turmas
+                    </button>
+                    {classes.map((cls, index) => (
+                      <button
+                        key={cls.id}
+                        type="button"
+                        onClick={() => {
+                          setFilterClass(cls.id);
+                          setFilterList(''); // Resetar lista quando mudar turma
+                          setIsClassDropdownOpen(false);
+                        }}
+                        className={`w-full px-4 py-3 text-left hover:bg-slate-50 ${
+                          filterClass === cls.id ? 'bg-blue-50 text-blue-700' : 'text-slate-900'
+                        } ${index < classes.length - 1 ? 'border-b border-slate-100' : ''}`}
+                      >
+                        {cls.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
-      {/* Estatísticas */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-        <StatsCard
-          title="Total"
-          value={submissoesFiltradas.length.toString()}
-        />
-        <StatsCard
-          title="Aceitas"
-          value={submissoesFiltradas.filter(s => s.status === 'aceita').length.toString()}
-          className="text-green-600"
-        />
-        <StatsCard
-          title="Pendentes"
-          value={submissoesFiltradas.filter(s => s.status === 'pendente').length.toString()}
-          className="text-yellow-600"
-        />
-        <StatsCard
-          title="Com Erro"
-          value={submissoesFiltradas.filter(s => ['erro_compilacao', 'erro_runtime', 'rejeitada'].includes(s.status)).length.toString()}
-          className="text-red-600"
-        />
-        <StatsCard
-          title="Taxa de Sucesso"
-          value={`${Math.round((submissoesFiltradas.filter(s => s.status === 'aceita').length / Math.max(submissoesFiltradas.length, 1)) * 100)}%`}
-          className="text-indigo-600"
-        />
-      </div>
+          {/* Filtro por Lista */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">Lista</label>
+            <div className="relative list-dropdown-container">
+              <button
+                type="button"
+                onClick={() => setIsListDropdownOpen(!isListDropdownOpen)}
+                className="w-full h-10 px-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-400 focus:border-blue-400 bg-white text-left flex items-center justify-between text-sm"
+              >
+                <span className={filterList ? 'text-slate-900' : 'text-slate-500'}>
+                  {filterList ? filteredQuestionLists.find(list => list.id === filterList)?.title : 'Todas as listas'}
+                </span>
+                <svg 
+                  className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
+                    isListDropdownOpen ? 'rotate-180' : ''
+                  }`} 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              
+              {isListDropdownOpen && (
+                <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-60 overflow-auto">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFilterList('');
+                      setIsListDropdownOpen(false);
+                    }}
+                    className="w-full px-4 py-3 text-left text-slate-500 hover:bg-slate-50 border-b border-slate-100"
+                  >
+                    Todas as listas
+                  </button>
+                  {filteredQuestionLists.map((list, index) => (
+                    <button
+                      key={list.id}
+                      type="button"
+                      onClick={() => {
+                        setFilterList(list.id);
+                        setIsListDropdownOpen(false);
+                      }}
+                      className={`w-full px-4 py-3 text-left hover:bg-slate-50 ${
+                        filterList === list.id ? 'bg-blue-50 text-blue-700' : 'text-slate-900'
+                      } ${index < filteredQuestionLists.length - 1 ? 'border-b border-slate-100' : ''}`}
+                    >
+                      {list.title}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Filtro por Questão */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">Questão</label>
+            <div className="relative question-dropdown-container">
+              <button
+                type="button"
+                onClick={() => setIsQuestionDropdownOpen(!isQuestionDropdownOpen)}
+                className="w-full h-10 px-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-400 focus:border-blue-400 bg-white text-left flex items-center justify-between text-sm"
+              >
+                <span className={filterQuestion ? 'text-slate-900' : 'text-slate-500'}>
+                  {filterQuestion ? uniqueQuestions.find(q => q.question.id === filterQuestion)?.question.name : 'Todas as questões'}
+                </span>
+                <svg 
+                  className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
+                    isQuestionDropdownOpen ? 'rotate-180' : ''
+                  }`} 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              
+              {isQuestionDropdownOpen && (
+                <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-60 overflow-auto">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFilterQuestion('');
+                      setIsQuestionDropdownOpen(false);
+                    }}
+                    className="w-full px-4 py-3 text-left text-slate-500 hover:bg-slate-50 border-b border-slate-100"
+                  >
+                    Todas as questões
+                  </button>
+                  {uniqueQuestions.map((question, index) => (
+                    <button
+                      key={question.question.id}
+                      type="button"
+                      onClick={() => {
+                        setFilterQuestion(question.question.id);
+                        setIsQuestionDropdownOpen(false);
+                      }}
+                      className={`w-full px-4 py-3 text-left hover:bg-slate-50 ${
+                        filterQuestion === question.question.id ? 'bg-blue-50 text-blue-700' : 'text-slate-900'
+                      } ${index < uniqueQuestions.length - 1 ? 'border-b border-slate-100' : ''}`}
+                    >
+                      {question.question.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Filtro por Status */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">Status</label>
+            <div className="relative status-dropdown-container">
+              <button
+                type="button"
+                onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)}
+                className="w-full h-10 px-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-400 focus:border-blue-400 bg-white text-left flex items-center justify-between text-sm"
+              >
+                <span className={filterStatus !== 'all' ? 'text-slate-900' : 'text-slate-500'}>
+                  {filterStatus === 'all' ? 'Todos os status' : 
+                   filterStatus === 'submitted' ? 'Aceitas' : 'Rejeitadas'}
+                </span>
+                <svg 
+                  className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
+                    isStatusDropdownOpen ? 'rotate-180' : ''
+                  }`} 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              
+              {isStatusDropdownOpen && (
+                <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg">
+                  {SUBMISSION_STATUS_OPTIONS.map((option, index) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => {
+                        setFilterStatus(option.value as typeof filterStatus);
+                        setIsStatusDropdownOpen(false);
+                      }}
+                      className={`w-full px-4 py-3 text-left hover:bg-slate-50 ${
+                        filterStatus === option.value ? 'bg-blue-50 text-blue-700' : 'text-slate-900'
+                      } ${index < 2 ? 'border-b border-slate-100' : ''}`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Filtro por Linguagem */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">Linguagem</label>
+            <div className="relative language-dropdown-container">
+              <button
+                type="button"
+                onClick={() => setIsLanguageDropdownOpen(!isLanguageDropdownOpen)}
+                className="w-full h-10 px-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-400 focus:border-blue-400 bg-white text-left flex items-center justify-between text-sm"
+              >
+                <span className={filterLanguage ? 'text-slate-900' : 'text-slate-500'}>
+                  {filterLanguage || 'Todas as linguagens'}
+                </span>
+                <svg 
+                  className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
+                    isLanguageDropdownOpen ? 'rotate-180' : ''
+                  }`} 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              
+              {isLanguageDropdownOpen && (
+                <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-60 overflow-auto">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFilterLanguage('');
+                      setIsLanguageDropdownOpen(false);
+                    }}
+                    className="w-full px-4 py-3 text-left text-slate-500 hover:bg-slate-50 border-b border-slate-100"
+                  >
+                    Todas as linguagens
+                  </button>
+                  {uniqueLanguages.map((language, index) => (
+                    <button
+                      key={language}
+                      type="button"
+                      onClick={() => {
+                        setFilterLanguage(language);
+                        setIsLanguageDropdownOpen(false);
+                      }}
+                      className={`w-full px-4 py-3 text-left hover:bg-slate-50 ${
+                        filterLanguage === language ? 'bg-blue-50 text-blue-700' : 'text-slate-900'
+                      } ${index < uniqueLanguages.length - 1 ? 'border-b border-slate-100' : ''}`}
+                    >
+                      {language}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </Card>
 
       {/* Tabela de Submissões */}
-      <Card>
-        {submissoesFiltradas.length === 0 ? (
-          <div className="p-8 text-center">
-            <div className="text-gray-400 mb-4">
-              <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <Card className="bg-white border-slate-200 rounded-3xl shadow-lg">
+        {filteredSubmissions.length === 0 ? (
+          <div className="p-12 text-center">
+            <div className="p-4 bg-gradient-to-r from-slate-50 to-slate-100 text-slate-600 rounded-xl shadow-lg border border-slate-200 mx-auto mb-6 w-fit">
+              <svg className="w-16 h-16 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhuma submissão encontrada</h3>
-            <p className="text-gray-600">
-              {submissoes.length === 0 
+            <h3 className="text-2xl font-bold text-slate-900 mb-4">Nenhuma submissão encontrada</h3>
+            <p className="text-slate-600 text-lg leading-relaxed max-w-lg mx-auto">
+              {submissions.length === 0 
                 ? 'Ainda não há submissões para suas listas.'
                 : 'Tente ajustar os filtros para encontrar o que procura.'
               }
@@ -324,222 +734,88 @@ export default function SubmissoesPage() {
             <table className="w-full">
               <thead>
                 {/* Linha de cabeçalhos */}
-                <tr className="border-b border-gray-200 bg-gray-50">
-                  <th className="text-left p-4 font-medium text-gray-900">Estudante</th>
-                  {(userRole === 'professor' || userRole === 'monitor') && (
-                    <th className="text-left p-4 font-medium text-gray-900">Turma</th>
+                <tr className="border-b border-slate-200 bg-gradient-to-r from-slate-50 to-slate-100">
+                  <th className="text-left py-4 px-6 font-semibold text-slate-700">Estudante</th>
+                  {(userRole === 'professor' || userRole === 'assistant') && (
+                    <th className="text-left py-4 px-6 font-semibold text-slate-700">Turma</th>
                   )}
-                  <th className="text-left p-4 font-medium text-gray-900">Lista</th>
-                  <th className="text-left p-4 font-medium text-gray-900">Questão</th>
-                  <th className="text-left p-4 font-medium text-gray-900">Status</th>
-                  <th className="text-left p-4 font-medium text-gray-900">Data Submissão</th>
-                  <th className="text-left p-4 font-medium text-gray-900">Linguagem</th>
-                  <th className="text-left p-4 font-medium text-gray-900">Pontuação</th>
-                  <th className="text-left p-4 font-medium text-gray-900">Ações</th>
-                </tr>
-                {/* Linha de filtros */}
-                <tr className="border-b border-gray-200 bg-gray-25">
-                  <td className="p-2">
-                    {(userRole === 'professor' || userRole === 'monitor') && (
-                      <Input
-                        placeholder="Filtrar por nome ou email..."
-                        value={filtroEstudante}
-                        onChange={(e) => setFiltroEstudante(e.target.value)}
-                        className="h-8 text-sm"
-                      />
-                    )}
-                  </td>
-                  {(userRole === 'professor' || userRole === 'monitor') && (
-                    <td className="p-2">
-                      <select
-                        value={filtroTurma}
-                        onChange={(e) => {
-                          setFiltroTurma(e.target.value);
-                          setFiltroLista(''); // Resetar lista quando mudar turma
-                        }}
-                        className="w-full h-8 px-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      >
-                        <option value="">Todas</option>
-                        {turmas.map(turma => (
-                          <option key={turma.id} value={turma.id}>{turma.nome}</option>
-                        ))}
-                      </select>
-                    </td>
-                  )}
-                  <td className="p-2">
-                    <select
-                      value={filtroLista}
-                      onChange={(e) => setFiltroLista(e.target.value)}
-                      className="w-full h-8 px-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="">Todas</option>
-                      {listasFiltradas.map(lista => (
-                        <option key={lista.id} value={lista.id}>{lista.titulo}</option>
-                      ))}
-                    </select>
-                  </td>
-                  <td className="p-2">
-                    <select
-                      value={filtroQuestao}
-                      onChange={(e) => setFiltroQuestao(e.target.value)}
-                      className="w-full h-8 px-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="">Todas</option>
-                      {questoesUnicas.map(questao => (
-                        <option key={questao.questaoId} value={questao.questaoId}>{questao.questaoTitulo}</option>
-                      ))}
-                    </select>
-                  </td>
-                  <td className="p-2">
-                    <select
-                      value={filtroStatus}
-                      onChange={(e) => setFiltroStatus(e.target.value as typeof filtroStatus)}
-                      className="w-full h-8 px-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="todas">Todos</option>
-                      <option value="pendente">Pendente</option>
-                      <option value="aceita">Aceita</option>
-                      <option value="erro_compilacao">Erro de Compilação</option>
-                      <option value="erro_runtime">Erro de Runtime</option>
-                      <option value="timeout">Timeout</option>
-                      <option value="rejeitada">Rejeitada</option>
-                    </select>
-                  </td>
-                  <td className="p-2">
-                    <div className="flex gap-1">
-                      <Input
-                        type="date"
-                        value={dataInicio}
-                        onChange={(e) => setDataInicio(e.target.value)}
-                        className="h-8 text-xs"
-                        title="Data início"
-                      />
-                      <Input
-                        type="date"
-                        value={dataFim}
-                        onChange={(e) => setDataFim(e.target.value)}
-                        className="h-8 text-xs"
-                        title="Data fim"
-                      />
-                    </div>
-                  </td>
-                  <td className="p-2">
-                    <select
-                      value={filtroLinguagem}
-                      onChange={(e) => setFiltroLinguagem(e.target.value)}
-                      className="w-full h-8 px-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="">Todas</option>
-                      {linguagensUnicas.map(linguagem => (
-                        <option key={linguagem} value={linguagem}>{linguagem}</option>
-                      ))}
-                    </select>
-                  </td>
-                  <td className="p-2">
-                    {/* Pontuação - sem filtro específico */}
-                  </td>
-                  <td className="p-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        setFiltroTurma('');
-                        setFiltroLista('');
-                        setFiltroStatus('todas');
-                        setFiltroLinguagem('');
-                        setFiltroQuestao('');
-                        if (userRole === 'professor' || userRole === 'monitor') {
-                          setFiltroEstudante('');
-                        }
-                        setDataInicio('');
-                        setDataFim('');
-                      }}
-                      className="h-8 px-2 text-xs"
-                    >
-                      Limpar
-                    </Button>
-                  </td>
+                  <th className="text-left py-4 px-6 font-semibold text-slate-700">Lista</th>
+                  <th className="text-left py-4 px-6 font-semibold text-slate-700">Questão</th>
+                  <th className="text-left py-4 px-6 font-semibold text-slate-700">Status</th>
+                  <th className="text-left py-4 px-6 font-semibold text-slate-700">Linguagem</th>
+                  <th className="text-left py-4 px-6 font-semibold text-slate-700">Pontuação</th>
+                  <th className="text-left py-4 px-6 font-semibold text-slate-700">Ações</th>
                 </tr>
               </thead>
               <tbody>
-                {submissoesFiltradas.map(submissao => (
+                {filteredSubmissions.map(submission => (
                   <tr 
-                    key={submissao.id} 
-                    className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors duration-200"
-                    onClick={() => abrirPopup(submissao)}
+                    key={submission.id} 
+                    className="border-b border-slate-100 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 cursor-pointer transition-all duration-200"
+                    onClick={() => openPopup(submission)}
                   >
-                    <td className="p-4">
+                    <td className="py-4 px-6">
                       <div>
-                        <div className="font-medium text-gray-900">{submissao.estudanteNome}</div>
-                        <div className="text-sm text-gray-500">{submissao.estudanteEmail}</div>
+                        <div className="font-semibold text-slate-900">{submission.student.name}</div>
                       </div>
                     </td>
-                    {(userRole === 'professor' || userRole === 'monitor') && (
-                      <td className="p-4">
-                        <div className="text-sm text-gray-900">{submissao.turmaNome}</div>
+                    {(userRole === 'professor' || userRole === 'assistant') && (
+                      <td className="py-4 px-6">
+                        <div className="text-sm text-slate-900">
+                          {submission.className}
+                        </div>
                       </td>
                     )}
-                    <td className="p-4">
-                      <div className="text-sm text-gray-900">{submissao.listaTitulo}</div>
-                    </td>
-                    <td className="p-4">
-                      <div className="text-sm text-gray-900">{submissao.questaoTitulo}</div>
-                    </td>
-                    <td className="p-4">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(submissao.status)}`}>
-                        {getStatusLabel(submissao.status)}
-                      </span>
-                    </td>
-                    <td className="p-4">
-                      <div className="text-sm text-gray-900">
-                        {new Date(submissao.submissaoEm).toLocaleDateString('pt-BR')}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {new Date(submissao.submissaoEm).toLocaleTimeString('pt-BR')}
+                    <td className="py-4 px-6">
+                      <div className="text-sm text-slate-900">
+                        {submission.questionList.name}
                       </div>
                     </td>
-                    <td className="p-4">
-                      <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-medium">
-                        {submissao.linguagem}
-                      </span>
+                    <td className="py-4 px-6">
+                      <div className="text-sm text-slate-900">{submission.question.name}</div>
                     </td>
-                    <td className="p-4">
-                      <div className="text-sm font-medium text-gray-900">
-                        {submissao.pontuacao} pts
-                      </div>
-                      {(submissao.tempoExecucao || submissao.memoriaUsada) && (
-                        <div className="text-xs text-gray-500">
-                          {submissao.tempoExecucao && <span>{submissao.tempoExecucao}ms</span>}
-                          {submissao.memoriaUsada && (
-                            <span className={submissao.tempoExecucao ? " | " : ""}>
-                              {submissao.memoriaUsada}KB
-                            </span>
-                          )}
+                    <td className="py-4 px-6">
+                      <div className="space-y-2">
+                        <span className={`px-3 py-1 rounded-xl text-xs font-medium ${getSubmissionStatusColor(submission.status)}`}>
+                          {getStatusLabel(submission.status)}
+                        </span>
+                        <div className={`text-xs ${getVerdictColor(submission.verdict)}`}>
+                          {submission.verdict}
                         </div>
-                      )}
+                      </div>
                     </td>
-                    <td className="p-4">
+                    <td className="py-4 px-6">
+                      <span className="px-3 py-1 bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 border border-blue-200 rounded-xl text-xs font-medium">
+                        {submission.language}
+                      </span>
+                    </td>
+                    <td className="py-4 px-6">
+                      <div className="text-sm font-semibold text-slate-900">
+                        {submission.score} pts
+                      </div>
+                    </td>
+                    <td className="py-4 px-6">
                       <div className="flex gap-2">
                         <Button 
                           size="sm" 
                           variant="outline"
                           onClick={(e) => {
                             e.stopPropagation();
-                            abrirPopup(submissao);
+                            openPopup(submission);
                           }}
-                          className="text-xs"
+                          className="text-xs border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold transition-all duration-200 rounded-xl"
                         >
                           Ver
                         </Button>
-                        {(userRole === 'professor' || userRole === 'monitor') && submissao.status !== 'pendente' && (
+                        {(userRole === 'professor' || userRole === 'assistant') && (
                           <Button 
                             size="sm" 
                             variant="outline"
                             onClick={(e) => {
                               e.stopPropagation();
-                              reavaliarSubmissao(submissao.id);
+                              revaluateSubmission(submission.id);
                             }}
-                            className="text-xs"
+                            className="text-xs border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold transition-all duration-200 rounded-xl"
                           >
                             Reavaliar
                           </Button>
@@ -555,28 +831,28 @@ export default function SubmissoesPage() {
       </Card>
 
       {/* Popup de Detalhes da Submissão */}
-      {isPopupOpen && selectedSubmissao && (
+      {isPopupOpen && selectedSubmission && (
         <div 
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-          onClick={fecharPopup} // Fechar ao clicar no backdrop
+          onClick={closePopup}
         >
           <div 
-            className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()} // Prevenir fechar ao clicar no conteúdo
+            className="bg-white rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-200"
+            onClick={(e) => e.stopPropagation()}
           >
             {/* Header do Popup */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+            <div className="flex items-center justify-between p-8 border-b border-slate-200">
               <div>
-                <h2 className="text-xl font-semibold text-gray-900">
+                <h2 className="text-2xl font-bold text-slate-900">
                   Detalhes da Submissão
                 </h2>
-                <p className="text-sm text-gray-600 mt-1">
-                  {selectedSubmissao.estudanteNome} - {selectedSubmissao.questaoTitulo}
+                <p className="text-slate-600 mt-2">
+                  {selectedSubmission.student?.name || 'Nome não disponível'} - {selectedSubmission.question?.name || 'Questão não encontrada'}
                 </p>
               </div>
               <button
-                onClick={fecharPopup}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
+                onClick={closePopup}
+                className="text-slate-400 hover:text-slate-600 transition-colors p-2 hover:bg-slate-100 rounded-xl"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -585,117 +861,90 @@ export default function SubmissoesPage() {
             </div>
 
             {/* Conteúdo do Popup */}
-            <div className="p-6">
+            <div className="p-8">
               {/* Informações da Submissão */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-3">Informações Gerais</h3>
-                  <div className="space-y-2 text-sm">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                <div className="bg-gradient-to-r from-slate-50 to-slate-100 rounded-2xl p-6">
+                  <h3 className="text-xl font-semibold text-slate-900 mb-4">Informações Gerais</h3>
+                  <div className="space-y-3 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Estudante:</span>
-                      <span className="font-medium">{selectedSubmissao.estudanteNome}</span>
+                      <span className="text-slate-600">Estudante:</span>
+                      <span className="font-semibold text-slate-900">{selectedSubmission.student?.name || 'Nome não disponível'}</span>
+                    </div>
+
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Lista:</span>
+                      <span className="font-semibold text-slate-900">{selectedSubmission.questionList?.name || 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Email:</span>
-                      <span className="font-medium">{selectedSubmissao.estudanteEmail}</span>
+                      <span className="text-slate-600">Questão:</span>
+                      <span className="font-semibold text-slate-900">{selectedSubmission.question?.name || 'Questão não encontrada'}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Turma:</span>
-                      <span className="font-medium">{selectedSubmissao.turmaNome}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Lista:</span>
-                      <span className="font-medium">{selectedSubmissao.listaTitulo}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Questão:</span>
-                      <span className="font-medium">{selectedSubmissao.questaoTitulo}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Linguagem:</span>
-                      <span className="font-medium">{selectedSubmissao.linguagem}</span>
+                      <span className="text-slate-600">Linguagem:</span>
+                      <span className="font-semibold text-slate-900">{selectedSubmission.language}</span>
                     </div>
                   </div>
                 </div>
 
-                <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-3">Resultado</h3>
-                  <div className="space-y-2 text-sm">
+                <div className="bg-gradient-to-r from-slate-50 to-slate-100 rounded-2xl p-6">
+                  <h3 className="text-xl font-semibold text-slate-900 mb-4">Resultado</h3>
+                  <div className="space-y-3 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Status:</span>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(selectedSubmissao.status)}`}>
-                        {getStatusLabel(selectedSubmissao.status)}
+                      <span className="text-slate-600">Status:</span>
+                      <span className={`px-3 py-1 rounded-xl text-xs font-medium ${getSubmissionStatusColor(selectedSubmission.status)}`}>
+                        {getStatusLabel(selectedSubmission.status)}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Pontuação:</span>
-                      <span className="font-medium">{selectedSubmissao.pontuacao} pts</span>
-                    </div>
-                    {selectedSubmissao.tempoExecucao && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Tempo de Execução:</span>
-                        <span className="font-medium">{selectedSubmissao.tempoExecucao}ms</span>
-                      </div>
-                    )}
-                    {selectedSubmissao.memoriaUsada && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Memória Usada:</span>
-                        <span className="font-medium">{selectedSubmissao.memoriaUsada}KB</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Submetido em:</span>
-                      <span className="font-medium">
-                        {new Date(selectedSubmissao.submissaoEm).toLocaleString('pt-BR')}
+                      <span className="text-slate-600">Veredicto:</span>
+                      <span className={`font-semibold ${getVerdictColor(selectedSubmission.verdict)}`}>
+                        {selectedSubmission.verdict}
                       </span>
                     </div>
-                    {selectedSubmissao.avaliadoEm && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Avaliado em:</span>
-                        <span className="font-medium">
-                          {new Date(selectedSubmissao.avaliadoEm).toLocaleString('pt-BR')}
-                        </span>
-                      </div>
-                    )}
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Pontuação:</span>
+                      <span className="font-semibold text-slate-900">{selectedSubmission.score} pts</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Submetido em:</span>
+                      <span className="font-semibold text-slate-900">
+                        {new Date(selectedSubmission.submittedAt).toLocaleString('pt-BR')}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Feedback */}
-              {selectedSubmissao.feedback && (
-                <div className="mb-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-3">Feedback</h3>
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <p className="text-sm text-gray-700">{selectedSubmissao.feedback}</p>
-                  </div>
-                </div>
-              )}
-
               {/* Código */}
               <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-3">Código Submetido</h3>
-                <div className="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto">
-                  <pre className="text-sm font-mono whitespace-pre-wrap">
-                    {selectedSubmissao.codigo}
+                <h3 className="text-xl font-semibold text-slate-900 mb-4">Código Submetido</h3>
+                <div className="bg-slate-900 text-slate-100 p-6 rounded-2xl overflow-x-auto border border-slate-700">
+                  <pre className="text-sm font-mono whitespace-pre-wrap leading-relaxed">
+                    {selectedSubmission.code}
                   </pre>
                 </div>
               </div>
             </div>
 
             {/* Footer do Popup */}
-            <div className="flex justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50">
-              {(userRole === 'professor' || userRole === 'monitor') && selectedSubmissao.status !== 'pendente' && (
+            <div className="flex justify-end gap-4 p-8 border-t border-slate-200 bg-gradient-to-r from-slate-50 to-slate-100">
+              {(userRole === 'professor' || userRole === 'assistant') && (
                 <Button 
                   onClick={() => {
-                    reavaliarSubmissao(selectedSubmissao.id);
-                    fecharPopup();
+                    revaluateSubmission(selectedSubmission.id);
+                    closePopup();
                   }}
                   variant="outline"
+                  className="border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold transition-all duration-200 rounded-xl"
                 >
                   Reavaliar Submissão
                 </Button>
               )}
-              <Button onClick={fecharPopup}>
+              <Button 
+                onClick={closePopup}
+                className="bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 border border-blue-200 shadow-sm hover:shadow-md font-semibold transition-all duration-200 transform hover:scale-[1.02] rounded-xl"
+              >
                 Fechar
               </Button>
             </div>

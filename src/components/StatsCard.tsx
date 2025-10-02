@@ -1,6 +1,8 @@
 "use client";
-import { Card } from "./ui/card";
+
 import { ReactNode } from "react";
+
+import { Card } from "./ui/card";
 
 interface StatsCardProps {
   title: string;

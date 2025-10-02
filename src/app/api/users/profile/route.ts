@@ -1,0 +1,77 @@
+import { NextRequest, NextResponse } from "next/server";
+
+export async function GET(request: NextRequest) {
+  try {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+    
+    // Obter o token do header Authorization
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json({ error: "Token de autenticação não fornecido" }, { status: 401 });
+    }
+        
+    const res = await fetch(`${apiUrl}/users/profile`, {
+      method: "GET",
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": authHeader
+      },
+    });
+    
+    const data = await res.json();
+    
+    if (!res.ok) {
+      return NextResponse.json({ 
+        error: data.error || data.message || "Erro ao buscar perfil" 
+      }, { status: res.status });
+    }
+        
+    return NextResponse.json(data);
+    
+  } catch (error) {
+    console.error("Erro ao buscar perfil:", error);
+    return NextResponse.json({ 
+      error: "Erro interno do servidor ao buscar perfil" 
+    }, { status: 500 });
+  }
+}
+
+export async function PUT(request: NextRequest) {
+  try {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+    
+    // Obter o token do header Authorization
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json({ error: "Token de autenticação não fornecido" }, { status: 401 });
+    }
+    
+    // Obter o corpo da requisição
+    const body = await request.json();
+        
+    const res = await fetch(`${apiUrl}/users/profile`, {
+      method: "PUT",
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": authHeader
+      },
+      body: JSON.stringify(body),
+    });
+    
+    const data = await res.json();
+    
+    if (!res.ok) {
+      return NextResponse.json({ 
+        error: data.error || data.message || "Erro ao atualizar perfil" 
+      }, { status: res.status });
+    }
+        
+    return NextResponse.json(data);
+    
+  } catch (error) {
+    console.error("Erro ao atualizar perfil:", error);
+    return NextResponse.json({ 
+      error: "Erro interno do servidor ao atualizar perfil" 
+    }, { status: 500 });
+  }
+}

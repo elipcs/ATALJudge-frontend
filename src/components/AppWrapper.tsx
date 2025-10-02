@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
+
 import UniversalLayout from '@/components/UniversalLayout';
 import { UserRoleProvider } from '@/contexts/UserRoleContext';
+import AuthGuard from '@/components/AuthGuard';
 
 // Páginas que devem ter layout de navegação
 const PROTECTED_ROUTES = [
@@ -13,9 +14,7 @@ const PROTECTED_ROUTES = [
   '/submissoes',
   '/configuracoes',
   '/perfil',
-  '/home',
-  '/professor',
-  '/alunos'
+  '/home'
 ];
 
 // Páginas que NÃO devem ter layout de navegação
@@ -35,9 +34,11 @@ export default function AppWrapper({
   children: React.ReactNode;
 }) {
   return (
-    <UserRoleProvider>
-      <AppWrapperContent>{children}</AppWrapperContent>
-    </UserRoleProvider>
+    <AuthGuard>
+      <UserRoleProvider>
+        <AppWrapperContent>{children}</AppWrapperContent>
+      </UserRoleProvider>
+    </AuthGuard>
   );
 }
 

@@ -1,0 +1,16 @@
+[
+  {
+    "id":"6500000000000000002001",
+    "name": "Melina Mongiovi",
+    "avatar": "/profile-default.svg",
+    "email": "melina@computacao.ufcg.edu.br",
+    "role": "professor"
+  },
+  {
+    "id":"6500000000000000002002",
+    "name": "Ricardo Oliveira",
+    "avatar": "/profile-default.svg",
+    "email": "ricardo@computacao.ufcg.edu.br",
+    "role": "professor"
+  }
+]

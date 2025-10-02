@@ -1,6 +1,7 @@
 
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+
 import AppWrapper from "@/components/AppWrapper";
 import "./globals.css";
 
@@ -21,7 +22,10 @@ export const metadata: Metadata = {
   },
   description: "Uma plataforma dedicada ao aprendizado e avaliação de algoritmos.",
   icons: {
-    icon: "/hammer.svg",
+    icon: [
+      { url: "/hammer.svg", type: "image/svg+xml" },
+      { url: "/hammer.png", type: "image/png" }
+    ],
     shortcut: "/hammer.svg",
     apple: "/hammer.svg",
   },

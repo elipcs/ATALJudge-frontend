@@ -1,12 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
 
-export type UserRole = 'student' | 'assistant' | 'professor';
+import { UserRole } from '../types';
+import { getToken, isTokenExpired, refreshAccessToken } from '../services/auth';
 
 interface UseUserRoleReturn {
   userRole: UserRole;
   isLoading: boolean;
-  setUserRole: (role: UserRole) => void;
 }
 
 export function useUserRole(): UseUserRoleReturn {
@@ -14,34 +14,46 @@ export function useUserRole(): UseUserRoleReturn {
   const [userRole, setUserRoleState] = useState<UserRole>('professor');
   const [isLoading, setIsLoading] = useState(true);
 
-  const detectUserRole = (): UserRole => {
-    // Método 0: Verificar se há um tipo definido manualmente (para testes)
-    const manualUserRole = localStorage.getItem('manual-userRole');
-    if (manualUserRole && ['student', 'assistant', 'professor'].includes(manualUserRole)) {
-      return manualUserRole as UserRole;
+  const detectUserRole = useCallback(async (): Promise<UserRole> => {
+    // Verificar se estamos no cliente antes de acessar localStorage
+    if (typeof window === 'undefined') {
+      return 'professor'; // Default para SSR
     }
 
-    // Método 1: Verificar token JWT
-    const token = localStorage.getItem('token');
+    // Método 1: Verificar token JWT (prioridade principal)
+    const token = getToken();
     if (token) {
       try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        const role = payload.role || payload.userRole;
-        if (['student', 'assistant', 'professor'].includes(role)) {
-          return role as UserRole;
+        // Verificar se o token está expirado
+        if (isTokenExpired(token)) {
+          // Tentar renovar o token
+          const newToken = await refreshAccessToken();
+          if (newToken) {
+            const payload = JSON.parse(atob(newToken.split('.')[1]));
+            const role = payload.role || payload.userRole;
+            if (['student', 'assistant', 'professor'].includes(role)) {
+              return role as UserRole;
+            }
+          }
+        } else {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          const role = payload.role || payload.userRole;
+          if (['student', 'assistant', 'professor'].includes(role)) {
+            return role as UserRole;
+          }
         }
       } catch (error) {
         console.error('Erro ao decodificar token:', error);
       }
     }
 
-    // Método 2: Fallback para localStorage
+    // Método 2: Fallback para localStorage (apenas se não houver token)
     const savedUserRole = localStorage.getItem('userRole');
     if (savedUserRole && ['student', 'assistant', 'professor'].includes(savedUserRole)) {
       return savedUserRole as UserRole;
     }
 
-    // Método 3: Verificar pela URL atual
+    // Método 3: Verificar pela URL atual (apenas como último recurso)
     if (pathname.includes('/professor/')) return 'professor';
     if (pathname.includes('/aluno/')) return 'student';
     if (pathname.includes('/monitor/')) return 'assistant';
@@ -54,52 +66,31 @@ export function useUserRole(): UseUserRoleReturn {
 
     // Default para professor
     return 'professor';
-  };
+  }, [pathname]);
 
-  const setUserRole = (role: UserRole) => {
-    setUserRoleState(role);
-    localStorage.setItem('userRole', role);
-    // Para testes, também salvar como tipo manual
-    localStorage.setItem('manual-userRole', role);
-    
-    // Disparar evento customizado para notificar outras páginas sobre a mudança
-    window.dispatchEvent(new CustomEvent('userRoleChanged', { detail: role }));
-  };
 
   useEffect(() => {
-    const detectedUserRole = detectUserRole();
-    setUserRoleState(detectedUserRole);
-    setIsLoading(false);
+    const loadUserRole = async () => {
+      try {
+        const detectedUserRole = await detectUserRole();
+        // Log removido - problema resolvido
+        setUserRoleState(detectedUserRole);
+        setIsLoading(false);
 
-    // Salvar no localStorage para próximas sessões
-    localStorage.setItem('userRole', detectedUserRole);
-
-    // Adicionar listener para mudanças de tipo de usuário
-    const handleUserRoleChange = (event: CustomEvent) => {
-      setUserRoleState(event.detail);
-    };
-
-    window.addEventListener('userRoleChanged', handleUserRoleChange as EventListener);
-    
-    // Também escutar mudanças no localStorage para sincronizar entre abas
-    const handleStorageChange = (event: StorageEvent) => {
-      if (event.key === 'manual-userRole' || event.key === 'userRole') {
-        const newUserRole = detectUserRole();
-        setUserRoleState(newUserRole);
+        // Salvar no localStorage para próximas sessões (apenas como fallback)
+        localStorage.setItem('userRole', detectedUserRole);
+      } catch (error) {
+        console.error('Erro ao detectar role do usuário:', error);
+        setUserRoleState('professor'); // Fallback
+        setIsLoading(false);
       }
     };
 
-    window.addEventListener('storage', handleStorageChange);
-
-    return () => {
-      window.removeEventListener('userRoleChanged', handleUserRoleChange as EventListener);
-      window.removeEventListener('storage', handleStorageChange);
-    };
-  }, [pathname]);
+    loadUserRole();
+  }, [pathname, detectUserRole]);
 
   return {
     userRole,
-    isLoading,
-    setUserRole
+    isLoading
   };
 }

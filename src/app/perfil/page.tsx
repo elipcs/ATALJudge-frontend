@@ -1,262 +1,235 @@
 "use client";
-import { useState, useEffect } from "react";
+
+import { useState, useEffect, useCallback } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
+
 import { Button } from "../../components/ui/button";
 import { Card } from "../../components/ui/card";
 import { Input } from "../../components/ui/input";
-import { getToken } from "../../services/auth";
+import PageHeader from "../../components/PageHeader";
 import { useUserRole } from "../../hooks/useUserRole";
+import { profileApi, ProfileData, UpdateProfileData, ChangePasswordData } from "../../services/profile";
+import { translateUserRole, getRoleColor } from "../../utils/roleTranslations";
 
-interface Usuario {
-  id: string;
-  nome: string;
-  email: string;
-  tipo: 'professor' | 'aluno' | 'monitor';
-  avatar?: string;
-  biografia?: string;
-  instituicao?: string;
-  departamento?: string;
-  titulo?: string;
-  criadoEm: string;
-  ultimoLogin: string;
-}
 
-interface EstatisticasProfessor {
-  totalTurmas: number;
-  totalEstudantes: number;
-  totalListas: number;
-  totalSubmissoes: number;
-  taxaSucessoGeral: number;
-  estudantesAtivos: number;
-}
-
-interface EstatisticasAluno {
-  totalSubmissoes: number;
-  submissoesAceitas: number;
-  totalListas: number;
-  listasCompletas: number;
-  taxaSucesso: number;
-  posicaoRanking: number;
-}
-
-interface EstatisticasMonitor {
-  totalTurmas: number;
-  totalEstudantes: number;
-  totalListas: number;
-  totalSubmissoes: number;
-  taxaSucessoGeral: number;
-  estudantesAtivos: number;
-}
-
-interface ConfiguracaoPrivacidade {
-  perfilPublico: boolean;
-  mostrarEstatisticas: boolean;
-  receberEmails: boolean;
-  notificacoesPush: boolean;
-}
 
 export default function PerfilPage() {
   const router = useRouter();
   const { userRole, isLoading: isLoadingRole } = useUserRole();
-  const [usuario, setUsuario] = useState<Usuario | null>(null);
-  const [estatisticas, setEstatisticas] = useState<EstatisticasProfessor | EstatisticasAluno | EstatisticasMonitor | null>(null);
-  const [privacidade, setPrivacidade] = useState<ConfiguracaoPrivacidade>({
-    perfilPublico: true,
-    mostrarEstatisticas: true,
-    receberEmails: true,
-    notificacoesPush: false
-  });
+  const [usuario, setUsuario] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [salvando, setSalvando] = useState(false);
-  const [tabAtiva, setTabAtiva] = useState('perfil');
-  const [senhaAtual, setSenhaAtual] = useState('');
-  const [novaSenha, setNovaSenha] = useState('');
-  const [confirmarSenha, setConfirmarSenha] = useState('');
-  const [alterandoSenha, setAlterandoSenha] = useState(false);
-  const [erro, setErro] = useState('');
-  const [sucesso, setSucesso] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState('perfil');
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [buttonSuccess, setButtonSuccess] = useState(false);
 
-  useEffect(() => {
-    // Aguardar o carregamento do userRole antes de carregar os dados
-    if (!isLoadingRole && userRole) {
-      carregarDados();
-    }
-  }, [router, userRole, isLoadingRole]);
-
-  async function carregarDados() {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      setErro('');
+      setError('');
       
-      // Usar o userRole do hook em vez de query parameter
-      const tipoUsuario = userRole;
+      const response = await profileApi.getProfile();
       
-      const headers = {
-        'Content-Type': 'application/json'
-      };
-
-      const [perfilRes, estatisticasRes, privacidadeRes] = await Promise.all([
-        fetch(`/api/usuarios/perfil?tipo=${tipoUsuario}`, { headers }),
-        fetch(`/api/usuarios/estatisticas?tipo=${tipoUsuario}`, { headers }),
-        fetch(`/api/usuarios/privacidade?tipo=${tipoUsuario}`, { headers })
-      ]);
-
-      if (perfilRes.ok) {
-        const perfilData = await perfilRes.json();
-        setUsuario(perfilData);
-      } else if (perfilRes.status === 401) {
-        // router.push('/login'); // Comentado temporariamente
-        throw new Error('Erro de autenticação');
-      } else {
-        throw new Error('Erro ao carregar perfil');
-      }
-
-      if (estatisticasRes.ok) {
-        const estatisticasData = await estatisticasRes.json();
-        setEstatisticas(estatisticasData);
-      }
-
-      if (privacidadeRes.ok) {
-        const privacidadeData = await privacidadeRes.json();
-        setPrivacidade(privacidadeData);
-      }
+      const profileData = (response as { data?: ProfileData }).data || response;
+      
+      setUsuario(profileData);
     } catch (error) {
-      console.error('Erro ao carregar dados:', error);
-      setErro('Erro ao carregar dados do perfil. Tente novamente.');
+      console.error('PerfilPage: Erro ao carregar dados:', error);
+      if (error instanceof Error && (error.message.includes('Não autorizado') || error.message.includes('Token expirado'))) {
+        router.push('/login');
+        return;
+      }
+      
+      // Verificar se é erro de conexão com o backend
+      if (error instanceof Error && (
+        error.message.includes('Failed to fetch') || 
+        error.message.includes('NetworkError') ||
+        error.message.includes('fetch')
+      )) {
+        setError('Erro de conexão: Não foi possível conectar ao servidor. Verifique se o backend está rodando em http://localhost:5000');
+      } else {
+        setError('Erro ao carregar dados do perfil. Tente novamente.');
+      }
     } finally {
       setLoading(false);
     }
-  }
+  }, [router]);
 
-  async function salvarPerfil() {
-    if (!usuario) return;
 
-    try {
-      setSalvando(true);
-      setErro('');
-      setSucesso('');
-      
-      const tipoUsuario = userRole;
-      
-      const response = await fetch(`/api/usuarios/perfil?tipo=${tipoUsuario}`, {
-        method: 'PUT',
-        headers: { 
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          nome: usuario.nome,
-          biografia: usuario.biografia,
-          instituicao: usuario.instituicao,
-          departamento: usuario.departamento,
-          titulo: usuario.titulo
-        })
-      });
+  useEffect(() => {
+    // Definir título da página
+    document.title = "Meu Perfil | AtalJudge";
+  }, []);
 
-      if (!response.ok) {
-        if (response.status === 401) {
-          // router.push('/login'); // Comentado temporariamente
-          throw new Error('Erro de autenticação');
-        }
-        throw new Error('Erro ao salvar perfil');
-      }
-
-      setSucesso('Perfil atualizado com sucesso!');
-      setTimeout(() => setSucesso(''), 3000);
-    } catch (error) {
-      console.error('Erro ao salvar perfil:', error);
-      setErro('Erro ao salvar perfil. Tente novamente.');
-    } finally {
-      setSalvando(false);
+  useEffect(() => {    // Wait for userRole loading before loading data
+    if (!isLoadingRole && userRole) {
+      loadData();
     }
-  }
+  }, [userRole, isLoadingRole, loadData]);
 
-  async function salvarPrivacidade() {
-    try {
-      setSalvando(true);
-      setErro('');
-      setSucesso('');
-      
-      const tipoUsuario = userRole;
-      
-      const response = await fetch(`/api/usuarios/privacidade?tipo=${tipoUsuario}`, {
-        method: 'PUT',
-        headers: { 
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(privacidade)
-      });
 
-      if (!response.ok) {
-        if (response.status === 401) {
-          // router.push('/login'); // Comentado temporariamente
-          throw new Error('Erro de autenticação');
-        }
-        throw new Error('Erro ao salvar configurações');
-      }
-
-      setSucesso('Configurações de privacidade atualizadas!');
-      setTimeout(() => setSucesso(''), 3000);
-    } catch (error) {
-      console.error('Erro ao salvar configurações:', error);
-      setErro('Erro ao salvar configurações. Tente novamente.');
-    } finally {
-      setSalvando(false);
-    }
-  }
-
-  async function alterarSenha() {
-    if (!senhaAtual || !novaSenha) {
-      setErro('Preencha todos os campos de senha');
+  async function saveProfile() {
+    if (!usuario) {
       return;
     }
 
-    if (novaSenha !== confirmarSenha) {
-      setErro('A confirmação da senha não confere');
+    if (!usuario.name || usuario.name.trim().length === 0) {
+      setError('O nome é obrigatório');
       return;
     }
 
-    if (novaSenha.length < 6) {
-      setErro('A nova senha deve ter pelo menos 6 caracteres');
+    if (usuario.name.trim().length < 2) {
+      setError('O nome deve ter pelo menos 2 caracteres');
+      return;
+    }
+
+    // Specific validation for students
+    if (usuario.role === 'student') {
+      if (!usuario.student_registration || usuario.student_registration.trim().length === 0) {
+        setError('A matrícula é obrigatória para estudantes');
+        return;
+      }
+      
+      // Validar se a matrícula tem exatamente 9 ou 11 dígitos
+      const registrationDigits = usuario.student_registration.replace(/\D/g, ''); // Remove caracteres não numéricos
+      if (registrationDigits.length !== 9 && registrationDigits.length !== 11) {
+        setError('A matrícula deve ter exatamente 9 ou 11 dígitos');
+        return;
+      }
+    }
+
+
+    try {
+      setSaving(true);
+      setError('');
+      setSuccess('');
+      
+      const updateData: UpdateProfileData = {
+        name: usuario.name,
+        student_registration: usuario.student_registration
+      };
+
+      const response = await profileApi.updateProfile(updateData);
+      
+      const updatedProfile = (response as { data?: ProfileData }).data || response;
+      setUsuario(updatedProfile);
+
+      setButtonSuccess(true);
+      setTimeout(() => setButtonSuccess(false), 3000);
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      if (error instanceof Error && (error.message.includes('Não autorizado') || error.message.includes('Token expirado'))) {
+        router.push('/login');
+        return;
+      }
+      
+      // Verificar se é erro de conexão com o backend
+      if (error instanceof Error && (
+        error.message.includes('Failed to fetch') || 
+        error.message.includes('NetworkError') ||
+        error.message.includes('fetch')
+      )) {
+        setError('Erro de conexão: Não foi possível conectar ao servidor. Verifique se o backend está rodando em http://localhost:5000');
+      } else {
+        setError(error instanceof Error ? error.message : 'Erro ao salvar perfil. Tente novamente.');
+      }
+    } finally {
+      setSaving(false);
+    }
+  }
+
+
+  // Função de validação de senha igual ao cadastro
+  function validatePassword(password: string) {
+    return {
+      minLength: password.length >= 8,
+      hasLetters: /[a-zA-Z]/.test(password),
+      hasNumbers: /[0-9]/.test(password),
+      hasUppercase: /[A-Z]/.test(password)
+    };
+  }
+
+  async function changePassword() {
+    // Validar se a nova senha é diferente da senha atual (primeira validação)
+    if (currentPassword && newPassword && currentPassword === newPassword) {
+      setError('A nova senha não pode ser igual à senha atual');
+      return;
+    }
+
+    if (!currentPassword || !newPassword) {
+      setError('Preencha todos os campos de senha');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setError('A confirmação da senha não confere');
+      return;
+    }
+
+    // Validação de senha igual ao cadastro
+    const isPasswordValid = validatePassword(newPassword);
+    if (!isPasswordValid.minLength) {
+      setError("Senha deve ter pelo menos 8 caracteres");
+      return;
+    }
+    if (!isPasswordValid.hasLetters) {
+      setError("Senha deve conter letras");
+      return;
+    }
+    if (!isPasswordValid.hasNumbers) {
+      setError("Senha deve conter números");
+      return;
+    }
+    if (!isPasswordValid.hasUppercase) {
+      setError("Senha deve conter pelo menos 1 letra maiúscula");
       return;
     }
 
     try {
-      setAlterandoSenha(true);
-      setErro('');
-      setSucesso('');
+      setChangingPassword(true);
+      setError('');
+      setSuccess('');
       
-      const tipoUsuario = userRole;
-      
-      const response = await fetch(`/api/usuarios/alterar-senha?tipo=${tipoUsuario}`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          senhaAtual,
-          novaSenha
-        })
-      });
+      const changePasswordData: ChangePasswordData = {
+        currentPassword: currentPassword,
+        newPassword: newPassword,
+        userId: usuario?.id
+      };
 
-      if (!response.ok) {
-        if (response.status === 401) {
-          // router.push('/login'); // Comentado temporariamente
-          throw new Error('Erro de autenticação');
-        }
-        const error = await response.json();
-        throw new Error(error.message || 'Erro ao alterar senha');
-      }
+      await profileApi.changePassword(changePasswordData);
 
-      setSucesso('Senha alterada com sucesso!');
-      setSenhaAtual('');
-      setNovaSenha('');
-      setConfirmarSenha('');
-      setTimeout(() => setSucesso(''), 3000);
+      setButtonSuccess(true);
+      setTimeout(() => setButtonSuccess(false), 3000);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
     } catch (error) {
-      console.error('Erro ao alterar senha:', error);
-      setErro('Erro ao alterar senha. Verifique sua senha atual.');
+      console.error('Error changing password:', error);
+      if (error instanceof Error && (error.message.includes('Não autorizado') || error.message.includes('Token expirado'))) {
+        router.push('/login');
+        return;
+      }
+      
+      // Verificar se é erro de conexão com o backend
+      if (error instanceof Error && (
+        error.message.includes('Failed to fetch') || 
+        error.message.includes('NetworkError') ||
+        error.message.includes('fetch')
+      )) {
+        setError('Erro de conexão: Não foi possível conectar ao servidor. Verifique se o backend está rodando em http://localhost:5000');
+      } else {
+        // Mostrar a mensagem específica do backend
+        const errorMessage = error instanceof Error ? error.message : 'Erro ao alterar senha';
+        setError(errorMessage);
+      }
     } finally {
-      setAlterandoSenha(false);
+      setChangingPassword(false);
     }
   }
 
@@ -265,98 +238,117 @@ export default function PerfilPage() {
     if (!file) return;
 
     if (file.size > 2 * 1024 * 1024) {
-      setErro('A imagem deve ter no máximo 2MB');
+      setError('A imagem deve ter no máximo 2MB');
       return;
     }
 
     try {
-      setErro('');
-      setSucesso('');
+      setError('');
+      setSuccess('');
       
-      const formData = new FormData();
-      formData.append('avatar', file);
-      
-      const tipoUsuario = userRole;
-      
-      const response = await fetch(`/api/usuarios/avatar?tipo=${tipoUsuario}`, {
-        method: 'POST',
-        body: formData
-      });
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          // router.push('/login'); // Comentado temporariamente
-          throw new Error('Erro de autenticação');
-        }
-        throw new Error('Erro ao fazer upload do avatar');
-      }
-
-      const result = await response.json();
+      const response = await profileApi.uploadAvatar(file);
+      const result = (response as { data?: { avatarUrl: string } }).data || response;
       if (usuario) {
-        setUsuario({ ...usuario, avatar: result.avatarUrl });
-        setSucesso('Avatar atualizado com sucesso!');
-        setTimeout(() => setSucesso(''), 3000);
+        setUsuario({ ...usuario, avatar_url: result.avatarUrl });
+        setButtonSuccess(true);
+        setTimeout(() => setButtonSuccess(false), 3000);
       }
     } catch (error) {
-      console.error('Erro ao fazer upload do avatar:', error);
-      setErro('Erro ao fazer upload do avatar. Tente novamente.');
+      console.error('Error uploading avatar:', error);
+      if (error instanceof Error && (error.message.includes('Não autorizado') || error.message.includes('Token expirado'))) {
+        router.push('/login');
+        return;
+      }
+      
+      // Verificar se é erro de conexão com o backend
+      if (error instanceof Error && (
+        error.message.includes('Failed to fetch') || 
+        error.message.includes('NetworkError') ||
+        error.message.includes('fetch')
+      )) {
+        setError('Erro de conexão: Não foi possível conectar ao servidor. Verifique se o backend está rodando em http://localhost:5000');
+      } else {
+        setError(error instanceof Error ? error.message : 'Erro ao fazer upload do avatar. Tente novamente.');
+      }
     }
   }
 
-  if (loading) {
+  
+  if (loading || isLoadingRole) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div>
+      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white flex items-center justify-center p-4">
+        <div className="w-full max-w-2xl mx-auto">
+          <div className="bg-white rounded-3xl shadow-lg border border-slate-200 p-8 sm:p-12 text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <h1 className="text-2xl font-bold text-slate-900 mb-2">Carregando perfil...</h1>
+            <p className="text-slate-600">Preparando suas informações pessoais</p>
+          </div>
+        </div>
       </div>
     );
   }
 
   if (!usuario) {
     return (
-      <div className="text-center">
-        <p className="text-gray-600">Erro ao carregar dados do perfil</p>
+      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white flex items-center justify-center p-4">
+        <div className="w-full max-w-2xl mx-auto">
+          <div className="bg-white rounded-3xl shadow-lg border border-slate-200 p-8 sm:p-12 text-center">
+            <div className="p-4 bg-gradient-to-r from-red-50 to-pink-50 text-red-600 rounded-xl shadow-lg border border-red-200 mx-auto mb-6 w-fit">
+              <svg className="w-16 h-16 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-red-600 to-red-700 bg-clip-text text-transparent mb-4">
+              Erro ao carregar perfil
+            </h1>
+            <p className="text-slate-600 text-lg sm:text-xl leading-relaxed max-w-lg mx-auto mb-8">
+              Não foi possível carregar os dados do seu perfil.
+            </p>
+            <button
+              onClick={loadData}
+              className="w-full bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 border border-blue-200 shadow-sm hover:shadow-md font-semibold transition-all duration-200 transform hover:scale-[1.02] py-3 px-6 rounded-xl"
+            >
+              Tentar Novamente
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
-
+  
   return (
-    <div className="p-6">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Meu Perfil</h1>
-          <p className="text-gray-600">Gerencie suas informações pessoais e configurações.</p>
-        </div>
-      </div>
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white p-6">
+      <PageHeader
+        title="Meu Perfil"
+        description="Gerencie suas informações pessoais e configurações"
+        icon={
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+          </svg>
+        }
+        iconColor="purple"
+      />
 
-      {/* Alertas de Sucesso e Erro */}
-      {sucesso && (
-        <div className="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
-          {sucesso}
-        </div>
-      )}
-      
-      {erro && (
-        <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
-          {erro}
-        </div>
-      )}
+
 
       {/* Tabs */}
-      <div className="border-b border-gray-200 mb-6">
-        <nav className="-mb-px flex space-x-8">
+      <div className="bg-white rounded-3xl shadow-lg border border-slate-200 p-2 mb-6">
+        <nav className="flex space-x-2">
           {[
             { id: 'perfil', label: 'Informações Pessoais' },
-            { id: 'estatisticas', label: 'Estatísticas' },
-            { id: 'seguranca', label: 'Segurança' },
-            { id: 'privacidade', label: 'Privacidade' }
+            { id: 'seguranca', label: 'Segurança' }
           ].map(tab => (
             <button
               key={tab.id}
-              onClick={() => setTabAtiva(tab.id)}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                tabAtiva === tab.id
-                  ? 'border-indigo-500 text-indigo-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-200 ${
+                activeTab === tab.id
+                  ? `shadow-sm border ${
+                      usuario.role === 'professor' ? 'bg-gradient-to-r from-purple-50 to-purple-100 text-purple-700 border-purple-200' :
+                      usuario.role === 'student' ? 'bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 border-blue-200' :
+                      'bg-gradient-to-r from-green-50 to-green-100 text-green-700 border-green-200'
+                    }`
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
               }`}
             >
               {tab.label}
@@ -366,28 +358,44 @@ export default function PerfilPage() {
       </div>
 
       {/* Conteúdo das Tabs */}
-      {tabAtiva === 'perfil' && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {activeTab === 'perfil' && (
+        <div className="space-y-6">
+          {/* Card Principal do Perfil */}
+          <Card className="bg-white border-slate-200 rounded-3xl shadow-lg p-8">
+            <div className="flex flex-col lg:flex-row items-start lg:items-center gap-8">
           {/* Avatar */}
-          <Card className="p-6">
-            <div className="text-center">
-              <div className="relative inline-block">
-                <div className="w-24 h-24 bg-gray-300 rounded-full mx-auto mb-4 overflow-hidden">
-                  {usuario.avatar ? (
-                    <img 
-                      src={usuario.avatar} 
+              <div className="relative">
+                <div className={`w-32 h-32 rounded-3xl shadow-lg overflow-hidden border-4 border-white ${
+                  usuario.role === 'professor' ? 'bg-gradient-to-r from-purple-50 to-purple-100' :
+                  usuario.role === 'student' ? 'bg-gradient-to-r from-blue-50 to-blue-100' :
+                  'bg-gradient-to-r from-green-50 to-green-100'
+                }`}>
+                  {usuario.avatar_url ? (
+                    <Image 
+                      src={usuario.avatar_url} 
                       alt="Avatar" 
+                      width={128}
+                      height={128}
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-500 text-2xl">
-                      {usuario.nome.charAt(0).toUpperCase()}
+                    <div className={`w-full h-full flex items-center justify-center text-4xl font-bold ${
+                      usuario.role === 'professor' ? 'text-purple-600 bg-gradient-to-br from-purple-100 to-purple-200' :
+                      usuario.role === 'student' ? 'text-blue-600 bg-gradient-to-br from-blue-100 to-blue-200' :
+                      'text-green-600 bg-gradient-to-br from-green-100 to-green-200'
+                    }`}>
+                      {usuario.name?.charAt(0)?.toUpperCase() || 'U'}
                     </div>
                   )}
                 </div>
-                <label className="absolute bottom-0 right-0 bg-indigo-600 text-white p-1 rounded-full cursor-pointer hover:bg-indigo-700">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                <label className={`absolute -bottom-2 -right-2 text-white p-3 rounded-xl cursor-pointer hover:shadow-lg transition-all duration-200 transform hover:scale-105 ${
+                  usuario.role === 'professor' ? 'bg-gradient-to-r from-purple-500 to-purple-600' :
+                  usuario.role === 'student' ? 'bg-gradient-to-r from-blue-500 to-blue-600' :
+                  'bg-gradient-to-r from-green-500 to-green-600'
+                }`}>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
                   <input
                     type="file"
@@ -397,309 +405,280 @@ export default function PerfilPage() {
                   />
                 </label>
               </div>
-              <h3 className="text-lg font-semibold text-gray-900">{usuario.nome}</h3>
-              <p className="text-sm text-gray-600 capitalize">{usuario.tipo}</p>
+
+              {/* Informações Básicas */}
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-3">
+                  <h2 className="text-3xl font-bold text-slate-900">{usuario.name || 'Usuário'}</h2>
+                  <span className={`px-4 py-2 rounded-xl text-sm font-semibold ${getRoleColor(usuario.role).bg} ${getRoleColor(usuario.role).text} border ${getRoleColor(usuario.role).border}`}>
+                    {translateUserRole(usuario.role)}
+                  </span>
+                </div>
+                <p className="text-slate-600 text-lg mb-4">{usuario.email}</p>
+                
+                {usuario.role === 'student' && usuario.student_registration && (
+                  <div className="flex items-center gap-2 text-sm text-slate-500">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
+                    </svg>
+                    Matrícula: {usuario.student_registration}
+                  </div>
+                )}
+              </div>
+
+              {/* Informações de Conta */}
+              <div className="bg-gradient-to-r from-slate-50 to-slate-100 rounded-2xl p-6 text-sm text-slate-600">
+                <div className="mb-3">
+                  <strong className="text-slate-900">Cadastrado em:</strong><br />
+                  {new Date(usuario.created_at).toLocaleDateString('pt-BR', {
+                    timeZone: 'America/Sao_Paulo'
+                  })}
+                </div>
+                {usuario.last_login && (
+                <div>
+                    <strong className="text-slate-900">Último login:</strong><br />
+                    {new Date(usuario.last_login).toLocaleString('pt-BR', {
+                      timeZone: 'America/Sao_Paulo'
+                    })}
+                </div>
+                )}
+              </div>
             </div>
           </Card>
 
-          {/* Informações */}
-          <Card className="p-6 lg:col-span-2">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Informações Pessoais</h3>
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Nome</label>
+          {/* Formulário de Edição */}
+          <Card className="bg-white border-slate-200 rounded-3xl shadow-lg p-6">
+            <h3 className="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-3">
+              <div className="p-2 bg-gradient-to-r from-purple-50 to-indigo-50 text-purple-600 rounded-xl border border-purple-200">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+              </div>
+              Editar Informações
+            </h3>
+            
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-gradient-to-r from-slate-50 to-slate-100 rounded-2xl p-6">
+                  <label className="block text-sm font-semibold text-slate-900 mb-3">
+                    Nome Completo <span className="text-red-500">*</span>
+                  </label>
                   <Input
-                    value={usuario.nome}
-                    onChange={e => setUsuario({ ...usuario, nome: e.target.value })}
+                    value={usuario.name}
+                    onChange={e => setUsuario({ ...usuario, name: e.target.value })}
+                    className={`h-12 bg-white border-slate-200 focus:border-blue-400 focus:ring-blue-400/20 text-slate-900 placeholder:text-slate-500 rounded-xl ${!usuario.name || usuario.name.trim().length < 2 ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
+                    placeholder="Digite seu nome completo"
                   />
+                  {(!usuario.name || usuario.name.trim().length < 2) && (
+                    <p className="text-xs text-red-500 mt-2">Nome é obrigatório (mínimo 2 caracteres)</p>
+                  )}
                 </div>
                 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <div className="bg-gradient-to-r from-slate-50 to-slate-100 rounded-2xl p-6">
+                  <label className="block text-sm font-semibold text-slate-900 mb-3">Email</label>
                   <Input
                     value={usuario.email}
                     disabled
-                    className="bg-gray-100"
+                    className="h-12 bg-slate-100 text-slate-500 rounded-xl"
                   />
+                  <p className="text-xs text-slate-500 mt-2">O email não pode ser alterado</p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Instituição</label>
+              {usuario.role === 'student' && (
+                <div className="bg-gradient-to-r from-slate-50 to-slate-100 rounded-2xl p-6">
+                  <label className="block text-sm font-semibold text-slate-900 mb-3">
+                    Matrícula <span className="text-red-500">*</span>
+                  </label>
                   <Input
-                    value={usuario.instituicao || ''}
-                    onChange={e => setUsuario({ ...usuario, instituicao: e.target.value })}
-                    placeholder="Ex: Universidade Federal..."
+                    value={usuario.student_registration || ''}
+                    onChange={e => setUsuario({ ...usuario, student_registration: e.target.value })}
+                    placeholder="Digite sua matrícula (9 ou 11 dígitos)"
+                    className={`h-12 bg-white border-slate-200 focus:border-blue-400 focus:ring-blue-400/20 text-slate-900 placeholder:text-slate-500 rounded-xl ${
+                      !usuario.student_registration || 
+                      usuario.student_registration.trim().length === 0 ||
+                      (usuario.student_registration.replace(/\D/g, '').length !== 9 && usuario.student_registration.replace(/\D/g, '').length !== 11)
+                        ? 'border-red-300 focus:border-red-500 focus:ring-red-500' 
+                        : ''
+                    }`}
                   />
+                  {(!usuario.student_registration || 
+                    usuario.student_registration.trim().length === 0 ||
+                    (usuario.student_registration.replace(/\D/g, '').length !== 9 && usuario.student_registration.replace(/\D/g, '').length !== 11)) && (
+                    <p className="text-xs text-red-500 mt-2">Matrícula deve ter exatamente 9 ou 11 dígitos</p>
+                  )}
                 </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Departamento</label>
-                  <Input
-                    value={usuario.departamento || ''}
-                    onChange={e => setUsuario({ ...usuario, departamento: e.target.value })}
-                    placeholder="Ex: Ciência da Computação"
-                  />
+              )}
+
+              <div className="flex justify-end">
+                <Button 
+                  onClick={() => {
+                    saveProfile();
+                  }} 
+                  disabled={
+                    saving || 
+                    !usuario.name || 
+                    usuario.name.trim().length < 2 || 
+                    (usuario.role === 'student' && (
+                      !usuario.student_registration || 
+                      usuario.student_registration.trim().length === 0 ||
+                      (usuario.student_registration.replace(/\D/g, '').length !== 9 && usuario.student_registration.replace(/\D/g, '').length !== 11)
+                    ))
+                  } 
+                  className={`shadow-sm hover:shadow-md font-semibold transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none px-8 py-3 rounded-xl ${
+                    buttonSuccess 
+                      ? 'bg-gradient-to-r from-green-500 to-green-600 text-white border border-green-600' 
+                      : usuario.role === 'professor' ? 'bg-gradient-to-r from-purple-50 to-purple-100 text-purple-700 border border-purple-200' :
+                        usuario.role === 'student' ? 'bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 border border-blue-200' :
+                        'bg-gradient-to-r from-green-50 to-green-100 text-green-700 border border-green-200'
+                  }`}
+                >
+                  {saving ? (
+                    <>
+                      <div className={`animate-spin rounded-full h-4 w-4 border-2 border-t-transparent mr-2 ${
+                        usuario.role === 'professor' ? 'border-purple-600' :
+                        usuario.role === 'student' ? 'border-blue-600' :
+                        'border-green-600'
+                      }`}></div>
+                      Salvando...
+                    </>
+                  ) : buttonSuccess ? (
+                    <>
+                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      Salvo com Sucesso!
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      Salvar Alterações
+                    </>
+                  )}
+                </Button>
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Título/Cargo</label>
-                <Input
-                  value={usuario.titulo || ''}
-                  onChange={e => setUsuario({ ...usuario, titulo: e.target.value })}
-                  placeholder="Ex: Professor Doutor, Mestrando..."
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Biografia</label>
-                <textarea
-                  value={usuario.biografia || ''}
-                  onChange={e => setUsuario({ ...usuario, biografia: e.target.value })}
-                  placeholder="Conte um pouco sobre você..."
-                  rows={4}
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-gray-500">
-                <div>
-                  <strong>Cadastrado em:</strong> {new Date(usuario.criadoEm).toLocaleDateString('pt-BR')}
-                </div>
-                <div>
-                  <strong>Último login:</strong> {new Date(usuario.ultimoLogin).toLocaleString('pt-BR')}
-                </div>
-              </div>
-
-              <Button onClick={salvarPerfil} disabled={salvando} className="w-full md:w-auto">
-                {salvando ? 'Salvando...' : 'Salvar Alterações'}
-              </Button>
             </div>
           </Card>
         </div>
       )}
 
-      {tabAtiva === 'estatisticas' && estatisticas && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {usuario?.tipo === 'professor' && (
-            <>
-              <Card className="p-6">
-                <div className="text-2xl font-bold text-indigo-600">{(estatisticas as EstatisticasProfessor).totalTurmas}</div>
-                <div className="text-sm text-gray-600">Turmas Criadas</div>
-              </Card>
-              
-              <Card className="p-6">
-                <div className="text-2xl font-bold text-green-600">{(estatisticas as EstatisticasProfessor).totalEstudantes}</div>
-                <div className="text-sm text-gray-600">Estudantes</div>
-              </Card>
-              
-              <Card className="p-6">
-                <div className="text-2xl font-bold text-blue-600">{(estatisticas as EstatisticasProfessor).totalListas}</div>
-                <div className="text-sm text-gray-600">Listas Criadas</div>
-              </Card>
-              
-              <Card className="p-6">
-                <div className="text-2xl font-bold text-purple-600">{(estatisticas as EstatisticasProfessor).totalSubmissoes}</div>
-                <div className="text-sm text-gray-600">Submissões Recebidas</div>
-              </Card>
-              
-              <Card className="p-6">
-                <div className="text-2xl font-bold text-yellow-600">{(estatisticas as EstatisticasProfessor).taxaSucessoGeral.toFixed(1)}%</div>
-                <div className="text-sm text-gray-600">Taxa de Sucesso</div>
-              </Card>
-              
-              <Card className="p-6">
-                <div className="text-2xl font-bold text-red-600">{(estatisticas as EstatisticasProfessor).estudantesAtivos}</div>
-                <div className="text-sm text-gray-600">Estudantes Ativos</div>
-              </Card>
-            </>
-          )}
 
-          {usuario?.tipo === 'aluno' && (
-            <>
-              <Card className="p-6">
-                <div className="text-2xl font-bold text-indigo-600">{(estatisticas as EstatisticasAluno).totalSubmissoes}</div>
-                <div className="text-sm text-gray-600">Total de Submissões</div>
-              </Card>
-              
-              <Card className="p-6">
-                <div className="text-2xl font-bold text-green-600">{(estatisticas as EstatisticasAluno).submissoesAceitas}</div>
-                <div className="text-sm text-gray-600">Submissões Aceitas</div>
-              </Card>
-              
-              <Card className="p-6">
-                <div className="text-2xl font-bold text-blue-600">{(estatisticas as EstatisticasAluno).totalListas}</div>
-                <div className="text-sm text-gray-600">Listas Disponíveis</div>
-              </Card>
-              
-              <Card className="p-6">
-                <div className="text-2xl font-bold text-purple-600">{(estatisticas as EstatisticasAluno).listasCompletas}</div>
-                <div className="text-sm text-gray-600">Listas Completas</div>
-              </Card>
-              
-              <Card className="p-6">
-                <div className="text-2xl font-bold text-yellow-600">{(estatisticas as EstatisticasAluno).taxaSucesso.toFixed(1)}%</div>
-                <div className="text-sm text-gray-600">Taxa de Sucesso</div>
-              </Card>
-              
-              <Card className="p-6">
-                <div className="text-2xl font-bold text-red-600">#{(estatisticas as EstatisticasAluno).posicaoRanking}</div>
-                <div className="text-sm text-gray-600">Posição no Ranking</div>
-              </Card>
-            </>
-          )}
+      {activeTab === 'seguranca' && (
+        <div className="space-y-6">
 
-          {usuario?.tipo === 'monitor' && (
-            <>
-              <Card className="p-6">
-                <div className="text-2xl font-bold text-indigo-600">{(estatisticas as EstatisticasMonitor).totalTurmas}</div>
-                <div className="text-sm text-gray-600">Turmas Monitoradas</div>
-              </Card>
+          <Card className="bg-white border-slate-200 rounded-3xl shadow-lg p-8">
+            <div className="flex items-center gap-4 mb-8">
+              <div className={`p-3 rounded-xl border ${
+                usuario.role === 'professor' ? 'bg-gradient-to-r from-purple-50 to-purple-100 text-purple-600 border-purple-200' :
+                usuario.role === 'student' ? 'bg-gradient-to-r from-blue-50 to-blue-100 text-blue-600 border-blue-200' :
+                'bg-gradient-to-r from-green-50 to-green-100 text-green-600 border-green-200'
+              }`}>
+                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+              </div>
+              <div>
+                <h4 className="text-2xl font-bold text-slate-900">Alterar Senha</h4>
+                <p className="text-slate-600">Mantenha sua conta segura com uma senha forte</p>
+              </div>
+        </div>
+
+            <div className="space-y-6 max-w-4xl">
+              <div className="bg-gradient-to-r from-slate-50 to-slate-100 rounded-2xl p-6">
+                <label className="block text-sm font-semibold text-slate-900 mb-3">Senha Atual</label>
+              <Input
+                type="password"
+                value={currentPassword}
+                onChange={e => setCurrentPassword(e.target.value)}  
+                  placeholder="Digite sua senha atual"
+                  className="h-12 bg-white border-slate-200 focus:border-blue-400 focus:ring-blue-400/20 text-slate-900 placeholder:text-slate-500 rounded-xl"
+              />
+            </div>
+            
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-gradient-to-r from-slate-50 to-slate-100 rounded-2xl p-6">
+                  <label className="block text-sm font-semibold text-slate-900 mb-3">Nova Senha</label>
+                <Input
+                  type="password"
+                  value={newPassword}
+                  onChange={e => setNewPassword(e.target.value)}
+                    placeholder="Digite sua nova senha"
+                    className="h-12 bg-white border-slate-200 focus:border-blue-400 focus:ring-blue-400/20 text-slate-900 placeholder:text-slate-500 rounded-xl"
+                />
+                  <p className="text-xs text-slate-500 mt-2">Mínimo de 8 caracteres, com letras, números e pelo menos 1 maiúscula</p>
+              </div>
               
-              <Card className="p-6">
-                <div className="text-2xl font-bold text-green-600">{(estatisticas as EstatisticasMonitor).totalEstudantes}</div>
-                <div className="text-sm text-gray-600">Estudantes Assistidos</div>
-              </Card>
-              
-              <Card className="p-6">
-                <div className="text-2xl font-bold text-blue-600">{(estatisticas as EstatisticasMonitor).totalListas}</div>
-                <div className="text-sm text-gray-600">Listas Acompanhadas</div>
-              </Card>
-              
-              <Card className="p-6">
-                <div className="text-2xl font-bold text-purple-600">{(estatisticas as EstatisticasMonitor).totalSubmissoes}</div>
-                <div className="text-sm text-gray-600">Submissões Avaliadas</div>
-              </Card>
-              
-              <Card className="p-6">
-                <div className="text-2xl font-bold text-yellow-600">{(estatisticas as EstatisticasMonitor).taxaSucessoGeral.toFixed(1)}%</div>
-                <div className="text-sm text-gray-600">Taxa de Sucesso</div>
-              </Card>
-              
-              <Card className="p-6">
-                <div className="text-2xl font-bold text-red-600">{(estatisticas as EstatisticasMonitor).estudantesAtivos}</div>
-                <div className="text-sm text-gray-600">Estudantes Ativos</div>
-              </Card>
-            </>
-          )}
+                <div className="bg-gradient-to-r from-slate-50 to-slate-100 rounded-2xl p-6">
+                  <label className="block text-sm font-semibold text-slate-900 mb-3">Confirmar Nova Senha</label>
+                <Input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={e => setConfirmPassword(e.target.value)}
+                    placeholder="Confirme sua nova senha"
+                    className="h-12 bg-white border-slate-200 focus:border-blue-400 focus:ring-blue-400/20 text-slate-900 placeholder:text-slate-500 rounded-xl"
+                />
+              </div>
+              </div>
+
+              <Button 
+                onClick={changePassword} 
+                disabled={changingPassword}
+                className={`w-full shadow-sm hover:shadow-md font-semibold transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none py-3 rounded-xl ${
+                  buttonSuccess 
+                    ? 'bg-gradient-to-r from-green-500 to-green-600 text-white border border-green-600' 
+                    : usuario.role === 'professor' ? 'bg-gradient-to-r from-purple-50 to-purple-100 text-purple-700 border border-purple-200' :
+                      usuario.role === 'student' ? 'bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 border border-blue-200' :
+                      'bg-gradient-to-r from-green-50 to-green-100 text-green-700 border border-green-200'
+                }`}
+              >
+                {changingPassword ? (
+                  <>
+                    <div className={`animate-spin rounded-full h-4 w-4 border-2 border-t-transparent mr-2 ${
+                      usuario.role === 'professor' ? 'border-purple-600' :
+                      usuario.role === 'student' ? 'border-blue-600' :
+                      'border-green-600'
+                    }`}></div>
+                    Alterando...
+                  </>
+                ) : buttonSuccess ? (
+                  <>
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Senha Alterada!
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                    Alterar Senha
+                  </>
+                )}
+            </Button>
+          </div>
+        </Card>
         </div>
       )}
 
-      {tabAtiva === 'seguranca' && (
-        <Card className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Alterar Senha</h3>
-          <div className="space-y-4 max-w-md">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Senha Atual</label>
-              <Input
-                type="password"
-                value={senhaAtual}
-                onChange={e => setSenhaAtual(e.target.value)}
-              />
+      
+      {/* Toast de Erro - Parte Inferior da Tela */}
+      {error && (
+        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 max-w-md w-full mx-4">
+          <div className="bg-gradient-to-r from-red-50 to-pink-50 border border-red-200 text-red-700 px-6 py-4 rounded-xl shadow-sm">
+            <div className="flex items-center gap-3">
+              <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="font-medium">{error}</span>
             </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Nova Senha</label>
-              <Input
-                type="password"
-                value={novaSenha}
-                onChange={e => setNovaSenha(e.target.value)}
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Confirmar Nova Senha</label>
-              <Input
-                type="password"
-                value={confirmarSenha}
-                onChange={e => setConfirmarSenha(e.target.value)}
-              />
-            </div>
-
-            <Button onClick={alterarSenha} disabled={alterandoSenha}>
-              {alterandoSenha ? 'Alterando...' : 'Alterar Senha'}
-            </Button>
           </div>
-        </Card>
+        </div>
       )}
 
-      {tabAtiva === 'privacidade' && (
-        <Card className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Configurações de Privacidade</h3>
-          <div className="space-y-4">
-            <label className="flex items-center space-x-3">
-              <input
-                type="checkbox"
-                checked={privacidade.perfilPublico}
-                onChange={e => setPrivacidade(prev => ({
-                  ...prev,
-                  perfilPublico: e.target.checked
-                }))}
-                className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-              />
-              <div>
-                <span className="text-sm font-medium text-gray-700">Perfil Público</span>
-                <p className="text-xs text-gray-500">Permitir que outros vejam seu perfil</p>
-              </div>
-            </label>
 
-            <label className="flex items-center space-x-3">
-              <input
-                type="checkbox"
-                checked={privacidade.mostrarEstatisticas}
-                onChange={e => setPrivacidade(prev => ({
-                  ...prev,
-                  mostrarEstatisticas: e.target.checked
-                }))}
-                className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-              />
-              <div>
-                <span className="text-sm font-medium text-gray-700">Mostrar Estatísticas</span>
-                <p className="text-xs text-gray-500">Exibir suas estatísticas publicamente</p>
-              </div>
-            </label>
-
-            <label className="flex items-center space-x-3">
-              <input
-                type="checkbox"
-                checked={privacidade.receberEmails}
-                onChange={e => setPrivacidade(prev => ({
-                  ...prev,
-                  receberEmails: e.target.checked
-                }))}
-                className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-              />
-              <div>
-                <span className="text-sm font-medium text-gray-700">Receber Emails</span>
-                <p className="text-xs text-gray-500">Receber notificações por email</p>
-              </div>
-            </label>
-
-            <label className="flex items-center space-x-3">
-              <input
-                type="checkbox"
-                checked={privacidade.notificacoesPush}
-                onChange={e => setPrivacidade(prev => ({
-                  ...prev,
-                  notificacoesPush: e.target.checked
-                }))}
-                className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-              />
-              <div>
-                <span className="text-sm font-medium text-gray-700">Notificações Push</span>
-                <p className="text-xs text-gray-500">Receber notificações no navegador</p>
-              </div>
-            </label>
-
-            <Button onClick={salvarPrivacidade} disabled={salvando}>
-              {salvando ? 'Salvando...' : 'Salvar Configurações'}
-            </Button>
-          </div>
-        </Card>
-      )}
     </div>
   );
 }

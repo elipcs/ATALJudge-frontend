@@ -1,79 +1,79 @@
 [
     {
-    "_id": { "$oid": "6500000000000000001001" },
+    "id": "6500000000000000001001",
     "name": "João da Silva",
     "avatar": "/profile-default.svg",
     "email": "joao@email.com",
     "studentRegistration": "202500001",
     "role": "student",
-    "class_id": { "$oid": "6500000000000000003001" },
+    "class_id": "6500000000000000003001",
     "grades": [
-      { "questionListId": { "$oid": "65000000000000000010001" }, "score": 8.5 }
+      { "questionListId": "65000000000000000010001", "score": 8.5 }
     ],
     "created_at": "2025-01-16T08:30:00Z"
   },
   {
-    "_id": { "$oid": "6500000000000000001002" },
+    "id": "6500000000000000001002",
     "name": "Maria Oliveira",
     "avatar": "/profile-default.svg",
     "email": "maria@email.com",
     "studentRegistration": "202500002",
     "role": "student",
-    "class_id": { "$oid": "6500000000000000003001" },
+    "class_id": "6500000000000000003001",
     "grades": [
-      { "questionListId": { "$oid": "65000000000000000010001" }, "score": 10 }
+      { "questionListId":"65000000000000000010001", "score": 10.0 }
     ],
     "created_at": "2025-01-16T08:30:00Z"
   },
   {
-    "_id": { "$oid": "6500000000000000001003" },
+    "id": "6500000000000000001003",
     "name": "Carlos Souza",
     "avatar": "/profile-default.svg",
     "email": "carlos@email.com",
     "studentRegistration": "202500003",
     "role": "student",
-    "class_id": { "$oid": "6500000000000000003002" },
+    "class_id": "6500000000000000003002",
     "grades": [
-      { "questionListId": { "$oid": "65000000000000000010001" }, "score": 7 }
+      { "questionListId": "65000000000000000010001", "score": 7.0 }
     ],
     "created_at": "2025-01-16T08:30:00Z"
   },
   {
-      "_id": { "$oid": "6500000000000000001004" },
+      "id": "6500000000000000001004",
       "name": "Fernanda Lima",
       "avatar": "/profile-default.svg",
       "email": "fernanda@email.com",
       "studentRegistration": "202500004",
       "role": "student",
-      "class_id": { "$oid": "6500000000000000003002" },
+      "class_id": "6500000000000000003002",
       "grades": [
-        { "questionListId": { "$oid": "65000000000000000010001" }, "score": 9 }
+        { "questionListId": "65000000000000000010001", "score": 9.0 }
       ],
       "created_at": "2025-01-16T08:30:00Z"
   },
   {
-    "_id": { "$oid": "6500000000000000001005" },
+    "id": "6500000000000000001005",
     "name": "Lucas Pereira",
     "avatar": "/profile-default.svg",
     "email": "lucas@email.com",
     "studentRegistration": "202500005",
     "role": "student",
-    "class_id": { "$oid": "6500000000000000003001" },
+    "class_id": "6500000000000000003001",
     "grades": [
-      { "questionListId": { "$oid": "65000000000000000010001" }, "score": 8 }
+      { "questionListId": "65000000000000000010001", "score": 8.0 }
     ],
     "created_at": "2025-01-16T08:30:00Z"
   },
   {
-    "_id": { "$oid": "6500000000000000001006" },
+    "id": "6500000000000000001006",
     "name": "Patricia Gomes",
     "avatar": "/profile-default.svg",
     "email": "patricia@email.com",
     "studentRegistration": "202500006",
     "role": "student",
-    "class_id": { "$oid": "6500000000000000003001" },
+    "class_id": "6500000000000000003001",
     "grades": [
-      { "questionListId": { "$oid": "65000000000000000010001" }, "score": 9 }
+      { "questionListId": "65000000000000000010001", "score": 9.0 }
     ],
     "created_at": "2025-01-16T08:30:00Z"
   }

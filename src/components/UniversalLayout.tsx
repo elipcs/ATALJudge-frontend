@@ -1,8 +1,9 @@
 'use client';
 
+import { ReactNode } from 'react';
+
 import { SidebarProvider, useSidebar } from '@/contexts/SidebarContext';
 import NavigationBar from '@/components/NavigationBar';
-import { ReactNode } from 'react';
 
 interface UniversalLayoutProps {
   children: ReactNode;

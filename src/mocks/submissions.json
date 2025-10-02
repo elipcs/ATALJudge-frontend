@@ -1,10 +1,26 @@
 [
   {
-    "_id": { "$oid": "66000000000000000050001" },
-    "questionListId": { "$oid": "65000000000000000010001" },
-    "questionId": { "$oid": "65000000000000000020001" },
-    "studentId": { "$oid": "6500000000000000001001" },
-    "studentName": "João da Silva",
+    "id":"66000000000000000050001",
+    "questionList": 
+    {
+      "id": "65000000000000000010001",
+      "name": "Lista 1: Introdução"
+    },
+    "question": 
+    {
+      "id": "65000000000000000020001",
+      "name": "Soma Simples"
+    },
+    "student": 
+    {
+      "id": "6500000000000000001001",
+      "name": "João da Silva",  
+      "class":
+        {
+        "id": "6500000000000000003001",
+        "name": "Turma 1"
+      }
+    },
     "status": "submitted",
     "score": 10,
     "language": "python",
@@ -13,24 +29,52 @@
     "verdict": "Accepted"
   },
   {
-    "_id": { "$oid": "66000000000000000050002" },
-    "questionListId": { "$oid": "65000000000000000010001" },
-    "questionId": { "$oid": "65000000000000000020002" },
-    "studentId": { "$oid": "6500000000000000001002" },
-    "studentName": "Maria Oliveira",
+    "id":"66000000000000000050002",
+    "questionListId": "65000000000000000010001",
+    "question": 
+    {
+      "id": "65000000000000000020002",
+      "name": "Maior Número"
+    },
+    "student": 
+    {
+      "id": "6500000000000000001002",
+      "name": "Maria Oliveira",
+      "class":
+        {
+        "id": "6500000000000000003001",
+        "name": "Turma 1"
+      }
+    },
     "status": "failed",
     "score": 0,
-    "language": "cpp",
+    "language": "java",
     "code": "#include <bits/stdc++.h>\\nusing namespace std;\\nint main(){int x,y,z;cin>>x>>y>>z;cout<<max({x,y,z})<<\"\\n\";}",
     "submittedAt": "2024-08-21T11:05:00Z",
     "verdict": "Wrong Answer"
   },
   {
-    "_id": { "$oid": "66000000000000000050003" },
-    "questionListId": { "$oid": "65000000000000000010002" },
-    "questionId": { "$oid": "65000000000000000020005" },
-    "studentId": { "$oid": "6500000000000000001003" },
-    "studentName": "Carlos Souza",
+    "id":"66000000000000000050003",
+    "questionList": 
+    {
+      "id": "65000000000000000010002",
+      "name": "Lista 2: Arrays"
+    },
+    "question": 
+    {
+      "id": "65000000000000000020002",
+      "name": "Maior Número"
+    },
+    "student": 
+    {
+      "id": "6500000000000000001003",
+      "name": "Carlos Souza",
+      "class":
+        {
+        "id": "6500000000000000003002",
+        "name": "Turma 2"
+      }
+    },
     "status": "submitted",
     "score": 8,
     "language": "java",
@@ -39,11 +83,27 @@
     "verdict": "Accepted"
   },
   {
-    "_id": { "$oid": "66000000000000000050004" },
-    "questionListId": { "$oid": "65000000000000000010002" },
-    "questionId": { "$oid": "65000000000000000020006" },
-    "studentId": { "$oid": "6500000000000000001004" },
-    "studentName": "Fernanda Lima",
+    "id":"66000000000000000050004",
+    "questionList": 
+    {
+      "id": "65000000000000000010002",
+      "name": "Lista 2: Arrays"
+    },
+    "question": 
+    {
+      "id": "65000000000000000020002",
+      "name": "Maior Número"
+    },
+    "student": 
+    {
+      "id": "6500000000000000001004",
+      "name": "Fernanda Lima",
+      "class":
+        {
+        "id": "6500000000000000003002",
+        "name": "Turma 2"
+      }
+    },
     "status": "failed",
     "score": 5,
     "language": "python",
@@ -52,24 +112,56 @@
     "verdict": "Runtime Error"
   },
   {
-    "_id": { "$oid": "66000000000000000050005" },
-    "questionListId": { "$oid": "65000000000000000010003" },
-    "questionId": { "$oid": "65000000000000000020007" },
-    "studentId": { "$oid": "6500000000000000001005" },
-    "studentName": "Lucas Pereira",
+    "id":"66000000000000000050005",
+    "questionList": 
+    {
+      "id": "65000000000000000010003",
+      "name": "Lista 3: Strings"
+    },
+    "question": 
+    {
+      "id": "65000000000000000020002",
+      "name": "Maior Número"
+    },
+    "student": 
+    {
+      "id": "6500000000000000001005",
+      "name": "Lucas Pereira",
+      "class":
+        {
+        "id": "6500000000000000003001",
+        "name": "Turma 1"
+      }
+    },
     "status": "submitted",
     "score": 9,
-    "language": "cpp",
-    "code": "// bubble sort implementation",
+    "language": "python",
+    "code": "# bubble sort implementation\ndef bubble_sort(arr):\n    n = len(arr)\n    for i in range(n):\n        for j in range(0, n-i-1):\n            if arr[j] > arr[j+1]:\n                arr[j], arr[j+1] = arr[j+1], arr[j]\n    return arr",
     "submittedAt": "2024-09-15T14:30:00Z",
     "verdict": "Accepted"
   },
   {
-    "_id": { "$oid": "66000000000000000050006" },
-    "questionListId": { "$oid": "65000000000000000010003" },
-    "questionId": { "$oid": "65000000000000000020008" },
-    "studentId": { "$oid": "6500000000000000001006" },
-    "studentName": "Patricia Gomes",
+    "id":"66000000000000000050006",
+    "questionList": 
+    {
+      "id": "65000000000000000010003",
+      "name": "Lista 3: Strings"
+    },
+    "question": 
+    {
+      "id": "65000000000000000020001",
+      "name": "Soma Simples"
+    },
+    "student": 
+    {
+      "id": "6500000000000000001006",
+      "name": "Patricia Gomes",
+      "class":
+        {
+        "id": "6500000000000000003001",
+        "name": "Turma 1"
+      }
+    },
     "status": "failed",
     "score": 6,
     "language": "java",
