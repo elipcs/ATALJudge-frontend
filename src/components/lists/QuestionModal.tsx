@@ -2,7 +2,6 @@ import React from 'react';
 
 import { Question } from '../../types';
 
-// Tipo para os dados do formulário de questão
 interface QuestionFormData {
   title: string;
   statement: string;

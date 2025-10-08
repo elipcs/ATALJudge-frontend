@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { API_ENDPOINTS } from "../../../../../config/api";
 
-import { getMockData } from '../../../../../services/mockData';
 
-// GET /api/turmas/[id]/alunos - Listar alunos de uma turma específica
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -43,7 +41,6 @@ export async function GET(
         studentRegistration: studentData.student_registration,
         name: studentData.name,
         email: studentData.email,
-        avatar: studentData.avatar_url || studentData.avatar || '/profile-default.svg',
         role: 'student',
         classId: turmaId,
         grades: studentData.grades || [],

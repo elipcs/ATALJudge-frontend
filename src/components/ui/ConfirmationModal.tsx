@@ -21,7 +21,6 @@ export function ConfirmationModal({
   cancelText = "Cancelar",
   type = 'danger'
 }: ConfirmationModalProps) {
-  // Fechar modal com ESC
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {

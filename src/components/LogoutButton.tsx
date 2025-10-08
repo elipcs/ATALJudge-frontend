@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import { logout } from "@/services/auth";
+import { authApi } from "@/services/auth";
 
 interface LogoutButtonProps {
   isCollapsed?: boolean;
@@ -14,25 +14,20 @@ export default function LogoutButton({ isCollapsed = false }: LogoutButtonProps)
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   
   async function handleLogout() {
-    if (isLoggingOut) return; // Evitar múltiplos cliques
+    if (isLoggingOut) return;
     
     setIsLoggingOut(true);
     
     try {
-      // Chamar a função de logout que revoga tokens no backend e limpa localStorage
-      const success = await logout();
-      
+      const success = await authApi.logout();
       if (success) {
-        // Redirecionar para página inicial após logout bem-sucedido
         router.push("/");
       } else {
-        // Mesmo se houver erro, redirecionar para página inicial
         console.warn('Logout com problemas, mas redirecionando para página inicial');
         router.push("/");
       }
     } catch (error) {
       console.error('Erro durante logout:', error);
-      // Mesmo com erro, redirecionar para página inicial
       router.push("/");
     } finally {
       setIsLoggingOut(false);

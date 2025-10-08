@@ -2,7 +2,6 @@ import React from 'react';
 
 import { Question } from '../../types';
 
-// Tipo específico para casos de teste
 interface TestCase {
   input: string;
   expectedOutput: string;

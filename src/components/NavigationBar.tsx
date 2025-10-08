@@ -26,7 +26,6 @@ export default function NavigationBar({ currentPage }: NavigationBarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const { userRole, isLoading } = useUserRole();
 
-  // Carregar estado do localStorage
   useEffect(() => {
     const savedState = localStorage.getItem('sidebar-collapsed');
     if (savedState === 'true') {
@@ -35,20 +34,17 @@ export default function NavigationBar({ currentPage }: NavigationBarProps) {
   }, []);
   
 
-  // Salvar estado no localStorage e atualizar CSS variable
   const toggleCollapse = () => {
     const newState = !isCollapsed;
     setIsCollapsed(newState);
     localStorage.setItem('sidebar-collapsed', newState.toString());
     
-    // Atualizar CSS variable
     document.documentElement.style.setProperty(
       '--sidebar-width',
       newState ? '4rem' : '16rem'
     );
   };
 
-  // Definir todos os links disponíveis no sistema
   const allNavigationLinks: NavigationLink[] = [
     { 
       href: "/home", 
@@ -103,7 +99,7 @@ export default function NavigationBar({ currentPage }: NavigationBarProps) {
         </svg>
       ),
       key: "convites",
-      roles: ['professor'] // Apenas professores podem gerenciar convites
+      roles: ['professor']
     },
     { 
       href: "/perfil", 
@@ -130,7 +126,6 @@ export default function NavigationBar({ currentPage }: NavigationBarProps) {
     }
   ];
 
-  // Função para obter links baseados no tipo de usuário
   const getLinksForUserRole = (): NavigationLink[] => {
     return allNavigationLinks.filter(link => link.roles.includes(userRole));
   };
@@ -151,7 +146,6 @@ export default function NavigationBar({ currentPage }: NavigationBarProps) {
 
   const activeKey = getCurrentKey();
 
-  // Mostrar loading enquanto detecta o tipo de usuário
   if (isLoading) {
     return (
       <nav className={`h-full bg-gradient-to-b from-slate-50 to-white border-r border-slate-200 shadow-lg transition-all duration-300 ease-in-out overflow-hidden ${
@@ -226,7 +220,6 @@ export default function NavigationBar({ currentPage }: NavigationBarProps) {
               </Link>
             </div>
 
-            {/* Botão de toggle */}
             <div className={`flex justify-center ${isCollapsed ? '' : 'justify-end'}`}>
               <button
                 onClick={toggleCollapse}
@@ -248,7 +241,6 @@ export default function NavigationBar({ currentPage }: NavigationBarProps) {
           </div>
 
 
-          {/* Links de navegação */}
           <div className="space-y-1">
             {links.map((link) => {
               const isActive = activeKey === link.key;
@@ -283,7 +275,6 @@ export default function NavigationBar({ currentPage }: NavigationBarProps) {
             })}
           </div>
 
-          {/* Botão de logout */}
           <div className={`mt-8 pt-4 border-t border-slate-200 transition-all duration-300 ${
             isCollapsed ? 'mt-4 pt-2' : 'mt-8 pt-4'
           }`}>

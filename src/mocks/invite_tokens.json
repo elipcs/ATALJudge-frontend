@@ -9,7 +9,7 @@
     "used": false,
     "max_uses": 5,
     "current_uses": 2,
-    "class_id": "6500000000000000003001",
+    "classId": "6500000000000000003001",
     "class_name": "Turma 1",
     "created_by": "6500000000000000002001",
     "creator_name": "Melina Mongiovi"
@@ -37,7 +37,7 @@
     "used": false,
     "max_uses": 10,
     "current_uses": 0,
-    "class_id": "6500000000000000003001",
+    "classId": "6500000000000000003001",
     "class_name": "Turma 1",
     "created_by": "6500000000000000002001",
     "creator_name": "Melina Mongiovi"
@@ -65,7 +65,7 @@
     "used": true,
     "max_uses": 3,
     "current_uses": 3,
-    "class_id": "6500000000000000003002",
+    "classId": "6500000000000000003002",
     "class_name": "Turma 2",
     "created_by": "6500000000000000002002",
     "creator_name": "Ricardo Oliveira"

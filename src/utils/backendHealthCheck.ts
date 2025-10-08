@@ -1,6 +1,3 @@
-// Utilitário para verificar a saúde do backend
-
-// Tipos para detalhes de resposta
 interface HealthCheckDetails {
   status?: number;
   statusText?: string;
@@ -27,7 +24,6 @@ export async function checkBackendHealth(): Promise<HealthCheckResult> {
       headers: {
         'Content-Type': 'application/json',
       },
-      // Timeout de 5 segundos
       signal: AbortSignal.timeout(5000)
     });
 
@@ -92,7 +88,6 @@ export async function checkBackendHealth(): Promise<HealthCheckResult> {
   }
 }
 
-// Função para testar conectividade básica
 export async function testBackendConnection(): Promise<boolean> {
   const healthCheck = await checkBackendHealth();
   return healthCheck.isHealthy;

@@ -11,7 +11,6 @@ export default function SubmissionsTable({ submissions, showActions = false }: S
   const [selectedSubmission, setSelectedSubmission] = useState<SubmissionsTableProps["submissions"][number] | null>(null);
   const [showModal, setShowModal] = useState(false);
 
-  // Garantir que submissions seja sempre um array
   const safeSubmissions = Array.isArray(submissions) ? submissions : [];
 
   const openModal = (submission: SubmissionsTableProps["submissions"][number]) => {
@@ -54,7 +53,6 @@ export default function SubmissionsTable({ submissions, showActions = false }: S
           </thead>
           <tbody>
             {safeSubmissions.slice(0, 5).map((submission, index) => {
-              // Usar a nova estrutura do mock
               const studentName = submission.student?.name || 'Aluno';
               const listTitle = submission.questionList?.name || 'Lista desconhecida';
               const questionTitle = submission.question?.name || 'Questão desconhecida';

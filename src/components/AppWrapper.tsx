@@ -6,7 +6,6 @@ import UniversalLayout from '@/components/UniversalLayout';
 import { UserRoleProvider } from '@/contexts/UserRoleContext';
 import AuthGuard from '@/components/AuthGuard';
 
-// Páginas que devem ter layout de navegação
 const PROTECTED_ROUTES = [
   '/turmas',
   '/listas',
@@ -17,7 +16,6 @@ const PROTECTED_ROUTES = [
   '/home'
 ];
 
-// Páginas que NÃO devem ter layout de navegação
 const PUBLIC_ROUTES = [
   '/',
   '/login',
@@ -49,26 +47,21 @@ function AppWrapperContent({
 }) {
   const pathname = usePathname();
   
-  // Verificar se a rota atual deve ter layout de navegação
   const shouldHaveNavigation = PROTECTED_ROUTES.some(route => 
     pathname === route || pathname.startsWith(route + '/')
   );
 
-  // Verificar se é uma rota pública que não deve ter navegação
   const isPublicRoute = PUBLIC_ROUTES.some(route => 
     pathname === route || pathname.startsWith(route + '/')
   );
 
 
 
-  // Se for uma rota pública, renderizar sem layout
   if (isPublicRoute) {
     return <>{children}</>;
   }
 
-  // Se a rota deve ter navegação, usar o UniversalLayout
   if (shouldHaveNavigation) {
-    // Extrair a página atual do pathname
     const currentPage = pathname === '/' || pathname === '/home' ? 'home' : 
                        pathname.replace('/', '').split('/')[0] || 'home';
     
@@ -79,6 +72,5 @@ function AppWrapperContent({
     );
   }
 
-  // Fallback para rotas não categorizadas
   return <>{children}</>;
 }

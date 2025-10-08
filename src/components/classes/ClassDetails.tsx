@@ -6,7 +6,8 @@ import { Button } from "../ui/button";
 import { Card } from "../ui/card";
 import { Class, Student } from "../../types";
 import { useListsData } from "../../hooks/useListsData";
-import { QuestionList } from "../../services/lists";
+import { QuestionList } from "../../types";
+import { InlineLoading } from "../PageLoading";
 
 interface ClassDetailsProps {
   classDetails: {
@@ -15,29 +16,27 @@ interface ClassDetailsProps {
   };
   userRole: string;
   onBack: () => void;
+  onEditClass?: (cls: Class) => void;
+  onDeleteClass?: (cls: Class) => void;
   loading?: boolean;
 }
 
 export default function ClassDetails({ 
   classDetails, 
   userRole, 
+  onBack,
+  onEditClass,
+  onDeleteClass,
   loading = false 
 }: ClassDetailsProps) {
   const { cls, students } = classDetails;
-  
-  // Log removido - problema resolvido
-  
-  // Buscar listas de exercícios usando dados reais do backend
   const { lists: allLists, loading: listsLoading } = useListsData();
-  
-  // Filtrar listas que pertencem à turma atual
-  const questionLists = allLists.filter((list: QuestionList) => 
-    list.classId === cls.id
+  const questionLists = allLists.filter((list: QuestionList) =>
+    list.classIds && list.classIds.includes(cls.id)
   );
 
 
 
-  // Função para exportar CSV
   const exportToCSV = () => {
     const headers = ['Nome', 'Email', 'Matrícula', 'Média Geral'];
     questionLists.forEach(list => {
@@ -78,13 +77,7 @@ export default function ClassDetails({
   };
 
   if (loading || listsLoading) {
-    return (
-      <div className="bg-white rounded-3xl shadow-lg border border-slate-200 p-12 text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-        <h1 className="text-2xl font-bold text-slate-900 mb-2">Carregando detalhes...</h1>
-        <p className="text-slate-600">Preparando informações da turma</p>
-      </div>
-    );
+    return <InlineLoading message="Carregando detalhes..." />;
   }
 
   const calculateAverageGrade = (grades: { questionListId: string; score: number }[] = []) => {
@@ -94,6 +87,49 @@ export default function ClassDetails({
 
   return (
     <div className="space-y-6">
+      {/* Cabeçalho com botões de ação */}
+      <div className="flex items-center justify-between">
+        <Button 
+          onClick={onBack}
+          variant="outline"
+          className="flex items-center gap-2"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          Voltar
+        </Button>
+        
+        {userRole === 'professor' && (
+          <div className="flex gap-2">
+            {onEditClass && (
+              <Button 
+                onClick={() => onEditClass(cls)}
+                variant="outline"
+                className="flex items-center gap-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                Editar Turma
+              </Button>
+            )}
+            
+            {onDeleteClass && (
+              <Button 
+                onClick={() => onDeleteClass(cls)}
+                variant="outline"
+                className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                Excluir Turma
+              </Button>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Lista de alunos */}
       <Card className="bg-white border-slate-200 rounded-3xl shadow-lg p-6">

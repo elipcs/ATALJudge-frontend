@@ -23,9 +23,8 @@ export default function QuestionNavigation({
   listStatus
 }: QuestionNavigationProps) {
   
-  // Função para gerar letra da questão (A, B, C, etc.)
   const getQuestionLetter = (index: number): string => {
-    return String.fromCharCode(65 + index); // A=65, B=66, C=67, etc.
+    return String.fromCharCode(65 + index);
   };
 
   return (

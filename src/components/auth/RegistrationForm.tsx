@@ -32,9 +32,8 @@ export function RegistrationForm({ onSubmit, loading = false, tokenInfo }: Regis
   });
 
   const handleInputChange = (field: string, value: string) => {
-    // Se for matrícula, permitir apenas números
     if (field === 'studentRegistration') {
-      value = value.replace(/\D/g, ''); // Remove qualquer caractere que não seja dígito
+      value = value.replace(/\D/g, '');
     }
     
     setFormData(prev => ({

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 
-import { getMockData } from '@/services/mockData';
+import { mockDataApi } from '@/services/mockData';
 import { Question, List, Submission } from '@/types/question';
 
 import { useUserRole } from './useUserRole';
@@ -56,11 +56,9 @@ export function useQuestionData() {
   const [submitting, setSubmitting] = useState(false);
   const { userRole } = useUserRole();
 
-  // Mock data
-  const mockLists = getMockData.questionLists() as MockList[];
-  const mockSubmissions = getMockData.submissions() as unknown as MockSubmission[];
+  const mockLists = mockDataApi.questionLists() as MockList[];
+  const mockSubmissions = mockDataApi.submissions() as unknown as MockSubmission[];
 
-  // Function to get question from mocks
   const getQuestionFromMocks = useCallback((questionId: string): Question | null => {
     for (const list of mockLists) {
       const question = list.questions.find((q: MockQuestion) => q.id === questionId);
@@ -102,7 +100,6 @@ ${question.output}
     return null;
   }, [mockLists]);
 
-  // Function to get list from mocks
   const getListFromMocks = useCallback((listId: string): List | null => {
     const list = mockLists.find((l: MockList) => l.id === listId);
     if (list) {
@@ -116,7 +113,6 @@ ${question.output}
     return null;
   }, [mockLists]);
 
-  // Function to get submissions from mocks
   const getSubmissionsFromMocks = useCallback((questionId: string): Submission[] => {
     return mockSubmissions
       .filter((s: MockSubmission) => s.questionId === questionId)
@@ -136,11 +132,9 @@ ${question.output}
   }, [mockSubmissions]);
 
   useEffect(() => {
-    // Simulate data loading
     const timer = setTimeout(() => {
       const mockList = mockLists.find(list => list.id === listId);
       if (mockList) {
-        // Load all questions from the list
         const questions: Question[] = mockList.questions.map((q: MockQuestion): Question => {
           return {
             id: q.id,
@@ -181,7 +175,6 @@ ${q.output}
         setQuestion(getQuestionFromMocks(questionId));
         setSubmissions(getSubmissionsFromMocks(questionId));
         
-        // userRole agora é obtido do hook useUserRole
         setLoading(false);
       } else {
         setLoading(false);
@@ -192,8 +185,6 @@ ${q.output}
   }, [listId, questionId, getListFromMocks, getQuestionFromMocks, getSubmissionsFromMocks, mockLists]);
 
   const navigateToQuestion = (newQuestionId: string) => {
-    // Como não temos mais rotas individuais de questões, 
-    // esta função pode ser usada para atualizar o estado local
     setQuestion(getQuestionFromMocks(newQuestionId));
     setSubmissions(getSubmissionsFromMocks(newQuestionId));
   };
@@ -207,7 +198,6 @@ ${q.output}
 
     setSubmitting(true);
     
-    // Simulate submission
     setTimeout(() => {
       const newSubmission: Submission = {
         id: `s${Date.now()}`,
@@ -222,8 +212,7 @@ ${q.output}
       
       setSubmissions(prev => [newSubmission, ...prev]);
       setSubmitting(false);
-      
-      // Simulate processing
+        
       setTimeout(() => {
         setSubmissions(prev => prev.map(s => 
           s.id === newSubmission.id 

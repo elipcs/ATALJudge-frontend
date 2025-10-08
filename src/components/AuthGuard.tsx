@@ -3,13 +3,12 @@
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 
-import { checkAuthentication } from "@/services/auth";
+import { authApi } from "@/services/auth";
 
 interface AuthGuardProps {
   children: React.ReactNode;
 }
 
-// Rotas que requerem autenticação (mesmas que usam barra de navegação)
 const PROTECTED_ROUTES = [
   '/home',
   '/turmas',
@@ -20,7 +19,6 @@ const PROTECTED_ROUTES = [
   '/perfil'
 ];
 
-// Rotas públicas (não requerem autenticação)
 const PUBLIC_ROUTES = [
   '/',
   '/login',
@@ -28,7 +26,7 @@ const PUBLIC_ROUTES = [
   '/esqueci-senha',
   '/reset-senha',
   '/not-found',
-  '/api' // Rotas da API também são públicas
+  '/api'
 ];
 
 export default function AuthGuard({ children }: AuthGuardProps) {
@@ -40,7 +38,6 @@ export default function AuthGuard({ children }: AuthGuardProps) {
 
   useEffect(() => {
     const checkAuth = async () => {
-      // Verificar se é uma rota pública
       const isPublicRoute = PUBLIC_ROUTES.some(route => 
         pathname === route || pathname.startsWith(route + '/')
       );
@@ -51,7 +48,6 @@ export default function AuthGuard({ children }: AuthGuardProps) {
         return;
       }
 
-      // Verificar se é uma rota protegida
       const isProtectedRoute = PROTECTED_ROUTES.some(route => 
         pathname === route || pathname.startsWith(route + '/')
       );
@@ -63,8 +59,7 @@ export default function AuthGuard({ children }: AuthGuardProps) {
       }
 
       try {
-        // Verificação silenciosa de autenticação
-        const isAuth = await checkAuthentication();
+        const isAuth = await authApi.checkAuthentication();
         
         if (!isAuth) {
           router.replace("/login");
@@ -82,7 +77,6 @@ export default function AuthGuard({ children }: AuthGuardProps) {
     checkAuth();
   }, [router, pathname]);
 
-  // Mostrar loading mínimo durante verificação para evitar tela branca
   if (isChecking) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white flex items-center justify-center">
@@ -91,11 +85,9 @@ export default function AuthGuard({ children }: AuthGuardProps) {
     );
   }
 
-  // Se não está autenticado, não renderizar nada (redirecionamento já foi feito)
   if (!isAuthenticated) {
     return null;
   }
 
-  // Se está autenticado, renderizar o conteúdo
   return <>{children}</>;
 }

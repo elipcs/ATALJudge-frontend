@@ -8,9 +8,8 @@ import { useActiveLists } from "../../hooks/useHomeData";
 import { QuestionList } from "../../types";
 
 export default function ListsComponent() {
-  const { data: lists } = useActiveLists();
+  const { data: lists, loading, error } = useActiveLists();
 
-  // Função para formatar data e hora de forma elegante
   const formatDateTime = (dateString: string) => {
     const date = new Date(dateString);
     const formattedDate = date.toLocaleDateString('pt-BR', { 
@@ -22,14 +21,44 @@ export default function ListsComponent() {
     const formattedTime = date.toLocaleTimeString('pt-BR', { 
       hour: '2-digit', 
       minute: '2-digit',
-      hour12: false, // Usar formato 24h
+      hour12: false,
       timeZone: 'America/Sao_Paulo'
     });
     return `${formattedDate} às ${formattedTime}`;
   };
 
-  // Se não há listas, mostrar mensagem sem loading
-  if (!lists || lists.length === 0) {
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold text-gray-900">Listas Ativas</h3>
+        <div className="text-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-500">Carregando listas...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold text-gray-900">Listas Ativas</h3>
+        <div className="text-center py-8">
+          <div className="text-red-500">
+            <svg className="w-12 h-12 mx-auto mb-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <p className="text-lg font-medium text-red-600 mb-2">Erro ao carregar listas</p>
+            <p className="text-sm text-red-500">{error}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const listsArray = Array.isArray(lists) ? lists : [];
+
+  if (!listsArray || listsArray.length === 0) {
     return (
       <div className="space-y-4">
         <h3 className="text-lg font-semibold text-gray-900">Listas Ativas</h3>
@@ -46,13 +75,11 @@ export default function ListsComponent() {
     );
   }
 
-  // Converter QuestionList para HighlightList
-  const availableLists = (lists || []).map((list: QuestionList) => {
+  const availableLists = listsArray.map((list: QuestionList) => {
     const now = new Date();
     const start = new Date(list.startDate);
     const end = new Date(list.endDate);
     
-    // Ajustar para considerar o final do dia para a data de encerramento
     end.setHours(23, 59, 59, 999);
     
     let status: 'open' | 'closed' = 'closed';
@@ -72,7 +99,6 @@ export default function ListsComponent() {
     };
   });
 
-  // Se não há listas, mostrar mensagem amigável
   if (availableLists.length === 0) {
     return (
       <div className="space-y-4">

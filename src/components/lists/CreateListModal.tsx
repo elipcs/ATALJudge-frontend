@@ -22,13 +22,11 @@ export default function CreateListModal({ isOpen, onClose, onSubmit, classes }: 
   const [loading, setLoading] = useState(false);
   const [classSearch, setClassSearch] = useState('');
 
-  // Filter classes based on search
   const filteredClasses = classes.filter(cls => 
     cls.name.toLowerCase().includes(classSearch.toLowerCase()) ||
     cls.id.toLowerCase().includes(classSearch.toLowerCase())
   );
 
-  // Set all classes as default when modal opens
   useEffect(() => {
     if (isOpen && classes.length > 0 && form.classIds.length === 0) {
       const defaultClassIds = classes.map(c => c.id);
@@ -57,7 +55,6 @@ export default function CreateListModal({ isOpen, onClose, onSubmit, classes }: 
 
       await onSubmit(listData);
       
-      // Reset form
       setForm({
         title: '',
         description: '',
@@ -160,12 +157,10 @@ export default function CreateListModal({ isOpen, onClose, onSubmit, classes }: 
                   type="button"
                   onClick={() => {
                     if (classSearch) {
-                      // If there's a search, select only filtered classes
                       const filteredIds = filteredClasses.map(c => c.id);
                       const newIds = [...new Set([...form.classIds, ...filteredIds])];
                       setForm(prev => ({ ...prev, classIds: newIds }));
                     } else {
-                      // If no search, select all
                       setForm(prev => ({ ...prev, classIds: classes.map(c => c.id) }));
                     }
                   }}
@@ -178,11 +173,9 @@ export default function CreateListModal({ isOpen, onClose, onSubmit, classes }: 
                   type="button"
                   onClick={() => {
                     if (classSearch) {
-                      // If there's a search, remove only filtered classes
                       const filteredIds = filteredClasses.map(c => c.id);
                       setForm(prev => ({ ...prev, classIds: prev.classIds.filter(id => !filteredIds.includes(id)) }));
                     } else {
-                      // If no search, clear all
                       setForm(prev => ({ ...prev, classIds: [] }));
                     }
                   }}
@@ -194,7 +187,6 @@ export default function CreateListModal({ isOpen, onClose, onSubmit, classes }: 
               </div>
             </div>
             
-            {/* Barra de busca */}
             <div className="mb-3">
               <Input
                 type="text"

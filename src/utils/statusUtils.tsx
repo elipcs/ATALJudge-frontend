@@ -1,12 +1,5 @@
-/**
- * Utilitários para normalização e formatação de status
- */
-
 import React from 'react';
 
-/**
- * Mapeamento de status para português
- */
 const STATUS_TRANSLATIONS: Record<string, string> = {
   'Accepted': 'Aceito',
   'Wrong Answer': 'Resposta Incorreta',
@@ -23,27 +16,14 @@ const STATUS_TRANSLATIONS: Record<string, string> = {
   'draft': 'Rascunho',
   'published': 'Publicada',
   'closed': 'Encerrada',
-  // Manter os que já estão em português
-  'Aceito': 'Aceito',
-  'Erro de Compilação': 'Erro de Compilação',
-  'Resposta Incorreta': 'Resposta Incorreta',
-  'Pendente': 'Pendente'
 };
 
-/**
- * Normaliza status para português
- * @param status - Status em inglês ou português
- * @returns Status normalizado em português
- */
+
 export function normalizeStatus(status: string): string {
   return STATUS_TRANSLATIONS[status] || status;
 }
 
-/**
- * Obtém a cor CSS para um status de submissão
- * @param status - Status da submissão
- * @returns Classes CSS para cor do status
- */
+
 export function getSubmissionStatusColor(status: string): string {
   const normalizedStatus = normalizeStatus(status);
   
@@ -62,11 +42,7 @@ export function getSubmissionStatusColor(status: string): string {
   return 'bg-gray-100 text-gray-800';
 }
 
-/**
- * Obtém a cor CSS para um status de lista
- * @param status - Status da lista
- * @returns Classes CSS para cor do status
- */
+
 export function getListStatusColor(status: string): string {
   switch (status) {
     case 'draft':
@@ -80,11 +56,7 @@ export function getListStatusColor(status: string): string {
   }
 }
 
-/**
- * Obtém o texto do status de uma lista
- * @param status - Status da lista
- * @returns Texto do status em português
- */
+
 export function getListStatusText(status: string): string {
   switch (status) {
     case 'draft':
@@ -98,11 +70,7 @@ export function getListStatusText(status: string): string {
   }
 }
 
-/**
- * Obtém a cor CSS para um veredicto
- * @param verdict - Veredicto da submissão
- * @returns Classes CSS para cor do veredicto
- */
+
 export function getVerdictColor(verdict: string): string {
   if (verdict === 'Accepted') return 'text-green-600';
   if (verdict.includes('Wrong Answer')) return 'text-red-600';
@@ -111,11 +79,7 @@ export function getVerdictColor(verdict: string): string {
   return 'text-gray-600';
 }
 
-/**
- * Obtém o ícone SVG para um status de lista
- * @param status - Status da lista
- * @returns JSX do ícone SVG
- */
+
 export function getListStatusIcon(status: string) {
   if (status === 'draft') {
     return (

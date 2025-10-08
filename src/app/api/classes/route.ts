@@ -1,29 +1,37 @@
 import { NextRequest, NextResponse } from "next/server";
 import { API_ENDPOINTS } from "../../../config/api";
 
-// GET /api/turmas - Listar turmas
+export async function OPTIONS(request: NextRequest) {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
+}
+
 export async function GET(request: NextRequest) {
   try {
-        const authToken = request.headers.get('authorization');
+     const authHeader = request.headers.get('authorization');
 
-    if (!authToken) {
-      return NextResponse.json({ error: 'Token de autenticação não fornecido' }, { status: 401 });
-    }
-    
+     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+       return NextResponse.json({ error: "Token de autenticação não fornecido" }, { status: 401 });
+     }
+
       const res = await fetch(`${API_ENDPOINTS.BASE_URL}${API_ENDPOINTS.ENDPOINTS.CLASSES.BASE}`, {
         method: "GET",
         headers: { 
           "Content-Type": "application/json",
-          ...(authToken && { 'Authorization': authToken })
+          "Authorization": authHeader
         },
       });
 
       const data = await res.json();
       
-      // Log removido - problema resolvido
-      
       if (!res.ok) {
-        throw new Error(data.message || data.error || 'Erro ao buscar turmas');
+        throw new Error(data.message || data.msg || data.error || 'Erro ao buscar turmas');
       }
       
       const classes = data.data.map((cls: unknown) => {
@@ -36,15 +44,12 @@ export async function GET(request: NextRequest) {
             id: (classData.professor as Record<string, unknown>).id,
             name: (classData.professor as Record<string, unknown>).name,
             email: (classData.professor as Record<string, unknown>).email,
-            role: 'professor',
-            avatar: (classData.professor as Record<string, unknown>).avatar_url || 
-                   (classData.professor as Record<string, unknown>).avatar || '/profile-default.svg'
+            role: 'professor'
           } : (classData.professor_id ? {
             id: classData.professor_id,
             name: classData.professor_name || 'Professor',
             email: classData.professor_email || '',
-            role: 'professor',
-            avatar: '/profile-default.svg'
+            role: 'professor'
           } : null),
           students: ((classData.students as unknown[]) || []).map((student: unknown) => {
             const studentData = student as Record<string, unknown>;
@@ -52,7 +57,6 @@ export async function GET(request: NextRequest) {
               id: studentData.id,
               name: studentData.name,
               email: studentData.email,
-              avatar: studentData.avatar_url || studentData.avatar || '/profile-default.svg',
               studentRegistration: studentData.student_registration,
               role: 'student',
               classId: classData.id,
@@ -76,7 +80,6 @@ export async function GET(request: NextRequest) {
 }
 }
 
-// POST /api/turmas - Criar nova turma
 export async function POST(request: NextRequest) {
   try {
     const { nome, professor_id } = await request.json();
@@ -89,7 +92,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'ID do professor é obrigatório' }, { status: 400 });
     }
 
-    // Get authentication token
     const authToken = request.headers.get('authorization');
     
     const res = await fetch(`${API_ENDPOINTS.BASE_URL}${API_ENDPOINTS.ENDPOINTS.CLASSES.CREATE}`, {
@@ -112,7 +114,6 @@ export async function POST(request: NextRequest) {
       }, { status: res.status });
     }
     
-    // Convert backend response to frontend format
     const newClass = {
       id: data.data.id,
       name: data.data.name,
@@ -120,8 +121,7 @@ export async function POST(request: NextRequest) {
         id: data.data.professor.id,
         name: data.data.professor.name,
         email: data.data.professor.email,
-        role: 'professor',
-        avatar: data.data.professor.avatar || '/profile-default.svg'
+        role: 'professor'
       } : null,
       students: data.data.students || [],
       student_count: data.data.student_count || 0,

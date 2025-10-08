@@ -1,10 +1,10 @@
-import { checkAuthentication } from "@/services/auth";
+import { authApi } from "@/services/auth";
 import { useAsyncData } from "./useAsyncData";
 
 export function useAuth() {
   const { data: isAuthenticated, loading: isLoading } = useAsyncData(
     async () => {
-      return await checkAuthentication();
+      return await authApi.checkAuthentication();
     },
     { immediate: true }
   );

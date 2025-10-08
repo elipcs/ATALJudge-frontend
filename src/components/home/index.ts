@@ -7,8 +7,6 @@ export { default as UserActions } from './UserActions';
 export { default as SystemNoticesComponent } from './SystemNoticesComponent';
 export { default as StudentHome } from './StudentHome';
 export { default as StaffHome } from './StaffHome';
-
-// Re-export types from central types file
 export type { 
   User, 
   UserRole, 

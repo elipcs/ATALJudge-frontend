@@ -1,6 +1,16 @@
-// Proxy de autenticação Next.js para backend Python
 import { NextResponse } from "next/server";
 import { API_ENDPOINTS } from "../../../../config/api";
+
+export async function OPTIONS(req: Request) {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
+}
 
 export async function POST(req: Request) {
 
@@ -33,10 +43,30 @@ export async function POST(req: Request) {
       body: JSON.stringify(body),
     });
     const data = await res.json();
+    
+    console.log('🔍 Debug - Resposta do backend:', { status: res.status, data });
 
     if (!res.ok) {
+      let errorMessage = "Email ou senha incorretos";
+      
+      if (res.status === 401) {
+        errorMessage = "Email ou senha incorretos";
+      } else if (res.status === 404) {
+        errorMessage = "Usuário não encontrado";
+      } else if (res.status === 403) {
+        errorMessage = "Conta desativada ou bloqueada";
+      } else if (data.message && data.message.toLowerCase().includes('password')) {
+        errorMessage = "Senha incorreta";
+      } else if (data.message && data.message.toLowerCase().includes('email')) {
+        errorMessage = "Email não encontrado";
+      } else if (data.message && data.message.toLowerCase().includes('invalid')) {
+        errorMessage = "Email ou senha incorretos";
+      } else if (data.message) {
+        errorMessage = data.message;
+      }
+      
       return NextResponse.json({ 
-        error: data.message || data.error || "Credenciais inválidas" 
+        error: errorMessage
       }, { status: res.status });
     }
     
@@ -54,7 +84,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Token de refresh não fornecido pelo backend" }, { status: 500 });
     }
     
-    return NextResponse.json({ data: responseData });
+    return NextResponse.json(responseData);
   } catch (error) {
     return NextResponse.json({ 
       error: "Erro interno do servidor: " + error 

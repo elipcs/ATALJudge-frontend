@@ -3,7 +3,6 @@ import { API_ENDPOINTS } from "../../../../config/api";
 
 export async function GET(request: NextRequest) {
   try {
-        // Obter o token do header Authorization
     const authHeader = request.headers.get('authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json({ error: "Token de autenticação não fornecido" }, { status: 401 });
@@ -37,13 +36,11 @@ export async function GET(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-        // Obter o token do header Authorization
     const authHeader = request.headers.get('authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json({ error: "Token de autenticação não fornecido" }, { status: 401 });
     }
     
-    // Obter o corpo da requisição
     const body = await request.json();
         
     const res = await fetch(`${API_ENDPOINTS.BASE_URL}${API_ENDPOINTS.ENDPOINTS.USERS.PROFILE}`, {

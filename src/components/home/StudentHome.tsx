@@ -15,21 +15,17 @@ export default function StudentHome({ currentUser }: StudentHomeProps) {
   const { data } = useStudentHomeData();
 
 
-  // Memoizar cálculos pesados
   const { highlightList, currentStudent } = useMemo(() => {
     if (!data) {
       return { highlightList: null, currentStudent: null };
     }
     
     const { availableLists, classParticipants } = data;
-    // Encontrar lista em destaque (publicada)
     let highlight = availableLists.find((l: { status: string }) => l.status === 'published');
     if (!highlight && availableLists.length > 0) {
-      // Se não houver published, pega a primeira disponível
       highlight = availableLists[0];
     }
 
-    // Dados do aluno atual - buscar pelo nome do usuário logado
     const student = classParticipants.find((classParticipant: Student) => classParticipant.name === currentUser.name) || {
       id: currentUser.id,
       name: currentUser.name,
@@ -40,13 +36,11 @@ export default function StudentHome({ currentUser }: StudentHomeProps) {
     return { highlightList: highlight, currentStudent: student };
   }, [data, currentUser]);
   
-  // Se não há dados, usar dados vazios para evitar loading
   const currentClass = data?.currentClass || { id: '', name: 'Carregando...', professorId: '', professorName: 'Carregando...' };
   const classParticipants = data?.classParticipants || [];
 
   return (
     <div className="space-y-6">
-      {/* Header com informações da turma e perfil */}
       <WelcomeHeader
         currentUser={currentUser}
         title={`Bem-vindo(a), ${currentUser.name.split(' ')[0]}!`}
@@ -54,7 +48,6 @@ export default function StudentHome({ currentUser }: StudentHomeProps) {
         extraInfo={<span>Professor: {currentClass.professorName}</span>}
       />
 
-      {/* Lista em destaque */}
       {highlightList && (
         <Card className="p-6 bg-white border-slate-200 rounded-3xl shadow-lg">
           <div className="flex items-start justify-between mb-6">
@@ -123,7 +116,6 @@ export default function StudentHome({ currentUser }: StudentHomeProps) {
         </Card>
       )}
 
-      {/* Lista de Alunos da turma */}
       <Card className="p-6 bg-white border-slate-200 rounded-3xl shadow-lg">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">

@@ -1,17 +1,12 @@
 import { Invite, Class } from '../types';
-import { authenticatedFetch } from '../config/api';
+import { authenticatedFetch, frontendFetch } from '../config/api';
 
-// API de Convites
+
 export const invitesApi = {
-  // Buscar todos os convites
   async getAll(queryParams?: string): Promise<Invite[]> {
     try {
       const endpoint = queryParams ? `/api/invites?${queryParams}` : '/api/invites';
       const response = await authenticatedFetch<Invite[]>(endpoint);
-
-      if (!response.success) {
-        throw new Error('Erro ao buscar convites');
-      }
 
       return response.data;
     } catch (error) {
@@ -20,14 +15,9 @@ export const invitesApi = {
     }
   },
 
-  // Buscar convite por ID
   async getById(id: string): Promise<Invite | null> {
     try {
       const response = await authenticatedFetch<Invite>(`/api/invites/${id}`);
-
-      if (!response.success) {
-        return null;
-      }
 
       return response.data;
     } catch (error) {
@@ -36,7 +26,6 @@ export const invitesApi = {
     }
   },
 
-  // Criar novo convite
   async create(data: {
     role: 'student' | 'assistant' | 'professor';
     maxUses: number;
@@ -47,7 +36,7 @@ export const invitesApi = {
     creatorName: string;
   }): Promise<Invite> {
     try {
-      const response = await authenticatedFetch<Invite>('/api/invites/generate', {
+      const response = await authenticatedFetch<Invite>('/api/invites/create', {
         method: 'POST',
         body: JSON.stringify({
           role: data.role,
@@ -60,11 +49,6 @@ export const invitesApi = {
         }),
       });
 
-      if (!response.success) {
-        throw new Error(response.error || 'Erro ao gerar convite');
-      }
-
-      // A resposta já vem no formato correto do endpoint
       return response.data;
     } catch (error) {
       console.error('Erro ao gerar convite:', error);
@@ -72,16 +56,11 @@ export const invitesApi = {
     }
   },
 
-  // Revogar convite
   async revoke(id: string): Promise<boolean> {
     try {
-      const response = await authenticatedFetch(`/api/invites/${id}/revoke`, {
+      await authenticatedFetch(`/api/invites/${id}/revoke`, {
         method: 'POST',
       });
-
-      if (!response.success) {
-        throw new Error(response.error || 'Erro ao revogar convite');
-      }
 
       return true;
     } catch (error) {
@@ -90,16 +69,12 @@ export const invitesApi = {
     }
   },
 
-  // Excluir convite
+   
   async delete(id: string): Promise<boolean> {
     try {
-      const response = await authenticatedFetch(`/api/invites/${id}`, {
+      await authenticatedFetch(`/api/invites/${id}`, {
         method: 'DELETE',
       });
-
-      if (!response.success) {
-        throw new Error(response.error || 'Erro ao excluir convite');
-      }
 
       return true;
     } catch (error) {
@@ -108,38 +83,46 @@ export const invitesApi = {
     }
   },
 
-  // Validar token
   async validateToken(token: string): Promise<Invite | null> {
     try {
-      const response = await fetch('/api/invites/verify', {
+      const response = await frontendFetch<{
+        valid: boolean;
+        data: {
+          id: string;
+          role: string;
+          token: string;
+          expires_at: string;
+          current_uses: number;
+          max_uses: number;
+          classId: string;
+          class_name: string;
+          created_by: string;
+          creator_name: string;
+        };
+      }>('/api/invites/verify', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({ token }),
       });
 
-      const result = await response.json();
-
-      if (!response.ok || !result.valid) {
+      if (!response.data.valid) {
         return null;
       }
 
-      // Converter resposta do backend para formato esperado
+      const data = response.data.data || response.data;
       return {
-        id: result.data.id,
-        role: result.data.role,
-        token: result.data.token,
-        link: `${window.location.origin}/cadastro?token=${result.data.token}`,
+        id: data.id,
+        role: data.role as 'student' | 'assistant' | 'professor',
+        token: data.token,
+        link: `${window.location.origin}/cadastro?token=${data.token}`,
         createdAt: new Date().toISOString(),
-        expiresAt: result.data.expires_at,
-        used: result.data.current_uses >= result.data.max_uses,
-        maxUses: result.data.max_uses,
-        currentUses: result.data.current_uses,
-        classId: result.data.classId,
-        className: result.data.class_name,
-        createdBy: result.data.created_by,
-        creatorName: result.data.creator_name
+        expiresAt: data.expires_at,
+        used: data.current_uses >= data.max_uses,
+        maxUses: data.max_uses,
+        currentUses: data.current_uses,
+        classId: data.classId,
+        className: data.class_name,
+        createdBy: data.created_by,
+        creatorName: data.creator_name
       };
     } catch (error) {
       console.error('Erro ao validar token:', error);
@@ -147,25 +130,25 @@ export const invitesApi = {
     }
   },
 
-  // Usar convite (quando alguém se cadastra com o token)
   async useToken(token: string): Promise<boolean> {
     try {
-      const response = await fetch('/api/invites/verify', {
+      const response = await frontendFetch<{
+        valid: boolean;
+        data: {
+          current_uses: number;
+          max_uses: number;
+        };
+      }>('/api/invites/verify', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({ token }),
       });
 
-      const result = await response.json();
-
-      if (!response.ok || !result.valid) {
+      if (!response.data.valid) {
         return false;
       }
 
-      // Verificar se ainda pode ser usado
-      if (result.data.current_uses >= result.data.max_uses) {
+      const data = response.data.data || response.data;
+      if (data.current_uses >= data.max_uses) {
         return false;
       }
 
@@ -173,41 +156,6 @@ export const invitesApi = {
     } catch (error) {
       console.error('Erro ao usar token:', error);
       return false;
-    }
-  }
-};
-
-// API de Classes
-export const classesApi = {
-  // Buscar todas as classes ativas
-  async getActive(): Promise<Class[]> {
-    try {
-      const response = await authenticatedFetch<Class[]>('/api/classes');
-
-      if (!response.success) {
-        throw new Error('Erro ao buscar turmas');
-      }
-
-      return response.data;
-    } catch (error) {
-      console.error('Erro ao buscar turmas:', error);
-      throw error;
-    }
-  },
-
-  // Buscar classe por ID
-  async getById(id: string): Promise<Class | null> {
-    try {
-      const response = await authenticatedFetch<Class>(`/api/classes/${id}`);
-
-      if (!response.success) {
-        return null;
-      }
-
-      return response.data;
-    } catch (error) {
-      console.error('Erro ao buscar turma:', error);
-      throw error;
     }
   }
 };

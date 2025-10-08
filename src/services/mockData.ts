@@ -1,4 +1,4 @@
-// Serviço centralizado para dados de mock
+
 import questionListsData from '../mocks/question_lists.json';
 import classesData from '../mocks/classes.json';
 import usersData from '../mocks/users.json';
@@ -51,7 +51,8 @@ let processedDataCache: {
   assistantData?: AssistantData;
 } = {};
 
-export const getMockData = {
+// Mock Data API
+export const mockDataApi = {
   questionLists: () => {
     if (!cachedData.questionLists) {
       // Converter os dados mock para o formato da interface QuestionList
@@ -84,21 +85,19 @@ export const getMockData = {
   classes: () => {
     if (!cachedData.classes) {
       // Converter dados mock para interfaces reais
-      cachedData.classes = classesData.map((cls: { id: string; name: string; professor: { id: string; name: string; avatar: string; email: string; role: string }; created_at: string; students?: { id: string; name: string; avatar?: string; email: string; studentRegistration: string; role: string; grades?: { score: number }[]; created_at?: string }[] }) => ({
+      cachedData.classes = classesData.map((cls: { id: string; name: string; professor: { id: string; name: string; email: string; role: string }; created_at: string; students?: { id: string; name: string; email: string; studentRegistration: string; role: string; grades?: { score: number }[]; created_at?: string }[] }) => ({
         id: cls.id,
         name: cls.name,
         professor: cls.professor ? {
           id: cls.professor.id,
           name: cls.professor.name,
-          avatar: cls.professor.avatar,
           email: cls.professor.email,
           role: cls.professor.role
         } : null,
         created_at: cls.created_at,
-        students: cls.students?.map((student: { id: string; name: string; avatar?: string; email: string; studentRegistration: string; role: string; grades?: { score: number }[]; created_at?: string }) => ({
+        students: cls.students?.map((student: { id: string; name: string; email: string; studentRegistration: string; role: string; grades?: { score: number }[]; created_at?: string }) => ({
           id: student.id,
           name: student.name,
-          avatar: student.avatar,
           email: student.email,
           studentRegistration: student.studentRegistration,
           role: student.role,
@@ -115,12 +114,11 @@ export const getMockData = {
   users: () => {
     if (!cachedData.users) {
       // Converter dados mock para interfaces reais
-      cachedData.users = usersData.map((user: { id: string; name: string; email: string; role: string; avatar?: string }) => ({
+      cachedData.users = usersData.map((user: { id: string; name: string; email: string; role: string }) => ({
         id: user.id,
         name: user.name,
         email: user.email,
-        role: user.role,
-        avatar: user.avatar ?? ''
+        role: user.role
       }));
     }
     return cachedData.users;
@@ -161,10 +159,9 @@ export const getMockData = {
   students: () => {
     if (!cachedData.students) {
       // Converter dados mock para interfaces reais
-      cachedData.students = studentsData.map((student: { id: string; name: string; avatar?: string; email: string; studentRegistration: string; role: string; classId?: string; grades?: { questionListId: string; score: number }[]; created_at?: string }) => ({
+      cachedData.students = studentsData.map((student: { id: string; name: string; email: string; studentRegistration: string; role: string; classId?: string; grades?: { questionListId: string; score: number }[]; created_at?: string }) => ({
         id: student.id,
         name: student.name,
-        avatar: student.avatar,
         email: student.email,
         studentRegistration: student.studentRegistration,
         role: student.role,
@@ -179,10 +176,9 @@ export const getMockData = {
   professors: () => {
     if (!cachedData.professors) {
       // Converter dados mock para interfaces reais
-      cachedData.professors = professorsData.map((prof: { id: string; name: string; avatar?: string; email: string; role: string }) => ({
+      cachedData.professors = professorsData.map((prof: { id: string; name: string; email: string; role: string }) => ({
         id: prof.id,
         name: prof.name,
-        avatar: prof.avatar,
         email: prof.email,
         role: prof.role
       }));
@@ -211,52 +207,50 @@ export const getMockData = {
       }));
     }
     return cachedData.inviteTokens;
-  }
-};
+  },
 
-// Função para limpar cache se necessário
-export const clearMockDataCache = () => {
-  cachedData = {};
-  processedDataCache = {};
-};
+  // Funções de cache para dados processados
+  getCachedStudentData: () => {
+    if (!processedDataCache.studentData) {
+      // Processar dados do estudante uma vez e cachear - usando dados já embutidos
+      const mockLists = mockDataApi.questionLists();
+      const mockClasses = mockDataApi.classes();
 
-// Funções de cache para dados processados
-export const getCachedStudentData = () => {
-  if (!processedDataCache.studentData) {
-    // Processar dados do estudante uma vez e cachear - usando dados já embutidos
-    const mockLists = getMockData.questionLists();
-    const mockClasses = getMockData.classes();
+      const cls = mockClasses[0];
+      if (!cls) {
+        throw new Error('Nenhuma classe encontrada');
+      }
 
-    const cls = mockClasses[0];
-    if (!cls) {
-      throw new Error('Nenhuma classe encontrada');
+      processedDataCache.studentData = {
+        currentClass: {
+          id: cls.id,
+          name: cls.name,
+          professorId: cls.professor?.id || '',
+          professorName: cls.professor?.name || 'Professor',
+        },
+        availableLists: mockLists
+          .filter((list: QuestionList) => list.status === 'published')
+          .map((list: QuestionList) => list),
+        // Usar students já embutidos na classe - muito mais eficiente!
+        classParticipants: cls.students
+          ?.sort((a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name))
+          .map((student: { id: string; name: string; email: string; studentRegistration: string; role: string; grades?: { score: number }[]; created_at?: string }) => ({
+            id: student.id,
+            name: student.name,
+            email: student.email,
+            studentRegistration: student.studentRegistration,
+            role: student.role,
+            classId: cls.id,
+            grades: student.grades?.map((g: { score: number }) => ({ questionListId: '', score: g.score })) || [],
+            created_at: student.created_at || new Date().toISOString()
+          })) || []
+      };
     }
+    return processedDataCache.studentData;
+  },
 
-    processedDataCache.studentData = {
-      currentClass: {
-        id: cls.id,
-        name: cls.name,
-        professorId: cls.professor?.id || '',
-        professorName: cls.professor?.name || 'Professor',
-      },
-      availableLists: mockLists
-        .filter((list: QuestionList) => list.status === 'published')
-        .map((list: QuestionList) => list),
-      // Usar students já embutidos na classe - muito mais eficiente!
-      classParticipants: cls.students
-        ?.sort((a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name))
-        .map((student: { id: string; name: string; avatar?: string; email: string; studentRegistration: string; role: string; grades?: { score: number }[]; created_at?: string }) => ({
-          id: student.id,
-          name: student.name,
-          avatar: student.avatar,
-          email: student.email,
-          studentRegistration: student.studentRegistration,
-          role: student.role,
-          classId: cls.id,
-          grades: student.grades?.map((g: { score: number }) => ({ questionListId: '', score: g.score })) || [],
-          created_at: student.created_at || new Date().toISOString()
-        })) || []
-    };
+  clearCache: () => {
+    cachedData = {};
+    processedDataCache = {};
   }
-  return processedDataCache.studentData;
 };

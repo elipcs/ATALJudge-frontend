@@ -8,17 +8,17 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import PageHeader from "@/components/PageHeader";
 import { CreateListModal, EditListModal } from "@/components/lists";
-import { getMockData } from "@/services/mockData";
+import { mockDataApi } from "@/services/mockData";
 import { QuestionList } from "@/types";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useUserClasses } from "@/hooks/useClassesData";
 import { useCurrentUser } from "@/hooks/useHomeData";
 import { formatDateTime, getListStatusColor, getListStatusText, getListStatusIcon } from "@/utils";
 import { LIST_STATUS_OPTIONS, MESSAGES } from "@/constants";
+import PageLoading from "@/components/PageLoading";
 
 
 export default function ListsPage() {
-  // Estados
   const [lists, setLists] = useState<QuestionList[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -31,10 +31,9 @@ export default function ListsPage() {
   const { data: currentUser } = useCurrentUser();
   const { classes } = useUserClasses(currentUser?.id || '', userRole || 'student');
 
-  // Carregar dados dos mocks
   useEffect(() => {
     const timer = setTimeout(() => {
-      const mockLists = getMockData.questionLists();
+      const mockLists = mockDataApi.questionLists();
       setLists(mockLists);
       setLoading(false);
     }, 500);
@@ -42,7 +41,6 @@ export default function ListsPage() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Filtros otimizados com useMemo
   const filteredLists = useMemo(() => {
     return lists.filter(list => {
       const matchSearch = search === '' || 
@@ -55,10 +53,8 @@ export default function ListsPage() {
     });
   }, [lists, search, statusFilter]);
 
-  // Funções para lidar com modais
   const handleCreateList = async (listData: any) => {
     try {
-      // Simular criação de lista (substituir por chamada real da API)
       const newList: QuestionList = {
         id: Date.now().toString(),
         title: listData.title,
@@ -82,7 +78,6 @@ export default function ListsPage() {
     try {
       if (!editingList) return;
       
-      // Simular edição de lista (substituir por chamada real da API)
       const updatedList: QuestionList = {
         ...editingList,
         title: listData.title,
@@ -111,17 +106,7 @@ export default function ListsPage() {
 
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white flex items-center justify-center p-4">
-        <div className="w-full max-w-2xl mx-auto">
-          <div className="bg-white rounded-3xl shadow-lg border border-slate-200 p-8 sm:p-12 text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <h1 className="text-2xl font-bold text-slate-900 mb-2">{MESSAGES.LOADING}</h1>
-            <p className="text-slate-600">Preparando as listas de exercícios</p>
-          </div>
-        </div>
-      </div>
-    );
+    return <PageLoading message="Carregando listas..." description="Preparando as listas de exercícios" />;
   }
 
   return (

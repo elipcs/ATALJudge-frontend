@@ -1,16 +1,13 @@
-// Traduções para roles de usuário
 export const roleTranslations = {
   student: 'Aluno',
   professor: 'Professor', 
   assistant: 'Monitor'
 } as const;
 
-// Função para traduzir role para português
 export function translateUserRole(role: string): string {
   return roleTranslations[role as keyof typeof roleTranslations] || role;
 }
 
-// Função para obter a cor da role
 export function getRoleColor(role: string): {
   bg: string;
   text: string;

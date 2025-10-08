@@ -1,18 +1,18 @@
 import { useMemo } from 'react';
 
-import { getMockData } from '../services/mockData';
+import { mockDataApi } from '../services/mockData';
 import { User, Class, Student, Professor, Submission, Invite, SystemNotice } from '../types';
 
 export const useMockData = () => {
   const data = useMemo(() => ({
-    submissions: getMockData.submissions() as Submission[],
-    users: getMockData.users() as User[],
-    questionLists: getMockData.questionLists(),
-    classes: getMockData.classes() as Class[],
-    students: getMockData.students() as Student[],
-    professors: getMockData.professors() as Professor[],
-    inviteTokens: getMockData.inviteTokens() as Invite[],
-    systemNotices: getMockData.systemNotices() as SystemNotice[],
+    submissions: mockDataApi.submissions() as Submission[],
+    users: mockDataApi.users() as User[],
+    questionLists: mockDataApi.questionLists(),
+    classes: mockDataApi.classes() as Class[],
+    students: mockDataApi.students() as Student[],
+    professors: mockDataApi.professors() as Professor[],
+    inviteTokens: mockDataApi.inviteTokens() as Invite[],
+    systemNotices: mockDataApi.systemNotices() as SystemNotice[],
   }), []);
 
   return data;
@@ -20,7 +20,7 @@ export const useMockData = () => {
 
 export const useUserData = (userRole: string): User => {
   return useMemo(() => {
-    const mockUsers = getMockData.users();
+    const mockUsers = mockDataApi.users();
     
     const getUserNameByRole = (role: string): string => {
       const user = mockUsers.find((user: User) => user.role === role);
@@ -39,8 +39,7 @@ export const useUserData = (userRole: string): User => {
         id: `${normalizedRole}_1`,
         name: getUserNameByRole(normalizedRole),
         email: getUserEmailByRole(normalizedRole),
-        role: normalizedRole,
-        avatar: "/profile-default.svg"
+        role: normalizedRole
       };
     }
 
@@ -54,8 +53,7 @@ export const useUserData = (userRole: string): User => {
             id: payload.userId || `${userRole}_1`,
             name: payload.name || getUserNameByRole(userRole),
             email: payload.email || getUserEmailByRole(userRole),
-            role: userRole,
-            avatar: payload.avatar || "/profile-default.svg"
+            role: userRole
           };
         } catch (jwtError) {
           console.error('Erro ao decodificar token:', jwtError);
@@ -71,8 +69,7 @@ export const useUserData = (userRole: string): User => {
         id: `${normalizedRole}_1`,
         name: userName || getUserNameByRole(normalizedRole),
         email: userEmail || getUserEmailByRole(normalizedRole),
-        role: normalizedRole,
-        avatar: "/profile-default.svg"
+        role: normalizedRole
       };
 
     } catch (error) {
@@ -82,8 +79,7 @@ export const useUserData = (userRole: string): User => {
         id: `${normalizedRole}_1`,
         name: getUserNameByRole(normalizedRole),
         email: getUserEmailByRole(normalizedRole),
-        role: normalizedRole,
-        avatar: '/profile-default.svg'
+        role: normalizedRole
       };
     }
   }, [userRole]);

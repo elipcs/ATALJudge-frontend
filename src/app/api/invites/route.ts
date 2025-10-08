@@ -26,7 +26,6 @@ export async function GET(request: NextRequest) {
       }, { status: res.status });
     }
     
-    // Converter resposta do backend para formato esperado pelo frontend
     const invites = data.data.invites.map((invite: {
       id: string;
       role: string;
@@ -64,7 +63,6 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// DELETE /api/invites - Limpar convites expirados
 export async function DELETE(request: NextRequest) {
   try {
     const authToken = request.headers.get('authorization');

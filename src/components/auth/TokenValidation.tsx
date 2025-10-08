@@ -25,7 +25,7 @@ interface TokenValidationProps {
 
 export function TokenValidation({ token, onTokenValidated, children }: TokenValidationProps) {
   const [tokenInfo, setTokenInfo] = useState<TokenInfo | null>(null);
-  const [loading, setLoading] = useState(false); // Sempre inicia sem loading
+  const [loading, setLoading] = useState(false);
   const [, setError] = useState("");
 
   const validateToken = useCallback(async (tokenValue: string) => {
@@ -87,7 +87,6 @@ export function TokenValidation({ token, onTokenValidated, children }: TokenVali
     }
   }, [token, validateToken, onTokenValidated]);
 
-  // Loading state
   if (loading) {
     return (
       <AuthLayout 
@@ -122,7 +121,6 @@ export function TokenValidation({ token, onTokenValidated, children }: TokenVali
     );
   }
 
-  // Invalid token state
   if (tokenInfo && !tokenInfo.valid) {
     return (
       <AuthLayout 
@@ -136,7 +134,6 @@ export function TokenValidation({ token, onTokenValidated, children }: TokenVali
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-
           <Button 
             onClick={() => window.location.href = '/'} 
             variant="outline"
@@ -150,6 +147,5 @@ export function TokenValidation({ token, onTokenValidated, children }: TokenVali
     );
   }
 
-  // Valid token - render children
   return <>{children}</>;
 }

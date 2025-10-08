@@ -38,7 +38,6 @@ interface NotificacaoConfig {
 export default function ConfiguracoesPage() {
   const { userRole, isLoading } = useUserRole();
   
-  // Todos os hooks devem ser chamados antes de qualquer return condicional
   const [configuracoes, setConfiguracoes] = useState<ConfiguracaoSistema[]>([]);
   const [configJudge, setConfigJudge] = useState<ConfiguracaoJudge>({
     tempoLimiteDefault: DEFAULT_CONFIG.TIME_LIMIT,
@@ -63,7 +62,6 @@ export default function ConfiguracoesPage() {
     carregarConfiguracoes();
   }, []);
 
-  // Verificar se o usuário tem permissão para acessar configurações (apenas professores)
   if (!isLoading && userRole !== 'professor') {
     window.location.href = '/nao-autorizado';
     return null;

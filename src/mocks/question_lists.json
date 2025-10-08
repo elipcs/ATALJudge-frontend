@@ -3,7 +3,7 @@
     "id":"65000000000000000010001",
     "title": "Lista 1: Introdução",
     "description": "Primeira lista de exercícios de lógica e algoritmos.",
-    "class_ids": [ "6500000000000000003001", "6500000000000000003002" ],
+    "classIds": [ "6500000000000000003001", "6500000000000000003002" ],
     "questions": [
       {
         "id":"65000000000000000020001",
@@ -99,7 +99,7 @@
     "id": "65000000000000000010002",
     "title": "Lista 2: Estruturas de Dados",
     "description": "Exercícios sobre arrays, lista e filas.",
-    "class_ids": [ "6500000000000000003002" ],
+    "classIds": [ "6500000000000000003002" ],
     "questions": [
       {
         "id":"65000000000000000020005",
@@ -141,7 +141,7 @@
     "id":"65000000000000000010003",
     "title": "Lista 3: Algoritmos de Ordenação",
     "description": "Problemas de ordenação clássicos.",
-    "class_ids": [ "6500000000000000003002" ],
+    "classIds": [ "6500000000000000003002" ],
     "questions": [
       {
         "id":"65000000000000000020007",

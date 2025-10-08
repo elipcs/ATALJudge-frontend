@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 
-import { getMockData } from "../../services/mockData";
+import { mockDataApi } from "../../services/mockData";
 import { SystemNotice } from "../../types";
 
 export default function SystemNoticesComponent() {
@@ -16,9 +16,8 @@ export default function SystemNoticesComponent() {
         setNotices(data.notices || []);
       }
     } catch (error) {
-      console.error('Erro ao carregar avisos:', error);
-      // Fallback para dados mock
-      const mockSystemNotices = getMockData.systemNotices();
+      console.error('Erro ao carregar avisos:', error); 
+      const mockSystemNotices = mockDataApi.systemNotices();
       setNotices(mockSystemNotices as SystemNotice[]);
     }
   };

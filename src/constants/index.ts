@@ -1,8 +1,3 @@
-/**
- * Constantes centralizadas do projeto
- */
-
-// Configurações de linguagens de programação
 export const PROGRAMMING_LANGUAGES = {
   PYTHON: 'python',
   JAVA: 'java'
@@ -13,7 +8,6 @@ export const LANGUAGE_OPTIONS = [
   { value: PROGRAMMING_LANGUAGES.JAVA, label: 'Java' }
 ];
 
-// Status de listas
 export const LIST_STATUS = {
   DRAFT: 'draft',
   PUBLISHED: 'published',
@@ -26,7 +20,6 @@ export const LIST_STATUS_OPTIONS = [
   { value: LIST_STATUS.DRAFT, label: 'Rascunhos' }
 ];
 
-// Status de submissões
 export const SUBMISSION_STATUS = {
   SUBMITTED: 'submitted',
   FAILED: 'failed',
@@ -41,23 +34,20 @@ export const SUBMISSION_STATUS_OPTIONS = [
   { value: SUBMISSION_STATUS.FAILED, label: 'Rejeitadas' }
 ];
 
-// Roles de usuário
 export const USER_ROLES = {
   STUDENT: 'student',
   PROFESSOR: 'professor',
   ASSISTANT: 'assistant'
 } as const;
 
-// Configurações padrão do sistema
 export const DEFAULT_CONFIG = {
-  TIME_LIMIT: 5000, // 5 segundos
-  MEMORY_LIMIT: 256, // 256MB
+  TIME_LIMIT: 5000,
+  MEMORY_LIMIT: 256,
   MAX_SUBMISSIONS_PER_MINUTE: 10,
-  MAX_FILE_SIZE: 10, // 10MB
+  MAX_FILE_SIZE: 10,
   DEFAULT_POINTS: 10
 } as const;
 
-// Configurações de notificação
 export const NOTIFICATION_CONFIG = {
   EMAIL_SUBMISSION: 'emailSubmissao',
   EMAIL_NEW_LIST: 'emailNovaLista',
@@ -65,7 +55,6 @@ export const NOTIFICATION_CONFIG = {
   PUSH_NOTIFICATIONS: 'pushNotifications'
 } as const;
 
-// Mensagens padrão
 export const MESSAGES = {
   LOADING: 'Carregando...',
   ERROR_GENERIC: 'Ocorreu um erro inesperado',
@@ -81,7 +70,6 @@ export const MESSAGES = {
   SUCCESS_DELETED: 'Excluído com sucesso'
 } as const;
 
-// Configurações de UI
 export const UI_CONFIG = {
   ANIMATION_DURATION: 200,
   DEBOUNCE_DELAY: 300,
@@ -90,14 +78,12 @@ export const UI_CONFIG = {
   DROPDOWN_Z_INDEX: 10
 } as const;
 
-// Configurações de paginação
 export const PAGINATION_CONFIG = {
   DEFAULT_PAGE_SIZE: 10,
   PAGE_SIZE_OPTIONS: [5, 10, 20, 50],
   MAX_PAGE_SIZE: 100
 } as const;
 
-// Configurações de validação
 export const VALIDATION_RULES = {
   EMAIL: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
   PASSWORD_MIN_LENGTH: 8,
@@ -107,21 +93,18 @@ export const VALIDATION_RULES = {
   TITLE_MAX_LENGTH: 200
 } as const;
 
-// Configurações de cache
 export const CACHE_CONFIG = {
-  DEFAULT_TTL: 5 * 60 * 1000, // 5 minutos
-  LONG_TTL: 30 * 60 * 1000, // 30 minutos
-  SHORT_TTL: 1 * 60 * 1000 // 1 minuto
+  DEFAULT_TTL: 5 * 60 * 1000,
+  LONG_TTL: 30 * 60 * 1000,
+  SHORT_TTL: 1 * 60 * 1000
 } as const;
 
-// Configurações de API
 export const API_CONFIG = {
-  TIMEOUT: 30000, // 30 segundos
+  TIMEOUT: 30000,
   RETRY_ATTEMPTS: 3,
-  RETRY_DELAY: 1000 // 1 segundo
+  RETRY_DELAY: 1000
 } as const;
 
-// Configurações de tema
 export const THEME_CONFIG = {
   COLORS: {
     PRIMARY: 'blue',

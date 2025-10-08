@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { login, setTokens } from '../services/auth';
+import { authApi } from '../services/auth';
 
 export function useLogin() {
   const [loading, setLoading] = useState(false);
@@ -12,10 +12,11 @@ export function useLogin() {
     setLoading(true);
     
     try {
-      const { accessToken, refreshToken } = await login(email, password);
+      const { user, accessToken, refreshToken } = await authApi.login(email, password);
       
-      // Salvar tokens e redirecionar
-      setTokens(accessToken, refreshToken);
+      authApi.setTokens(accessToken, refreshToken);
+      localStorage.setItem('user', JSON.stringify(user));
+      
       router.push("/home");
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : "Erro ao autenticar";

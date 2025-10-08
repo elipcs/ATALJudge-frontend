@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { getToken, getRefreshToken, isTokenExpired, refreshAccessToken } from "@/services/auth";
+import { authApi } from "@/services/auth";
 
 export function useAuthGuard(timeoutMs: number = 10000) {
   const router = useRouter();
@@ -9,7 +9,6 @@ export function useAuthGuard(timeoutMs: number = 10000) {
 
   useEffect(() => {
     const checkAuth = async () => {
-      // Criar timeout para verificação de autenticação
       const timeoutPromise = new Promise<boolean>((_, reject) => {
         setTimeout(() => {
           reject(new Error('Timeout: Verificação de autenticação demorou muito'));
@@ -17,32 +16,26 @@ export function useAuthGuard(timeoutMs: number = 10000) {
       });
 
       const authPromise = async (): Promise<boolean> => {
-        const token = getToken();
-        const refreshToken = getRefreshToken();
+        const token = authApi.getToken();
+        const refreshToken = authApi.getRefreshToken();
 
-        // Se não há token nem refresh token, redirecionar para login
         if (!token && !refreshToken) {
           return false;
         }
 
-        // Se há token, verificar se está expirado
         if (token) {
-          if (isTokenExpired(token)) {
-            // Token expirado, tentar renovar com refresh token
+          if (authApi.isTokenExpired(token)) {
             if (refreshToken) {
-              const newToken = await refreshAccessToken();
+              const newToken = await authApi.refreshAccessToken();
               return !!newToken;
             } else {
-              // Não há refresh token, redirecionar para login
               return false;
             }
           } else {
-            // Token válido
             return true;
           }
         } else if (refreshToken) {
-          // Só há refresh token, tentar renovar
-          const newToken = await refreshAccessToken();
+          const newToken = await authApi.refreshAccessToken();
           return !!newToken;
         }
 
@@ -50,7 +43,6 @@ export function useAuthGuard(timeoutMs: number = 10000) {
       };
 
       try {
-        // Executar verificação com timeout
         const isAuthenticated = await Promise.race([authPromise(), timeoutPromise]);
         
         if (!isAuthenticated) {
@@ -61,7 +53,6 @@ export function useAuthGuard(timeoutMs: number = 10000) {
         setIsChecking(false);
       } catch (error) {
         console.error('Erro na verificação de autenticação:', error);
-        // Em caso de timeout ou erro, redirecionar para login
         router.replace("/login");
       }
     };

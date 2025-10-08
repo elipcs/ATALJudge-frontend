@@ -2,7 +2,6 @@ import React from 'react';
 
 import { Question } from '../../types';
 
-// Tipo para resultado de submissão
 interface SubmissionResult {
   status: 'pending' | 'accepted' | 'error' | 'timeout';
   message: string;

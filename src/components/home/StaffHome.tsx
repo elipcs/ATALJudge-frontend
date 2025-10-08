@@ -20,7 +20,6 @@ const StaffHome = memo(({ currentUser, userRole }: StaffHomeProps) => {
   
   const currentDate = useMemo(() => getCurrentDateFormatted(), []);
   
-  // Se não há dados, usar dados vazios para evitar loading
   const submissions = data?.submissions || [];
 
   const isProfessor = userRole === 'professor';

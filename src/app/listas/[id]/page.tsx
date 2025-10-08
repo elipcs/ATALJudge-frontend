@@ -6,11 +6,11 @@ import Link from "next/link";
 
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { getMockData } from "@/services/mockData";
+import { mockDataApi } from "@/services/mockData";
+import PageLoading from "@/components/PageLoading";
 import { QuestionList, Question, QuestionGroup, QuestionArrangement, GroupResult, ArrangementResult } from "@/types";
 import { useUserRole } from "@/hooks/useUserRole";
 
-// Interface local para submissões (compatível com o uso atual)
 interface LocalSubmission {
   id: string;
   questionId: string;
@@ -20,7 +20,6 @@ interface LocalSubmission {
   submittedAt: string;
 }
 
-// Função para formatar data e hora
 const formatDateTime = (dateString: string) => {
   const date = new Date(dateString);
   const formattedDate = date.toLocaleDateString('pt-BR', { 
@@ -54,7 +53,7 @@ export default function ListPage() {
     message: string;
     score: number;
   } | null>(null);
-  const [viewMode, setViewMode] = useState<'list' | 'question'>('list'); // Nova funcionalidade
+  const [viewMode, setViewMode] = useState<'list' | 'question'>('list');
   const [arrangement, setArrangement] = useState<QuestionArrangement | null>(null);
   const [showArrangementConfig, setShowArrangementConfig] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState<'python' | 'java'>('python');
@@ -75,7 +74,7 @@ export default function ListPage() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      const mockLists = getMockData.questionLists();
+      const mockLists = mockDataApi.questionLists();
       const foundList = mockLists.find(list => list.id === id);
       if (foundList) {
         setList(foundList);
@@ -655,17 +654,7 @@ public class Solution {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white flex items-center justify-center p-4">
-        <div className="w-full max-w-2xl mx-auto">
-          <div className="bg-white rounded-3xl shadow-lg border border-slate-200 p-8 sm:p-12 text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <h1 className="text-2xl font-bold text-slate-900 mb-2">Carregando lista...</h1>
-            <p className="text-slate-600">Preparando os exercícios</p>
-          </div>
-        </div>
-      </div>
-    );
+    return <PageLoading message="Carregando lista..." description="Preparando as questões" />;
   }
 
   if (!list) {

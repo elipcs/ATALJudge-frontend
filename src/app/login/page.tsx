@@ -23,7 +23,6 @@ export default function LoginPage() {
     </svg>
   );
 
-  // Não mostrar nada enquanto verifica autenticação
   if (checkingAuth) {
     return null;
   }

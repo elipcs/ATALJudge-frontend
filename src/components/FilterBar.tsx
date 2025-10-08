@@ -24,7 +24,7 @@ interface FilterBarProps {
   filters: FilterConfig[];
   onClear?: () => void;
   className?: string;
-  children?: ReactNode; // Para filtros customizados adicionais
+  children?: ReactNode;
 }
 
 export default function FilterBar({ 

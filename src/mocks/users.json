@@ -2,21 +2,18 @@
   {
     "id":"6500000000000000002001",
     "name": "Melina Mongiovi",
-    "avatar": "/profile-default.svg",
     "email": "melina@computacao.ufcg.edu.br",
     "role": "professor"
   },
   {
     "id":"6500000000000000002002",
     "name": "Ricardo Oliveira",
-    "avatar": "/profile-default.svg",
     "email": "ricardo@computacao.ufcg.edu.br",
     "role": "professor"
   },
   {
     "id":"6500000000000000001001",
     "name": "João da Silva",
-    "avatar": "/profile-default.svg",
     "email": "joao@email.com",
     "studentRegistration": "202500001",
     "role": "student"
@@ -24,7 +21,6 @@
   {
     "id":"6500000000000000001002",
     "name": "Maria Oliveira",
-    "avatar": "/profile-default.svg",
     "email": "maria@email.com",
     "studentRegistration": "202500002",
     "role": "student"
@@ -32,7 +28,6 @@
   {
     "id":"6500000000000000001003",
     "name": "Carlos Souza",
-    "avatar": "/profile-default.svg",
     "email": "carlos@email.com",
     "studentRegistration": "202500003",
     "role": "student"
@@ -40,7 +35,6 @@
   {
       "id":"6500000000000000001004",
       "name": "Fernanda Lima",
-      "avatar": "/profile-default.svg",
       "email": "fernanda@email.com",
       "studentRegistration": "202500004",
       "role": "student"
@@ -48,7 +42,6 @@
   {
     "id":"6500000000000000001005",
     "name": "Lucas Pereira",
-    "avatar": "/profile-default.svg",
     "email": "lucas@email.com",
     "studentRegistration": "202500005",
     "role": "student"
@@ -56,7 +49,6 @@
   {
     "id":"6500000000000000001006",
     "name": "Patricia Gomes",
-    "avatar": "/profile-default.svg",
     "email": "patricia@email.com",
     "studentRegistration": "202500006",
     "role": "student"
@@ -64,14 +56,12 @@
   {
     "id":"6500000000000000003001",
     "name": "Bob Monitor",
-    "avatar": "/profile-default.svg",
     "email": "bob.monitor@computacao.ufcg.edu.br",
     "role": "assistant"
   },
   {
     "id":"6500000000000000003002",
     "name": "Alice Monitor",
-    "avatar": "/profile-default.svg",
     "email": "alice.monitor@computacao.ufcg.edu.br",
     "role": "assistant"
   }

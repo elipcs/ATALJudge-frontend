@@ -1,12 +1,11 @@
-// Tipos para o sistema de arranjos de questões
 
 export interface QuestionGroup {
   id: string;
   name: string;
-  questions: string[]; // IDs das questões
-  minRequired: number; // Mínimo de questões a serem resolvidas do grupo
-  pointsPerQuestion: number; // Pontos por questão resolvida
-  color: string; // Cor do grupo para interface
+  questions: string[];
+  minRequired: number;
+  pointsPerQuestion: number;
+  color: string;
 }
 
 export interface QuestionArrangement {
@@ -14,9 +13,9 @@ export interface QuestionArrangement {
   name: string;
   description: string;
   groups: QuestionGroup[];
-  requireAllGroups: boolean; // Se true, precisa resolver questões de todos os grupos
-  maxScore: number; // Nota máxima possível (ex: 10)
-  passingScore: number; // Nota mínima para aprovação
+  requireAllGroups: boolean;
+  maxScore: number;
+  passingScore: number;
 }
 
 export interface GroupResult {
@@ -31,6 +30,6 @@ export interface ArrangementResult {
   completed: boolean;
   groups: { [groupId: string]: GroupResult };
   totalScore: number;
-  finalGrade: number; // Nota final calculada (0-10)
+  finalGrade: number;
   requirementsMet: boolean;
 }

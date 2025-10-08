@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { registerUser, RegistrationFormData, TokenInfo } from '../services/auth';
+import { authApi, RegistrationFormData, TokenInfo } from '../services/auth';
 
-// Interfaces importadas do serviço de auth
 
 export interface PasswordValidation {
   minLength: boolean;
@@ -88,7 +87,7 @@ export function useRegistration() {
       return;
     }
 
-    const result = await registerUser(formData, tokenInfo);
+    const result = await authApi.registerUser(formData, tokenInfo);
     
     if (!result.success) {
       setError(result.error || "Erro ao realizar cadastro");

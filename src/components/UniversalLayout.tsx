@@ -15,12 +15,10 @@ function UniversalLayoutContent({ children, currentPage }: UniversalLayoutProps)
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      {/* Navegação lateral */}
       <div className="fixed left-0 top-0 h-full z-30">
         <NavigationBar currentPage={currentPage} />
       </div>
       
-      {/* Conteúdo principal */}
       <div 
         className={`flex-1 transition-all duration-300 ease-in-out ${
           isCollapsed ? 'ml-16' : 'ml-64'

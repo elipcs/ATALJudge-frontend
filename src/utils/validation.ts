@@ -1,23 +1,11 @@
-/**
- * Utilitários de validação centralizados
- */
-
 import { VALIDATION_RULES } from '../constants';
 
-/**
- * Valida se um email é válido
- * @param email - Email para validar
- * @returns true se válido, false caso contrário
- */
+
 export function isValidEmail(email: string): boolean {
   return VALIDATION_RULES.EMAIL.test(email);
 }
 
-/**
- * Valida se uma senha é forte
- * @param password - Senha para validar
- * @returns Objeto com resultado da validação
- */
+
 export function validatePassword(password: string): {
   isValid: boolean;
   errors: string[];
@@ -50,11 +38,7 @@ export function validatePassword(password: string): {
   };
 }
 
-/**
- * Valida se um nome é válido
- * @param name - Nome para validar
- * @returns Objeto com resultado da validação
- */
+
 export function validateName(name: string): {
   isValid: boolean;
   error?: string;
@@ -84,11 +68,7 @@ export function validateName(name: string): {
   return { isValid: true };
 }
 
-/**
- * Valida se um título é válido
- * @param title - Título para validar
- * @returns Objeto com resultado da validação
- */
+
 export function validateTitle(title: string): {
   isValid: boolean;
   error?: string;
@@ -107,11 +87,7 @@ export function validateTitle(title: string): {
   return { isValid: true };
 }
 
-/**
- * Valida se uma descrição é válida
- * @param description - Descrição para validar
- * @returns Objeto com resultado da validação
- */
+
 export function validateDescription(description: string): {
   isValid: boolean;
   error?: string;
@@ -126,13 +102,7 @@ export function validateDescription(description: string): {
   return { isValid: true };
 }
 
-/**
- * Valida se um número é válido
- * @param value - Valor para validar
- * @param min - Valor mínimo (opcional)
- * @param max - Valor máximo (opcional)
- * @returns Objeto com resultado da validação
- */
+
 export function validateNumber(
   value: number | string, 
   min?: number, 
@@ -158,11 +128,7 @@ export function validateNumber(
   return { isValid: true };
 }
 
-/**
- * Valida se uma URL é válida
- * @param url - URL para validar
- * @returns true se válida, false caso contrário
- */
+
 export function isValidUrl(url: string): boolean {
   try {
     new URL(url);
@@ -172,59 +138,35 @@ export function isValidUrl(url: string): boolean {
   }
 }
 
-/**
- * Valida se um token é válido
- * @param token - Token para validar
- * @returns true se válido, false caso contrário
- */
+
 export function isValidToken(token: string): boolean {
   return Boolean(token && token.length > 0 && /^[a-zA-Z0-9-_]+$/.test(token));
 }
 
-/**
- * Valida se uma data é válida
- * @param date - Data para validar
- * @returns true se válida, false caso contrário
- */
+
 export function isValidDate(date: string | Date): boolean {
   const dateObj = typeof date === 'string' ? new Date(date) : date;
   return dateObj instanceof Date && !isNaN(dateObj.getTime());
 }
 
-/**
- * Valida se uma data está no futuro
- * @param date - Data para validar
- * @returns true se está no futuro, false caso contrário
- */
+
 export function isFutureDate(date: string | Date): boolean {
   const dateObj = typeof date === 'string' ? new Date(date) : date;
   return dateObj > new Date();
 }
 
-/**
- * Valida se uma data está no passado
- * @param date - Data para validar
- * @returns true se está no passado, false caso contrário
- */
+
 export function isPastDate(date: string | Date): boolean {
   const dateObj = typeof date === 'string' ? new Date(date) : date;
   return dateObj < new Date();
 }
 
-/**
- * Valida se um array não está vazio
- * @param array - Array para validar
- * @returns true se não está vazio, false caso contrário
- */
+
 export function isNotEmpty<T>(array: T[]): boolean {
   return Array.isArray(array) && array.length > 0;
 }
 
-/**
- * Valida se um objeto não está vazio
- * @param obj - Objeto para validar
- * @returns true se não está vazio, false caso contrário
- */
+
 export function isNotEmptyObject(obj: Record<string, unknown>): boolean {
   return Boolean(obj && typeof obj === 'object' && Object.keys(obj).length > 0);
 }

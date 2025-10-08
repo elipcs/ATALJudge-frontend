@@ -17,7 +17,7 @@ export const API_ENDPOINTS = {
       BASE: '/api/invites',
       BY_ID: (id: string) => `/api/invites/${id}`,
       VERIFY: '/api/invites/verify',
-      CREATE: '/api/invites/CREATE',
+      CREATE: '/api/invites/create',
       REVOKE: (id: string) => `/api/invites/revoke/${id}`,
       DELETE: (id: string) => `/api/invites/${id}`,
       CLEANUP: '/api/invites/cleanup/',
@@ -34,43 +34,79 @@ export const API_ENDPOINTS = {
     },
     USERS: {
       PROFILE: '/api/users/profile',
-      AVATAR: '/api/users/avatar',
     },
     
   }
 };
 
-// Função helper para fazer requisições autenticadas
+export async function frontendFetch<T = unknown>(
+  endpoint: string, 
+  options: RequestInit = {}
+): Promise<ApiResponse<T>> {
+  try {
+
+    const url = endpoint.startsWith('http') || endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || errorData.msg || `HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    
+    return {
+      data,
+      success: true,
+      message: data.message,
+    };
+  } catch (error) {
+    throw error;
+  }
+}
+
 export async function authenticatedFetch<T = unknown>(
   endpoint: string, 
   options: RequestInit = {}
 ): Promise<ApiResponse<T>> {
-  // Importar dinamicamente para evitar problemas de SSR
-  const { makeAuthenticatedRequest } = await import('../services/auth');
-  
-  const response = await makeAuthenticatedRequest(endpoint, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
+  try {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    
+    const url = endpoint.startsWith('http') || endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    
+    const response = await fetch(url, {
+      ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` }),
+          ...options.headers,
+        },
+    });
 
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || errorData.msg || `HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    
+    return {
+      data,
+      success: true,
+      message: data.message,
+    };
+  } catch (error) {
+    throw error;
   }
-
-  const data = await response.json();
-  // Log removido - problema resolvido
-  return {
-    data,
-    success: true,
-    message: data.message,
-  };
 }
 
-// Função helper para fazer requisições para o backend
 export async function backendFetch(endpoint: string, options: RequestInit = {}) {
   const url = `${API_ENDPOINTS.BASE_URL}${endpoint}`;
   
@@ -87,12 +123,10 @@ export async function backendFetch(endpoint: string, options: RequestInit = {}) 
       },
     });
 
-    // Verificar se a resposta é válida
     if (!response) {
       throw new Error('Nenhuma resposta recebida do servidor');
     }
 
-    // Verificar se o backend está retornando HTML em vez de JSON
     const contentType = response.headers.get('content-type');
     if (contentType && !contentType.includes('application/json')) {
       console.error('Backend retornou resposta não-JSON:', {
@@ -113,7 +147,6 @@ export async function backendFetch(endpoint: string, options: RequestInit = {}) 
   }
 }
 
-// Função para diagnosticar problemas de conectividade
 export async function diagnoseBackendConnection(): Promise<{
   isConnected: boolean;
   error?: string;
@@ -121,8 +154,7 @@ export async function diagnoseBackendConnection(): Promise<{
 }> {
   const suggestions: string[] = [];
   
-  try {
-    // Teste básico de conectividade usando endpoint de login
+  try { 
     const response = await fetch(`${API_ENDPOINTS.BASE_URL}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

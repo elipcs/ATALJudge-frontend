@@ -16,8 +16,9 @@ interface BackendStatusDetails {
   timeout?: string;
   suggestion?: string;
   error?: unknown;
-  [key: string]: unknown; // Para permitir outros campos que possam vir da API
+  [key: string]: unknown;
 }
+
 
 export function BackendStatus({ showDetails = false }: BackendStatusProps) {
   const [status, setStatus] = useState<{

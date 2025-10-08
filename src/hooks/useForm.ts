@@ -1,7 +1,3 @@
-/**
- * Hook genérico para gerenciamento de formulários
- */
-
 import { useState, useCallback, useMemo } from 'react';
 
 interface ValidationRule {
@@ -38,11 +34,7 @@ interface UseFormReturn<T> {
   reset: () => void;
 }
 
-/**
- * Hook genérico para gerenciamento de formulários
- * @param options - Opções de configuração do formulário
- * @returns Estado e funções para gerenciar o formulário
- */
+
 export function useForm<T extends Record<string, unknown>>(
   options: UseFormOptions<T>
 ): UseFormReturn<T> {
@@ -102,7 +94,6 @@ export function useForm<T extends Record<string, unknown>>(
   const setValue = useCallback((field: keyof T, value: unknown) => {
     setValuesState(prev => ({ ...prev, [field]: value }));
     
-    // Clear error when user starts typing
     if (errors[field]) {
       setErrorsState(prev => {
         const newErrors = { ...prev };
@@ -143,7 +134,6 @@ export function useForm<T extends Record<string, unknown>>(
       e.preventDefault();
     }
 
-    // Mark all fields as touched
     const allTouched = Object.keys(validationRules).reduce((acc, key) => ({
       ...acc,
       [key]: true
@@ -202,11 +192,6 @@ export function useForm<T extends Record<string, unknown>>(
   };
 }
 
-/**
- * Hook especializado para formulários de autenticação
- * @param initialValues - Valores iniciais do formulário
- * @param onSubmit - Função de submissão
- */
 export function useAuthForm<T extends Record<string, unknown>>(
   initialValues: T,
   onSubmit: (values: T) => Promise<void> | void

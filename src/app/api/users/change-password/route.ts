@@ -11,13 +11,11 @@ export async function POST(request: NextRequest) {
     
     const body = await request.json();
     
-    // Extrair o ID do usuário do token JWT
     const token = authHeader.replace('Bearer ', '');
-    let userId = body.userId; // Usar o userId do body se fornecido
+    let userId = body.userId;
     
     if (!userId) {
       try {
-        // Decodificar o token JWT para extrair o userId
         const payload = JSON.parse(atob(token.split('.')[1]));
         userId = payload.userId || payload.sub || payload.id;
       } catch (error) {
@@ -25,7 +23,6 @@ export async function POST(request: NextRequest) {
       }
     }
     
-    // Adicionar o user_id ao body e converter campos para o formato esperado pelo backend
     const requestBody = {
       user_id: userId,
       current_password: body.currentPassword,
@@ -46,7 +43,6 @@ export async function POST(request: NextRequest) {
     const data = await res.json();
     
     if (!res.ok) {
-      // Extrair a mensagem de erro do backend
       let errorMessage = "Erro ao alterar senha";
       
       if (data.message) {
@@ -57,14 +53,12 @@ export async function POST(request: NextRequest) {
         errorMessage = data;
       }
       
-      // Para erros de validação (400), sempre retornar status 400 mas preservar a mensagem
       if (res.status === 400) {
         return NextResponse.json({ 
           error: errorMessage
         }, { status: 400 });
       }
       
-      // Para outros erros, retornar o status original
       return NextResponse.json({ 
         error: errorMessage
       }, { status: res.status });

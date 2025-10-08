@@ -13,7 +13,7 @@ export async function POST(
     }
 
     const authToken = request.headers.get('authorization');
-    const res = await fetch(`${API_ENDPOINTS.BASE_URL}${API_ENDPOINTS.ENDPOINTS.INVITES.REVOKE}/${inviteId}`, {
+    const res = await fetch(`${API_ENDPOINTS.BASE_URL}${API_ENDPOINTS.ENDPOINTS.INVITES.REVOKE(inviteId)}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

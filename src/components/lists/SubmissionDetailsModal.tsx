@@ -1,6 +1,5 @@
 import React from 'react';
 
-// Interface local para submissão (compatível com LocalSubmission da página de listas)
 interface LocalSubmission {
   id: string;
   questionId: string;

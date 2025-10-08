@@ -30,7 +30,6 @@ export default function EditListModal({ isOpen, onClose, onSubmit, classes, list
   const [loading, setLoading] = useState(false);
   const [classSearch, setClassSearch] = useState('');
 
-  // Fill form when modal opens
   useEffect(() => {
     if (isOpen && listData) {
       setForm({
@@ -64,7 +63,6 @@ export default function EditListModal({ isOpen, onClose, onSubmit, classes, list
 
       await onSubmit(editData);
       
-      // Reset form
       setForm({
         title: '',
         description: '',
@@ -88,7 +86,6 @@ export default function EditListModal({ isOpen, onClose, onSubmit, classes, list
     }
   };
 
-  // Filter classes based on search
   const filteredClasses = classes.filter(cls => 
     cls.name.toLowerCase().includes(classSearch.toLowerCase()) ||
     cls.id.toLowerCase().includes(classSearch.toLowerCase())
@@ -181,12 +178,10 @@ export default function EditListModal({ isOpen, onClose, onSubmit, classes, list
                   type="button"
                   onClick={() => {
                     if (classSearch) {
-                      // If there's a search, select only filtered classes
                       const filteredIds = filteredClasses.map(c => c.id);
                       const newIds = [...new Set([...form.classIds, ...filteredIds])];
                       setForm(prev => ({ ...prev, classIds: newIds }));
                     } else {
-                      // If no search, select all
                       setForm(prev => ({ ...prev, classIds: classes.map(c => c.id) }));
                     }
                   }}
@@ -199,11 +194,9 @@ export default function EditListModal({ isOpen, onClose, onSubmit, classes, list
                   type="button"
                   onClick={() => {
                     if (classSearch) {
-                      // If there's a search, remove only filtered classes
                       const filteredIds = filteredClasses.map(c => c.id);
                       setForm(prev => ({ ...prev, classIds: prev.classIds.filter(id => !filteredIds.includes(id)) }));
                     } else {
-                      // If no search, clear all
                       setForm(prev => ({ ...prev, classIds: [] }));
                     }
                   }}

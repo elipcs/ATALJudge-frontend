@@ -67,7 +67,7 @@ export async function DELETE(
     }
 
     const authToken = request.headers.get('authorization');
-    const res = await fetch(`${API_ENDPOINTS.BASE_URL}${API_ENDPOINTS.ENDPOINTS.INVITES.BY_ID}/${inviteId}`, {
+    const res = await fetch(`${API_ENDPOINTS.BASE_URL}${API_ENDPOINTS.ENDPOINTS.INVITES.BY_ID(inviteId)}`, {
       method: "DELETE",
       headers: { 
         "Content-Type": "application/json",

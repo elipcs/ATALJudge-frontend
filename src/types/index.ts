@@ -1,19 +1,16 @@
-// User related types
 export interface User {
   id: string;
   name: string;
   email: string;
   role: string;
-  avatar: string;
+  classId?: string;
 }
 
 export type UserRole = 'student' | 'assistant' | 'professor';
 
-// Student related types
 export interface Student {
   id: string;
   name: string;
-  avatar?: string;
   email: string;
   studentRegistration: string;
   role: string;
@@ -32,16 +29,13 @@ export interface Class {
   updated_at: string;
 }
 
-// Professor related types
 export interface Professor {
   id: string;
   name: string;
-  avatar?: string;
   email: string;
   role: string;
 }
 
-// Question related types
 export interface Question {
   id: string;
   title: string;
@@ -65,7 +59,6 @@ export interface Question {
   }>;
 }
 
-// Submission related types
 export interface Submission {
   id: string;
   questionList: { id: string; name: string };
@@ -79,7 +72,6 @@ export interface Submission {
   verdict: string;
 }
 
-// Invite related types
 export interface Invite {
   id: string;
   role: 'student' | 'assistant' | 'professor';
@@ -99,15 +91,17 @@ export interface Invite {
 export interface QuestionList {
   id: string;
   title: string;
-  description: string;
+  description?: string;
   classIds: string[];
   questions: Question[];
   startDate: string;
   endDate: string;
   status: 'published' | 'draft';
+  createdAt?: string;
+  updatedAt?: string;
+  calculatedStatus?: 'next' | 'open' | 'closed';
 }
 
-// Quick Actions types
 export interface QuickAction {
   href: string;
   icon: React.ReactNode;
@@ -117,7 +111,6 @@ export interface QuickAction {
   iconColor: string;
 }
 
-// System Notices types
 export interface SystemNotice {
   id: string;
   title: string;
@@ -126,7 +119,6 @@ export interface SystemNotice {
   date: string;
 }
 
-// Component Props types
 export interface WelcomeHeaderProps {
   currentUser: User;
   title?: string;
@@ -165,5 +157,4 @@ export interface SubmissionsTableProps {
   showActions?: boolean;
 }
 
-// Re-export arrangement types
 export * from './arrangement';

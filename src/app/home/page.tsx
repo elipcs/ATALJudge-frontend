@@ -10,7 +10,6 @@ import {
 } from "../../components/home";
 
 
-// Componente principal
 export default function HomePage() {
   const { isLoading: userRoleLoading } = useUserRole();
   const { data: currentUser, loading: userLoading, error: userError } = useCurrentUser();
@@ -29,31 +28,26 @@ export default function HomePage() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Se há usuário, marcar que não deve mostrar erro
   useEffect(() => {
     if (currentUser) {
       setHasShownError(false);
     }
   }, [currentUser]);
 
-  // Controlar quando está realmente pronto para mostrar conteúdo
   useEffect(() => {
     if (showContent && !isLoading && (currentUser || (userError && !currentUser))) {
       setIsReady(true);
     }
   }, [showContent, isLoading, currentUser, userError]);
 
-  // Se há erro de autenticação, redirecionar para login
   useEffect(() => {
     if (userError && (userError.includes('Token expirado') || userError.includes('Não autorizado') || userError.includes('401'))) {
       window.location.href = '/login';
     }
   }, [userError]);
 
-  // Verificar se há token
   const hasToken = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
   
-  // Se não há token, redirecionar para login imediatamente
   if (!hasToken) {
     if (typeof window !== 'undefined') {
       window.location.href = '/login';
@@ -61,10 +55,6 @@ export default function HomePage() {
     return null;
   }
 
-  // SEMPRE mostrar loading se:
-  // 1. Ainda não passou o delay
-  // 2. Está carregando
-  // 3. Não está pronto para mostrar conteúdo
   if (!showContent || isLoading || !isReady) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white flex items-center justify-center p-4">
@@ -79,9 +69,7 @@ export default function HomePage() {
     );
   }
 
-  // Se há usuário, sempre mostrar o conteúdo (ignorar erros)
   if (currentUser) {
-    // Renderizar componente específico baseado no papel do usuário
     switch (currentUser.role) {
       case 'professor':
       case 'assistant':
@@ -119,7 +107,6 @@ export default function HomePage() {
     }
   }
 
-  // Só mostrar erro se há erro E não há usuário E não mostrou erro ainda
   if (userError && !currentUser && !hasShownError) {
     setHasShownError(true);
     return (

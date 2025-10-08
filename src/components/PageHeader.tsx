@@ -5,9 +5,9 @@ import { ReactNode } from "react";
 interface PageHeaderProps {
   title: string;
   description?: string;
-  icon?: ReactNode; // Ícone personalizado
-  iconColor?: 'blue' | 'indigo' | 'slate' | 'gray' | 'green' | 'purple' | 'red' | 'yellow'; // Cores predefinidas
-  children?: ReactNode; // Para botões ou outros elementos de ação
+  icon?: ReactNode;
+  iconColor?: 'blue' | 'indigo' | 'slate' | 'gray' | 'green' | 'purple' | 'red' | 'yellow';
+  children?: ReactNode;
 }
 
 export default function PageHeader({ 
@@ -17,7 +17,6 @@ export default function PageHeader({
   iconColor = 'blue', 
   children 
 }: PageHeaderProps) {
-  // Mapear cores para classes do Tailwind
   const getIconClasses = (color: string) => {
     const colorMap = {
       blue: 'bg-blue-100 text-blue-600',

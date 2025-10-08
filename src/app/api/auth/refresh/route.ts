@@ -1,4 +1,3 @@
-// Proxy de refresh token Next.js para backend Python
 import { NextResponse } from "next/server";
 import { API_ENDPOINTS } from "../../../../config/api";
 
@@ -33,7 +32,7 @@ export async function POST(req: Request) {
       accessToken: data.data.access_token
     };
     
-    return NextResponse.json({ data: responseData });
+    return NextResponse.json(responseData);
   } catch (error) {
     console.error("Erro ao renovar token:", error);
     return NextResponse.json({ 

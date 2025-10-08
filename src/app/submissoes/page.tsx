@@ -6,9 +6,9 @@ import { Button } from "../../components/ui/button";
 import { Card } from "../../components/ui/card";
 import { Input } from "../../components/ui/input";
 import { useUserRoleContext } from "../../contexts/UserRoleContext";
-import { getMockData, clearMockDataCache } from "../../services/mockData";
+import { mockDataApi } from "../../services/mockData";
 import PageHeader from "../../components/PageHeader";
-import LoadingSpinner from "../../components/LoadingSpinner";
+import PageLoading from "../../components/PageLoading";
 import { getSubmissionStatusColor, getVerdictColor, normalizeStatus } from "../../utils/statusUtils";
 import { SUBMISSION_STATUS_OPTIONS, MESSAGES } from "../../constants";
 
@@ -120,15 +120,15 @@ export default function SubmissoesPage() {
       setLoading(true);
       
       // Limpar cache para garantir dados atualizados
-      clearMockDataCache();
+      mockDataApi.clearCache();
       
       // Simular carregamento
       await new Promise(resolve => setTimeout(resolve, 500));
       
       // Forçar recarregamento completo dos dados
-      const mockSubmissions = getMockData.submissions() as unknown as MockSubmission[];
-      const classesData = getMockData.classes() as unknown as MockClass[];
-      const questionListsData = getMockData.questionLists() as unknown as MockQuestionList[];
+      const mockSubmissions = mockDataApi.submissions() as unknown as MockSubmission[];
+      const classesData = mockDataApi.classes() as unknown as MockClass[];
+      const questionListsData = mockDataApi.questionLists() as unknown as MockQuestionList[];
       
       // Converter submissões do mock para formato esperado
       const submissionsConverted: Submission[] = mockSubmissions.map((sub) => {
@@ -367,7 +367,7 @@ export default function SubmissoesPage() {
   }
 
   if (loading) {
-    return <LoadingSpinner message={MESSAGES.ERROR_LOADING_SUBMISSIONS} />;
+    return <PageLoading message="Carregando submissões..." description="Preparando as submissões" />;
   }
 
   return (

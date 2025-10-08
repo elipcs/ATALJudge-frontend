@@ -1,12 +1,5 @@
-/**
- * Utilitários para tratamento de erros e mensagens
- */
-
 import React from 'react';
 
-/**
- * Componente de erro padrão
- */
 interface ErrorMessageProps {
   title?: string;
   message?: string;
@@ -28,9 +21,6 @@ export function ErrorMessage({
   );
 }
 
-/**
- * Componente de erro inline
- */
 export function InlineError({ 
   message = "Erro ao carregar dados",
   className = ""
@@ -42,9 +32,6 @@ export function InlineError({
   );
 }
 
-/**
- * Componente de estado vazio
- */
 interface EmptyStateProps {
   title?: string;
   message?: string;
@@ -82,9 +69,6 @@ export function EmptyState({
   );
 }
 
-/**
- * Componente de erro para avisos do sistema
- */
 export function SystemError({ message }: { message: string }) {
   return (
     <div className="text-center py-8">
@@ -93,9 +77,6 @@ export function SystemError({ message }: { message: string }) {
   );
 }
 
-/**
- * Função para tratar erros de API
- */
 export function handleApiError(error: unknown): string {
   if (error instanceof Error) {
     return error.message;
@@ -106,18 +87,10 @@ export function handleApiError(error: unknown): string {
   return 'Ocorreu um erro inesperado';
 }
 
-/**
- * Função para exibir mensagens de erro em toast/alert
- */
 export function showErrorToast(message: string) {
-  // Implementação pode ser feita com react-hot-toast ou similar
   alert(message);
 }
 
-/**
- * Função para exibir mensagens de sucesso em toast/alert
- */
 export function showSuccessToast(message: string) {
-  // Implementação pode ser feita com react-hot-toast ou similar
   alert(message);
 }

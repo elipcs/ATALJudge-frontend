@@ -1,12 +1,11 @@
 import { useMemo } from 'react';
 
-import { getCachedStudentData } from '../services/mockData';
-// import { Student, Class, HighlightList } from '../types';
+import { mockDataApi } from '../services/mockData';
 
 
 export const useStudentData = () => {
   return useMemo(() => {
-    return getCachedStudentData();
+    return mockDataApi.getCachedStudentData();
   }, []);
 };
 

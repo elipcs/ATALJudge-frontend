@@ -1,4 +1,3 @@
-// Proxy de verificação de token de reset Next.js para backend Python
 import { NextResponse } from "next/server";
 import { API_ENDPOINTS } from "../../../../config/api";
 
