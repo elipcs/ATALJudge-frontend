@@ -17,7 +17,7 @@ import { translateUserRole, getRoleColor } from "../../utils/roleTranslations";
 export default function PerfilPage() {
   const router = useRouter();
   const { userRole, isLoading: isLoadingRole } = useUserRole();
-  const [usuario, setUsuario] = useState<ProfileData | null>(null);
+  const [user, setUser] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('perfil');
@@ -38,7 +38,7 @@ export default function PerfilPage() {
       
       const profileData = (response as { data?: ProfileData }).data || response;
       
-      setUsuario(profileData);
+      setUser(profileData);
     } catch (error) {
       console.error('PerfilPage: Erro ao carregar dados:', error);
       if (error instanceof Error && (error.message.includes('Não autorizado') || error.message.includes('Token expirado'))) {
@@ -75,29 +75,29 @@ export default function PerfilPage() {
 
 
   async function saveProfile() {
-    if (!usuario) {
+    if (!user) {
       return;
     }
 
-    if (!usuario.name || usuario.name.trim().length === 0) {
+    if (!user.name || user.name.trim().length === 0) {
       setError('O nome é obrigatório');
       return;
     }
 
-    if (usuario.name.trim().length < 2) {
+    if (user.name.trim().length < 2) {
       setError('O nome deve ter pelo menos 2 caracteres');
       return;
     }
 
     // Specific validation for students
-    if (usuario.role === 'student') {
-      if (!usuario.student_registration || usuario.student_registration.trim().length === 0) {
+    if (user.role === 'student') {
+      if (!user.studentRegistration || user.studentRegistration.trim().length === 0) {
         setError('A matrícula é obrigatória para estudantes');
         return;
       }
       
       // Validar se a matrícula tem exatamente 9 ou 11 dígitos
-      const registrationDigits = usuario.student_registration.replace(/\D/g, ''); // Remove caracteres não numéricos
+      const registrationDigits = user.studentRegistration.replace(/\D/g, ''); // Remove caracteres não numéricos
       if (registrationDigits.length !== 9 && registrationDigits.length !== 11) {
         setError('A matrícula deve ter exatamente 9 ou 11 dígitos');
         return;
@@ -111,14 +111,14 @@ export default function PerfilPage() {
       setSuccess('');
       
       const updateData: UpdateProfileData = {
-        name: usuario.name,
-        student_registration: usuario.student_registration
+        name: user.name,
+        studentRegistration: user.studentRegistration
       };
 
       const response = await profileApi.updateProfile(updateData);
       
       const updatedProfile = (response as { data?: ProfileData }).data || response;
-      setUsuario(updatedProfile);
+      setUser(updatedProfile);
 
       setButtonSuccess(true);
       setTimeout(() => setButtonSuccess(false), 3000);
@@ -199,7 +199,7 @@ export default function PerfilPage() {
       const changePasswordData: ChangePasswordData = {
         currentPassword: currentPassword,
         newPassword: newPassword,
-        userId: usuario?.id
+        userId: user?.id
       };
 
       await profileApi.changePassword(changePasswordData);
@@ -248,8 +248,8 @@ export default function PerfilPage() {
       
       const response = await profileApi.uploadAvatar(file);
       const result = (response as { data?: { avatarUrl: string } }).data || response;
-      if (usuario) {
-        setUsuario({ ...usuario, avatar_url: result.avatarUrl });
+      if (user) {
+        setUser({ ...user, avatarUrl: result.avatarUrl });
         setButtonSuccess(true);
         setTimeout(() => setButtonSuccess(false), 3000);
       }
@@ -288,7 +288,7 @@ export default function PerfilPage() {
     );
   }
 
-  if (!usuario) {
+  if (!user) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white flex items-center justify-center p-4">
         <div className="w-full max-w-2xl mx-auto">
@@ -344,8 +344,8 @@ export default function PerfilPage() {
               className={`px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-200 ${
                 activeTab === tab.id
                   ? `shadow-sm border ${
-                      usuario.role === 'professor' ? 'bg-gradient-to-r from-purple-50 to-purple-100 text-purple-700 border-purple-200' :
-                      usuario.role === 'student' ? 'bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 border-blue-200' :
+                      user.role === 'professor' ? 'bg-gradient-to-r from-purple-50 to-purple-100 text-purple-700 border-purple-200' :
+                      user.role === 'student' ? 'bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 border-blue-200' :
                       'bg-gradient-to-r from-green-50 to-green-100 text-green-700 border-green-200'
                     }`
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
@@ -366,13 +366,13 @@ export default function PerfilPage() {
           {/* Avatar */}
               <div className="relative">
                 <div className={`w-32 h-32 rounded-3xl shadow-lg overflow-hidden border-4 border-white ${
-                  usuario.role === 'professor' ? 'bg-gradient-to-r from-purple-50 to-purple-100' :
-                  usuario.role === 'student' ? 'bg-gradient-to-r from-blue-50 to-blue-100' :
+                  user.role === 'professor' ? 'bg-gradient-to-r from-purple-50 to-purple-100' :
+                  user.role === 'student' ? 'bg-gradient-to-r from-blue-50 to-blue-100' :
                   'bg-gradient-to-r from-green-50 to-green-100'
                 }`}>
-                  {usuario.avatar_url ? (
+                  {user.avatarUrl ? (
                     <Image 
-                      src={usuario.avatar_url} 
+                      src={user.avatarUrl} 
                       alt="Avatar" 
                       width={128}
                       height={128}
@@ -380,17 +380,17 @@ export default function PerfilPage() {
                     />
                   ) : (
                     <div className={`w-full h-full flex items-center justify-center text-4xl font-bold ${
-                      usuario.role === 'professor' ? 'text-purple-600 bg-gradient-to-br from-purple-100 to-purple-200' :
-                      usuario.role === 'student' ? 'text-blue-600 bg-gradient-to-br from-blue-100 to-blue-200' :
+                      user.role === 'professor' ? 'text-purple-600 bg-gradient-to-br from-purple-100 to-purple-200' :
+                      user.role === 'student' ? 'text-blue-600 bg-gradient-to-br from-blue-100 to-blue-200' :
                       'text-green-600 bg-gradient-to-br from-green-100 to-green-200'
                     }`}>
-                      {usuario.name?.charAt(0)?.toUpperCase() || 'U'}
+                      {user.name?.charAt(0)?.toUpperCase() || 'U'}
                     </div>
                   )}
                 </div>
                 <label className={`absolute -bottom-2 -right-2 text-white p-3 rounded-xl cursor-pointer hover:shadow-lg transition-all duration-200 transform hover:scale-105 ${
-                  usuario.role === 'professor' ? 'bg-gradient-to-r from-purple-500 to-purple-600' :
-                  usuario.role === 'student' ? 'bg-gradient-to-r from-blue-500 to-blue-600' :
+                  user.role === 'professor' ? 'bg-gradient-to-r from-purple-500 to-purple-600' :
+                  user.role === 'student' ? 'bg-gradient-to-r from-blue-500 to-blue-600' :
                   'bg-gradient-to-r from-green-500 to-green-600'
                 }`}>
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -409,19 +409,19 @@ export default function PerfilPage() {
               {/* Informações Básicas */}
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-3">
-                  <h2 className="text-3xl font-bold text-slate-900">{usuario.name || 'Usuário'}</h2>
-                  <span className={`px-4 py-2 rounded-xl text-sm font-semibold ${getRoleColor(usuario.role).bg} ${getRoleColor(usuario.role).text} border ${getRoleColor(usuario.role).border}`}>
-                    {translateUserRole(usuario.role)}
+                  <h2 className="text-3xl font-bold text-slate-900">{user.name || 'Usuário'}</h2>
+                  <span className={`px-4 py-2 rounded-xl text-sm font-semibold ${getRoleColor(user.role).bg} ${getRoleColor(user.role).text} border ${getRoleColor(user.role).border}`}>
+                    {translateUserRole(user.role)}
                   </span>
                 </div>
-                <p className="text-slate-600 text-lg mb-4">{usuario.email}</p>
+                <p className="text-slate-600 text-lg mb-4">{user.email}</p>
                 
-                {usuario.role === 'student' && usuario.student_registration && (
+                {user.role === 'student' && user.studentRegistration && (
                   <div className="flex items-center gap-2 text-sm text-slate-500">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
                     </svg>
-                    Matrícula: {usuario.student_registration}
+                    Matrícula: {user.studentRegistration}
                   </div>
                 )}
               </div>
@@ -430,14 +430,14 @@ export default function PerfilPage() {
               <div className="bg-gradient-to-r from-slate-50 to-slate-100 rounded-2xl p-6 text-sm text-slate-600">
                 <div className="mb-3">
                   <strong className="text-slate-900">Cadastrado em:</strong><br />
-                  {new Date(usuario.created_at).toLocaleDateString('pt-BR', {
+                  {new Date(user.created_at).toLocaleDateString('pt-BR', {
                     timeZone: 'America/Sao_Paulo'
                   })}
                 </div>
-                {usuario.last_login && (
+                {user.last_login && (
                 <div>
                     <strong className="text-slate-900">Último login:</strong><br />
-                    {new Date(usuario.last_login).toLocaleString('pt-BR', {
+                    {new Date(user.last_login).toLocaleString('pt-BR', {
                       timeZone: 'America/Sao_Paulo'
                     })}
                 </div>
@@ -464,12 +464,12 @@ export default function PerfilPage() {
                     Nome Completo <span className="text-red-500">*</span>
                   </label>
                   <Input
-                    value={usuario.name}
-                    onChange={e => setUsuario({ ...usuario, name: e.target.value })}
-                    className={`h-12 bg-white border-slate-200 focus:border-blue-400 focus:ring-blue-400/20 text-slate-900 placeholder:text-slate-500 rounded-xl ${!usuario.name || usuario.name.trim().length < 2 ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
+                    value={user.name}
+                    onChange={e => setUser({ ...user, name: e.target.value })}
+                    className={`h-12 bg-white border-slate-200 focus:border-blue-400 focus:ring-blue-400/20 text-slate-900 placeholder:text-slate-500 rounded-xl ${!user.name || user.name.trim().length < 2 ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
                     placeholder="Digite seu nome completo"
                   />
-                  {(!usuario.name || usuario.name.trim().length < 2) && (
+                  {(!user.name || user.name.trim().length < 2) && (
                     <p className="text-xs text-red-500 mt-2">Nome é obrigatório (mínimo 2 caracteres)</p>
                   )}
                 </div>
@@ -477,7 +477,7 @@ export default function PerfilPage() {
                 <div className="bg-gradient-to-r from-slate-50 to-slate-100 rounded-2xl p-6">
                   <label className="block text-sm font-semibold text-slate-900 mb-3">Email</label>
                   <Input
-                    value={usuario.email}
+                    value={user.email}
                     disabled
                     className="h-12 bg-slate-100 text-slate-500 rounded-xl"
                   />
@@ -485,26 +485,26 @@ export default function PerfilPage() {
                 </div>
               </div>
 
-              {usuario.role === 'student' && (
+              {user.role === 'student' && (
                 <div className="bg-gradient-to-r from-slate-50 to-slate-100 rounded-2xl p-6">
                   <label className="block text-sm font-semibold text-slate-900 mb-3">
                     Matrícula <span className="text-red-500">*</span>
                   </label>
                   <Input
-                    value={usuario.student_registration || ''}
-                    onChange={e => setUsuario({ ...usuario, student_registration: e.target.value })}
+                    value={user.studentRegistration || ''}
+                    onChange={e => setUser({ ...user, studentRegistration: e.target.value })}
                     placeholder="Digite sua matrícula (9 ou 11 dígitos)"
                     className={`h-12 bg-white border-slate-200 focus:border-blue-400 focus:ring-blue-400/20 text-slate-900 placeholder:text-slate-500 rounded-xl ${
-                      !usuario.student_registration || 
-                      usuario.student_registration.trim().length === 0 ||
-                      (usuario.student_registration.replace(/\D/g, '').length !== 9 && usuario.student_registration.replace(/\D/g, '').length !== 11)
+                      !user.studentRegistration || 
+                      user.studentRegistration.trim().length === 0 ||
+                      (user.studentRegistration.replace(/\D/g, '').length !== 9 && user.studentRegistration.replace(/\D/g, '').length !== 11)
                         ? 'border-red-300 focus:border-red-500 focus:ring-red-500' 
                         : ''
                     }`}
                   />
-                  {(!usuario.student_registration || 
-                    usuario.student_registration.trim().length === 0 ||
-                    (usuario.student_registration.replace(/\D/g, '').length !== 9 && usuario.student_registration.replace(/\D/g, '').length !== 11)) && (
+                  {(!user.studentRegistration || 
+                    user.studentRegistration.trim().length === 0 ||
+                    (user.studentRegistration.replace(/\D/g, '').length !== 9 && user.studentRegistration.replace(/\D/g, '').length !== 11)) && (
                     <p className="text-xs text-red-500 mt-2">Matrícula deve ter exatamente 9 ou 11 dígitos</p>
                   )}
                 </div>
@@ -517,27 +517,27 @@ export default function PerfilPage() {
                   }} 
                   disabled={
                     saving || 
-                    !usuario.name || 
-                    usuario.name.trim().length < 2 || 
-                    (usuario.role === 'student' && (
-                      !usuario.student_registration || 
-                      usuario.student_registration.trim().length === 0 ||
-                      (usuario.student_registration.replace(/\D/g, '').length !== 9 && usuario.student_registration.replace(/\D/g, '').length !== 11)
+                    !user.name || 
+                    user.name.trim().length < 2 || 
+                    (user.role === 'student' && (
+                      !user.studentRegistration || 
+                      user.studentRegistration.trim().length === 0 ||
+                      (user.studentRegistration.replace(/\D/g, '').length !== 9 && user.studentRegistration.replace(/\D/g, '').length !== 11)
                     ))
                   } 
                   className={`shadow-sm hover:shadow-md font-semibold transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none px-8 py-3 rounded-xl ${
                     buttonSuccess 
                       ? 'bg-gradient-to-r from-green-500 to-green-600 text-white border border-green-600' 
-                      : usuario.role === 'professor' ? 'bg-gradient-to-r from-purple-50 to-purple-100 text-purple-700 border border-purple-200' :
-                        usuario.role === 'student' ? 'bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 border border-blue-200' :
+                      : user.role === 'professor' ? 'bg-gradient-to-r from-purple-50 to-purple-100 text-purple-700 border border-purple-200' :
+                        user.role === 'student' ? 'bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 border border-blue-200' :
                         'bg-gradient-to-r from-green-50 to-green-100 text-green-700 border border-green-200'
                   }`}
                 >
                   {saving ? (
                     <>
                       <div className={`animate-spin rounded-full h-4 w-4 border-2 border-t-transparent mr-2 ${
-                        usuario.role === 'professor' ? 'border-purple-600' :
-                        usuario.role === 'student' ? 'border-blue-600' :
+                        user.role === 'professor' ? 'border-purple-600' :
+                        user.role === 'student' ? 'border-blue-600' :
                         'border-green-600'
                       }`}></div>
                       Salvando...
@@ -571,8 +571,8 @@ export default function PerfilPage() {
           <Card className="bg-white border-slate-200 rounded-3xl shadow-lg p-8">
             <div className="flex items-center gap-4 mb-8">
               <div className={`p-3 rounded-xl border ${
-                usuario.role === 'professor' ? 'bg-gradient-to-r from-purple-50 to-purple-100 text-purple-600 border-purple-200' :
-                usuario.role === 'student' ? 'bg-gradient-to-r from-blue-50 to-blue-100 text-blue-600 border-blue-200' :
+                user.role === 'professor' ? 'bg-gradient-to-r from-purple-50 to-purple-100 text-purple-600 border-purple-200' :
+                user.role === 'student' ? 'bg-gradient-to-r from-blue-50 to-blue-100 text-blue-600 border-blue-200' :
                 'bg-gradient-to-r from-green-50 to-green-100 text-green-600 border-green-200'
               }`}>
                 <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -628,16 +628,16 @@ export default function PerfilPage() {
                 className={`w-full shadow-sm hover:shadow-md font-semibold transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none py-3 rounded-xl ${
                   buttonSuccess 
                     ? 'bg-gradient-to-r from-green-500 to-green-600 text-white border border-green-600' 
-                    : usuario.role === 'professor' ? 'bg-gradient-to-r from-purple-50 to-purple-100 text-purple-700 border border-purple-200' :
-                      usuario.role === 'student' ? 'bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 border border-blue-200' :
+                    : user.role === 'professor' ? 'bg-gradient-to-r from-purple-50 to-purple-100 text-purple-700 border border-purple-200' :
+                      user.role === 'student' ? 'bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 border border-blue-200' :
                       'bg-gradient-to-r from-green-50 to-green-100 text-green-700 border border-green-200'
                 }`}
               >
                 {changingPassword ? (
                   <>
                     <div className={`animate-spin rounded-full h-4 w-4 border-2 border-t-transparent mr-2 ${
-                      usuario.role === 'professor' ? 'border-purple-600' :
-                      usuario.role === 'student' ? 'border-blue-600' :
+                      user.role === 'professor' ? 'border-purple-600' :
+                      user.role === 'student' ? 'border-blue-600' :
                       'border-green-600'
                     }`}></div>
                     Alterando...

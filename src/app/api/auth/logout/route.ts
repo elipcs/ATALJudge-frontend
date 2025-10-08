@@ -1,20 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
+import { API_ENDPOINTS } from "../../../../config/api";
 
 export async function POST(request: NextRequest) {
+
   try {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
     
-    // Obter o token do header Authorization
     const authHeader = request.headers.get('authorization');
+
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json({ error: "Token de autenticação não fornecido" }, { status: 401 });
     }
     
-    // Obter o corpo da requisição para pegar o refresh_token
-    const body = await request.json().catch(() => ({}));
-    
-    
-    const res = await fetch(`${apiUrl}/auth/logout`, {
+    const body = await request.json();
+    const res = await fetch(`${API_ENDPOINTS.BASE_URL}${API_ENDPOINTS.ENDPOINTS.AUTH.LOGOUT}`, {
       method: "POST",
       headers: { 
         "Content-Type": "application/json",
@@ -22,7 +20,6 @@ export async function POST(request: NextRequest) {
       },
       body: JSON.stringify(body),
     });
-    
     const data = await res.json();
     
     if (!res.ok) {
@@ -30,7 +27,6 @@ export async function POST(request: NextRequest) {
         error: data.message || data.error || "Erro ao fazer logout no servidor" 
       }, { status: res.status });
     }
-    
     
     return NextResponse.json({ 
       success: true, 

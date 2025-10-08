@@ -5,15 +5,15 @@ export interface ProfileData {
   name: string;
   email: string;
   role: 'professor' | 'student' | 'assistant';
-  avatar_url?: string;
-  student_registration?: string;
+  avatarUrl?: string;
+  studentRegistration?: string;
   created_at: string;
   last_login?: string;
 }
 
 export interface UpdateProfileData {
   name: string;
-  student_registration?: string;
+  studentRegistration?: string;
 }
 
 export interface ChangePasswordData {

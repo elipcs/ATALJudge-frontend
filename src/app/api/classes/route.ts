@@ -1,38 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
-
+import { API_ENDPOINTS } from "../../../config/api";
 
 // GET /api/turmas - Listar turmas
 export async function GET(request: NextRequest) {
   try {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-    
-    const authToken = request.headers.get('authorization');
-    
+        const authToken = request.headers.get('authorization');
 
-    
     if (!authToken) {
       return NextResponse.json({ error: 'Token de autenticação não fornecido' }, { status: 401 });
     }
     
-      const res = await fetch(`${apiUrl}/classes/`, {
+      const res = await fetch(`${API_ENDPOINTS.BASE_URL}${API_ENDPOINTS.ENDPOINTS.CLASSES.BASE}`, {
         method: "GET",
         headers: { 
           "Content-Type": "application/json",
           ...(authToken && { 'Authorization': authToken })
         },
       });
-      
-      
+
       const data = await res.json();
       
       // Log removido - problema resolvido
       
       if (!res.ok) {
         throw new Error(data.message || data.error || 'Erro ao buscar turmas');
-      }
-      
-      if (!data.success) {
-        throw new Error(data.message || 'Erro ao buscar turmas');
       }
       
       const classes = data.data.map((cls: unknown) => {
@@ -82,7 +73,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Erro ao buscar turmas:', error);
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
-  }
+}
 }
 
 // POST /api/turmas - Criar nova turma
@@ -98,12 +89,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'ID do professor é obrigatório' }, { status: 400 });
     }
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-    
     // Get authentication token
     const authToken = request.headers.get('authorization');
     
-    const res = await fetch(`${apiUrl}/classes/`, {
+    const res = await fetch(`${API_ENDPOINTS.BASE_URL}${API_ENDPOINTS.ENDPOINTS.CLASSES.CREATE}`, {
       method: "POST",
       headers: { 
         "Content-Type": "application/json",
@@ -121,13 +110,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ 
         error: data.message || data.error || 'Erro ao criar turma' 
       }, { status: res.status });
-    }
-    
-    // Verificar se a resposta tem o formato esperado com success
-    if (!data.success) {
-      return NextResponse.json({ 
-        error: data.message || 'Erro ao criar turma' 
-      }, { status: 400 });
     }
     
     // Convert backend response to frontend format
@@ -152,5 +134,5 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Erro ao criar turma:', error);
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
-  }
+}
 }

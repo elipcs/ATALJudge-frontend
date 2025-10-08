@@ -1,22 +1,24 @@
 // Proxy de refresh token Next.js para backend Python
 import { NextResponse } from "next/server";
+import { API_ENDPOINTS } from "../../../../config/api";
 
 export async function POST(req: Request) {
   try {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+    const body = await req.json();
+    const refreshToken = body.refreshToken;
     
-    // Obter o token do header Authorization
-    const authHeader = req.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (!refreshToken) {
       return NextResponse.json({ error: "Token de refresh não fornecido" }, { status: 401 });
     }
     
-    const res = await fetch(`${apiUrl}/auth/refresh`, {
+    const res = await fetch(`${API_ENDPOINTS.BASE_URL}${API_ENDPOINTS.ENDPOINTS.AUTH.REFRESH}`, {
       method: "POST",
       headers: { 
-        "Content-Type": "application/json",
-        "Authorization": authHeader
+        "Content-Type": "application/json"
       },
+      body: JSON.stringify({
+        refresh_token: refreshToken
+      }),
     });
     
     const data = await res.json();
@@ -27,19 +29,11 @@ export async function POST(req: Request) {
       }, { status: res.status });
     }
     
-    // Verificar se a resposta tem o formato esperado com success
-    if (!data.success) {
-      return NextResponse.json({ 
-        error: data.message || "Falha ao renovar token" 
-      }, { status: 400 });
-    }
-    
-    // O backend agora retorna token dentro de data
     const responseData = {
-      access_token: data.token
+      accessToken: data.data.access_token
     };
     
-    return NextResponse.json(responseData);
+    return NextResponse.json({ data: responseData });
   } catch (error) {
     console.error("Erro ao renovar token:", error);
     return NextResponse.json({ 

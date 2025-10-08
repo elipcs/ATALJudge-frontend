@@ -1,40 +1,42 @@
 import { ApiResponse } from '../utils/apiUtils';
 
-// Configuração centralizada da API
-export const API_CONFIG = {
+export const API_ENDPOINTS = {
   BASE_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000',
   ENDPOINTS: {
     AUTH: {
-      LOGIN: '/auth/login',
-      LOGOUT: '/auth/logout',
-      REGISTER: '/auth/register',
-      FORGOT_PASSWORD: '/auth/forgot-password',
-      RESET_PASSWORD: '/auth/reset-password',
-      VERIFY_RESET_TOKEN: '/auth/verify-reset-token',
+      LOGIN: '/api/auth/login',
+      LOGOUT: '/api/auth/logout',
+      REGISTER: '/api/auth/register',
+      REFRESH: '/api/auth/refresh',
+      CHANGE_PASSWORD: '/api/auth/change-password',
+      FORGOT_PASSWORD: '/api/auth/forgot-password',
+      RESET_PASSWORD: '/api/auth/reset-password',
+      VERIFY_RESET_TOKEN: '/api/auth/verify',
     },
     INVITES: {
-      BASE: '/invites',
-      VALIDATE: '/invites/validate',
-      GENERATE: '/invites/generate',
-      REVOKE: (id: string) => `/invites/${id}/revoke`,
+      BASE: '/api/invites',
+      BY_ID: (id: string) => `/api/invites/${id}`,
+      VERIFY: '/api/invites/verify',
+      CREATE: '/api/invites/CREATE',
+      REVOKE: (id: string) => `/api/invites/revoke/${id}`,
+      DELETE: (id: string) => `/api/invites/${id}`,
+      CLEANUP: '/api/invites/cleanup/',
     },
-    TURMAS: {
-      BASE: '/classes',
-      BY_ID: (id: string) => `/classes/${id}`,
-      ALUNOS: (id: string) => `/classes/${id}/students`,
+    CLASSES: {
+      BASE: '/api/classes',
+      BY_ID: (id: string) => `/api/classes/${id}`,
+      STUDENTS: (id: string) => `/api/classes/${id}/students`,
+      CREATE: '/api/classes/create',
+      ADD_STUDENT: (id: string) => `/api/classes/${id}/add-student`,
+      REMOVE_STUDENT: (id: string) => `/api/classes/${id}/remove-student`,
+      UPDATE: (id: string) => `/api/classes/${id}`,
+      DELETE: (id: string) => `/api/classes/${id}`,
     },
-    USUARIOS: {
-      PERFIL: '/users/profile',
-      ESTATISTICAS: '/users/statistics',
-      PRIVACIDADE: '/users/privacy',
-      ALTERAR_SENHA: '/users/change-password',
-      AVATAR: '/users/avatar',
+    USERS: {
+      PROFILE: '/api/users/profile',
+      AVATAR: '/api/users/avatar',
     },
-    SISTEMA: {
-      AVISOS: '/sistema/avisos',
-      ESTATISTICAS: '/sistema/estatisticas',
-      RESET: '/sistema/reset',
-    }
+    
   }
 };
 
@@ -70,7 +72,7 @@ export async function authenticatedFetch<T = unknown>(
 
 // Função helper para fazer requisições para o backend
 export async function backendFetch(endpoint: string, options: RequestInit = {}) {
-  const url = `${API_CONFIG.BASE_URL}${endpoint}`;
+  const url = `${API_ENDPOINTS.BASE_URL}${endpoint}`;
   
   const defaultHeaders = {
     'Content-Type': 'application/json',
@@ -99,13 +101,13 @@ export async function backendFetch(endpoint: string, options: RequestInit = {}) 
         url,
         text: await response.text()
       });
-      throw new Error(`Backend retornou ${contentType} em vez de JSON. Verifique se o servidor está rodando em ${API_CONFIG.BASE_URL}`);
+      throw new Error(`Backend retornou ${contentType} em vez de JSON. Verifique se o servidor está rodando em ${API_ENDPOINTS.BASE_URL}`);
     }
 
     return response;
   } catch (error) {
     if (error instanceof TypeError && error.message === 'Failed to fetch') {
-      throw new Error(`Não foi possível conectar ao backend em ${API_CONFIG.BASE_URL}. Verifique se o servidor está rodando.`);
+      throw new Error(`Não foi possível conectar ao backend em ${API_ENDPOINTS.BASE_URL}. Verifique se o servidor está rodando.`);
     }
     throw error;
   }
@@ -120,10 +122,11 @@ export async function diagnoseBackendConnection(): Promise<{
   const suggestions: string[] = [];
   
   try {
-    // Teste básico de conectividade
-    const response = await fetch(`${API_CONFIG.BASE_URL}/health`, {
-      method: 'GET',
+    // Teste básico de conectividade usando endpoint de login
+    const response = await fetch(`${API_ENDPOINTS.BASE_URL}/api/auth/login`, {
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'test', password: 'test' }),
       signal: AbortSignal.timeout(5000)
     });
 
@@ -156,7 +159,7 @@ export async function diagnoseBackendConnection(): Promise<{
   } catch (error) {
     if (error instanceof TypeError && error.message === 'Failed to fetch') {
       suggestions.push('Verifique se o backend está rodando');
-      suggestions.push(`Confirme se a URL ${API_CONFIG.BASE_URL} está correta`);
+      suggestions.push(`Confirme se a URL ${API_ENDPOINTS.BASE_URL} está correta`);
       suggestions.push('Verifique se não há problemas de firewall ou proxy');
       return {
         isConnected: false,

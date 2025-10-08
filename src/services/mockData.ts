@@ -59,7 +59,7 @@ export const getMockData = {
         id: ql.id as string,
         title: ql.title as string,
         description: ql.description as string,
-        classIds: ql.class_ids as string[],
+        classIds: ql.classIds as string[],
         questions: (ql.questions as Record<string, unknown>[]).map((q: Record<string, unknown>) => ({
           id: q.id as string,
           title: q.title as string,
@@ -204,7 +204,7 @@ export const getMockData = {
         createdAt: (token.createdAt ?? token.created_at ?? '') as string,
         expiresAt: (token.expiresAt ?? token.expires_at ?? '') as string,
         used: token.used as boolean,
-        classId: (token.classId ?? token.class_id ?? '') as string,
+        classId: (token.classId ?? token.classId ?? '') as string,
         className: (token.className ?? token.class_name ?? '') as string,
         createdBy: (token.createdBy ?? token.created_by ?? '') as string,
         creatorName: (token.creatorName ?? token.creator_name ?? '') as string

@@ -35,7 +35,7 @@ export function useAsyncData<T>(
     immediate = true,
     onError,
     onSuccess,
-    timeoutMs = 10000
+    timeoutMs
   } = options;
 
   const [data, setData] = useState<T | null>(initialData);
@@ -88,15 +88,22 @@ export function useAsyncData<T>(
         setLoading(true);
         setError(null);
         
-        // Timeout de segurança para evitar loading infinito
-        const timeoutPromise = new Promise((_, reject) => {
-          setTimeout(() => reject(new Error('Timeout: Operação demorou muito para responder')), timeoutMs);
-        });
-        
-        const result = await Promise.race([
-          asyncFunction(...args),
-          timeoutPromise
-        ]) as T;
+        // Executar função assíncrona
+        let result: T;
+        if (timeoutMs) {
+          // Timeout de segurança para evitar loading infinito
+          const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error('Timeout: Operação demorou muito para responder')), timeoutMs);
+          });
+          
+          result = await Promise.race([
+            asyncFunction(...args),
+            timeoutPromise
+          ]) as T;
+        } else {
+          // Sem timeout - execução direta
+          result = await asyncFunction(...args);
+        }
         
         // Salvar no cache
         cacheRef.current.set(cacheKey, { data: result, timestamp: now });

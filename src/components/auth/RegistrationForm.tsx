@@ -17,8 +17,8 @@ interface RegistrationFormProps {
   loading?: boolean;
   tokenInfo?: {
     role: 'student' | 'assistant' | 'professor';
-    class_id?: string;
-    class_name?: string;
+    classId?: string;
+    className?: string;
   };
 }
 
@@ -57,11 +57,11 @@ export function RegistrationForm({ onSubmit, loading = false, tokenInfo }: Regis
 
   return (
     <div className="space-y-3 sm:space-y-4">
-      {tokenInfo?.role === 'student' && tokenInfo?.class_name && (
+      {tokenInfo?.role === 'student' && tokenInfo?.className && (
         <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 mb-4">
           <div className="flex justify-center items-center gap-1">
             <span className="text-xs sm:text-sm text-slate-600 font-medium">Turma:</span>
-            <span className="text-xs sm:text-sm font-bold text-slate-900">{tokenInfo.class_name}</span>
+            <span className="text-xs sm:text-sm font-bold text-slate-900">{tokenInfo.className}</span>
           </div>
         </div>
       )}

@@ -6,7 +6,7 @@
     "email": "joao@email.com",
     "studentRegistration": "202500001",
     "role": "student",
-    "class_id": "6500000000000000003001",
+    "classId": "6500000000000000003001",
     "grades": [
       { "questionListId": "65000000000000000010001", "score": 8.5 }
     ],
@@ -19,7 +19,7 @@
     "email": "maria@email.com",
     "studentRegistration": "202500002",
     "role": "student",
-    "class_id": "6500000000000000003001",
+    "classId": "6500000000000000003001",
     "grades": [
       { "questionListId":"65000000000000000010001", "score": 10.0 }
     ],
@@ -32,7 +32,7 @@
     "email": "carlos@email.com",
     "studentRegistration": "202500003",
     "role": "student",
-    "class_id": "6500000000000000003002",
+    "classId": "6500000000000000003002",
     "grades": [
       { "questionListId": "65000000000000000010001", "score": 7.0 }
     ],
@@ -45,7 +45,7 @@
       "email": "fernanda@email.com",
       "studentRegistration": "202500004",
       "role": "student",
-      "class_id": "6500000000000000003002",
+      "classId": "6500000000000000003002",
       "grades": [
         { "questionListId": "65000000000000000010001", "score": 9.0 }
       ],
@@ -58,7 +58,7 @@
     "email": "lucas@email.com",
     "studentRegistration": "202500005",
     "role": "student",
-    "class_id": "6500000000000000003001",
+    "classId": "6500000000000000003001",
     "grades": [
       { "questionListId": "65000000000000000010001", "score": 8.0 }
     ],
@@ -71,7 +71,7 @@
     "email": "patricia@email.com",
     "studentRegistration": "202500006",
     "role": "student",
-    "class_id": "6500000000000000003001",
+    "classId": "6500000000000000003001",
     "grades": [
       { "questionListId": "65000000000000000010001", "score": 9.0 }
     ],

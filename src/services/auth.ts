@@ -50,6 +50,36 @@ export function isTokenExpired(token: string): boolean {
   }
 }
 
+// Função simples para verificar autenticação
+export async function checkAuthentication(): Promise<boolean> {
+  const token = getToken();
+  const refreshToken = getRefreshToken();
+
+  // Se não há token nem refresh token, usuário não está logado
+  if (!token && !refreshToken) {
+    return false;
+  }
+
+  // Se há token, verificar se está expirado
+  if (token && !isTokenExpired(token)) {
+    // Token válido
+    return true;
+  }
+
+  // Token expirado ou não existe, tentar renovar com refresh token
+  if (refreshToken) {
+    try {
+      const newToken = await refreshAccessToken();
+      return !!newToken;
+    } catch (error) {
+      // Falha no refresh
+      return false;
+    }
+  }
+
+  return false;
+}
+
 export async function refreshAccessToken(): Promise<string | null> {
   const refreshToken = getRefreshToken();
   if (!refreshToken) {
@@ -61,25 +91,25 @@ export async function refreshAccessToken(): Promise<string | null> {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${refreshToken}`,
       },
+      body: JSON.stringify({
+        refreshToken: refreshToken
+      }),
     });
 
     if (!response.ok) {
       throw new Error("Falha ao renovar token");
     }
 
-    const data = await response.json();
+    const responseData = await response.json();
+    const data = responseData.data;
     
-    if (data.access_token) {
-      setToken(data.access_token);
-      // O backend pode retornar um novo refresh token ou manter o mesmo
-      if (data.refresh_token) {
-        setRefreshToken(data.refresh_token);
-      }
-      return data.access_token;
-    }
+    const accessToken = data.accessToken;
 
+    if (accessToken) {
+      setToken(accessToken);
+      return accessToken;
+    }
     return null;
   } catch (error) {
     console.error("Erro ao renovar token:", error);
@@ -92,16 +122,13 @@ export async function logout(): Promise<boolean> {
   const token = getToken();
   
   if (!token) {
-    // Se não há token, apenas limpar o localStorage
     removeTokens();
     return true;
   }
 
   try {
-    // Obter o refresh token
     const refreshToken = getRefreshToken();
     
-    // Chamar o endpoint de logout no backend para revogar o token
     const response = await fetch('/api/auth/logout', {
       method: 'POST',
       headers: {
@@ -109,14 +136,12 @@ export async function logout(): Promise<boolean> {
         'Authorization': `Bearer ${token}`,
       },
       body: JSON.stringify({
-        refresh_token: refreshToken || ''
+        refreshToken: refreshToken
       }),
     });
 
-    // Independente da resposta do backend, limpar os tokens localmente
     removeTokens();
     
-    // Limpar outros dados do localStorage relacionados ao usuário
     if (typeof window !== "undefined") {
       localStorage.removeItem('userRole');
       localStorage.removeItem('user');
@@ -129,12 +154,11 @@ export async function logout(): Promise<boolean> {
       return true;
     } else {
       console.warn('Erro ao fazer logout no servidor, mas tokens foram removidos localmente');
-      return true; // Retorna true mesmo com erro do servidor, pois limpamos localmente
+      return true;
     }
   } catch (error) {
     console.error('Erro ao fazer logout:', error);
     
-    // Mesmo com erro, limpar os tokens localmente
     removeTokens();
     if (typeof window !== "undefined") {
       localStorage.removeItem('userRole');
@@ -144,20 +168,111 @@ export async function logout(): Promise<boolean> {
       localStorage.removeItem('userEmail');
     }
     
-    return true; // Retorna true pois limpamos localmente
+    return true;
+  }
+}
+
+export async function login(email: string, password: string): Promise<{
+  user: any;
+  accessToken: string;
+  refreshToken: string;
+}> {
+  const requestBody = { email, password };
+  
+  const res = await fetch('/api/auth/login', {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(requestBody),
+  });
+  
+  if (!res.ok) {
+    const errorData = await res.json();
+    throw new Error(errorData.message || errorData.error || "Credenciais inválidas");
+  }
+  
+  const response = await res.json();
+  const data = response.data;
+  
+  if (!data.accessToken) {
+    throw new Error("Token de acesso não recebido do servidor");
+  }
+  
+  if (!data.refreshToken) {
+    throw new Error("Token de refresh não recebido do servidor");
+  }
+  
+  return data;
+}
+
+export interface RegistrationFormData {
+  name: string;
+  email: string;
+  studentRegistration?: string;
+  password: string;
+  confirmPassword: string;
+}
+
+export interface TokenInfo {
+  role: 'student' | 'assistant' | 'professor';
+  classId?: string;
+  className?: string;
+  professor?: string;
+  valid: boolean;
+  expires: string;
+}
+
+export async function registerUser(
+  formData: RegistrationFormData, 
+  tokenInfo: TokenInfo | null
+): Promise<{ success: boolean; message?: string; error?: string }> {
+  try {
+    const requestBody = {
+      name: formData.name,
+      email: formData.email,
+      password: formData.password,
+      role: tokenInfo?.role,
+      student_registration: formData.studentRegistration,
+      class_id: tokenInfo?.classId,
+      class_name: tokenInfo?.className
+    };
+
+    const response = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      return {
+        success: false,
+        error: result.error || "Erro ao realizar cadastro"
+      };
+    }
+
+    return {
+      success: true,
+      message: "Cadastro realizado com sucesso"
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: "Erro ao realizar cadastro"
+    };
   }
 }
 
 export async function makeAuthenticatedRequest(url: string, options: RequestInit = {}): Promise<Response> {
   let token = getToken();
   
-  // Verificar se o token está expirado
   if (token && isTokenExpired(token)) {
     const newToken = await refreshAccessToken();
     if (newToken) {
       token = newToken;
     } else {
-      // Se não conseguiu renovar, redirecionar para página inicial
       if (typeof window !== "undefined") {
         window.location.href = "/";
       }
@@ -175,11 +290,9 @@ export async function makeAuthenticatedRequest(url: string, options: RequestInit
     headers,
   });
 
-  // Se receber 401, tentar renovar o token uma vez
   if (response.status === 401 && token) {
     const newToken = await refreshAccessToken();
     if (newToken) {
-      // Tentar a requisição novamente com o novo token
       const retryHeaders = {
         ...options.headers,
         Authorization: `Bearer ${newToken}`,
@@ -189,7 +302,6 @@ export async function makeAuthenticatedRequest(url: string, options: RequestInit
         headers: retryHeaders,
       });
     } else {
-      // Se não conseguiu renovar, redirecionar para página inicial
       if (typeof window !== "undefined") {
         window.location.href = "/";
       }

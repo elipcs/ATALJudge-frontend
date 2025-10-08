@@ -1,70 +1,20 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 import { AuthLayout, AuthForm, AuthInput, AlertMessage, AuthFooter } from "../../components/auth";
-import { setTokens, getToken, isTokenExpired } from "../../services/auth";
+import { useLogin } from "../../hooks/useLogin";
+import { useAuthCheck } from "../../hooks/useAuthCheck";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [checkingAuth, setCheckingAuth] = useState(true);
-  const router = useRouter();
-
-  // Verificar se o usuário já está autenticado
-  useEffect(() => {
-    const checkAuth = () => {
-      const token = getToken();
-      if (token && !isTokenExpired(token)) {
-        // Usuário já autenticado, redirecionar para home
-        router.push("/home");
-        return;
-      }
-      setCheckingAuth(false);
-    };
-
-    checkAuth();
-  }, [router]);
+  const { handleLogin, loading, error, setError } = useLogin();
+  const { checkingAuth } = useAuthCheck();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError("");
-    setLoading(true);
-    
-    try {
-      const requestBody = { email, password };
-      
-      const res = await fetch('/api/auth/login', {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(requestBody),
-      });
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || "Credenciais inválidas");
-      }
-      const data = await res.json();
-      
-      // Salvar tanto o access token quanto o refresh token
-      if (data.access_token) {
-        setTokens(data.access_token, data.refresh_token || "");
-        router.push("/home");
-      } else if (data.token) {
-        // Fallback para compatibilidade com backend antigo
-        setTokens(data.token, data.refresh_token || "");
-        router.push("/home");
-      } else {
-        throw new Error("Token não recebido do servidor");
-      }
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : "Erro ao autenticar";
-      setError(errorMessage);
-    } finally {
-      setLoading(false);
-    }
+    await handleLogin(email, password);
   }
 
   const loginIcon = (

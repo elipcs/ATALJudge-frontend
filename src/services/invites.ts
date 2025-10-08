@@ -111,7 +111,7 @@ export const invitesApi = {
   // Validar token
   async validateToken(token: string): Promise<Invite | null> {
     try {
-      const response = await fetch('/api/invites/validate', {
+      const response = await fetch('/api/invites/verify', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -136,7 +136,7 @@ export const invitesApi = {
         used: result.data.current_uses >= result.data.max_uses,
         maxUses: result.data.max_uses,
         currentUses: result.data.current_uses,
-        classId: result.data.class_id,
+        classId: result.data.classId,
         className: result.data.class_name,
         createdBy: result.data.created_by,
         creatorName: result.data.creator_name
@@ -150,7 +150,7 @@ export const invitesApi = {
   // Usar convite (quando alguém se cadastra com o token)
   async useToken(token: string): Promise<boolean> {
     try {
-      const response = await fetch('/api/invites/validate', {
+      const response = await fetch('/api/invites/verify', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

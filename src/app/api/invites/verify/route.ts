@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { API_ENDPOINTS } from "../../../../config/api";
 
 export async function POST(request: NextRequest) {
   try {
@@ -8,9 +9,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Token não fornecido' }, { status: 400 });
     }
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-    
-    const res = await fetch(`${apiUrl}/invites/verify`, {
+    const res = await fetch(`${API_ENDPOINTS.BASE_URL}${API_ENDPOINTS.ENDPOINTS.INVITES.VERIFY}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ token }),
@@ -23,13 +22,6 @@ export async function POST(request: NextRequest) {
         valid: false, 
         error: data.message || data.error || 'Erro ao validar token' 
       }, { status: res.status });
-    }
-    
-    if (!data.success) {
-      return NextResponse.json({ 
-        valid: false, 
-        error: data.message || 'Erro ao validar token' 
-      }, { status: 400 });
     }
     
     const inviteInfo = data.data.invite_info;

@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import { API_ENDPOINTS } from "../../../../config/api";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-    
-    const authToken = request.headers.get('authorization');
+        const authToken = request.headers.get('authorization');
     
     let userId = "";
     let userName = ""; 
@@ -32,7 +31,7 @@ export async function POST(request: NextRequest) {
       })
     };
     
-    const res = await fetch(`${apiUrl}/invites/generate`, {
+    const res = await fetch(`${API_ENDPOINTS.BASE_URL}${API_ENDPOINTS.ENDPOINTS.INVITES.CREATE}`, {
       method: "POST",
       headers: { 
         "Content-Type": "application/json",
@@ -50,12 +49,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ 
         error: data.message || data.error || 'Erro ao gerar convite' 
       }, { status: res.status });
-    }
-    
-    if (!data.success) {
-      return NextResponse.json({ 
-        error: data.message || 'Erro ao gerar convite' 
-      }, { status: 400 });
     }
     
     const invite = data.data.invite;
@@ -78,5 +71,5 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Erro ao gerar convite:', error);
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
-  }
+}
 }

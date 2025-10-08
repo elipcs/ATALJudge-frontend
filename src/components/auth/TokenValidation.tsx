@@ -33,7 +33,7 @@ export function TokenValidation({ token, onTokenValidated, children }: TokenVali
     setError("");
     
     try {
-      const response = await fetch('/api/invites/validate', {
+      const response = await fetch('/api/invites/verify', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -56,8 +56,8 @@ export function TokenValidation({ token, onTokenValidated, children }: TokenVali
       
       const validatedTokenInfo = {
         role: result.data.role,
-        class_id: result.data.class_id,
-        class_name: result.data.class_name,
+        classId: result.data.class_id,
+        className: result.data.class_name,
         professor: result.data.created_by,
         valid: true,
         expires: new Date(result.data.expires_at).toLocaleDateString('pt-BR')

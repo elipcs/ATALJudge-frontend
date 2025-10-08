@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { API_ENDPOINTS } from "../../../../config/api";
 
 export async function GET(
   request: NextRequest,
@@ -11,12 +12,8 @@ export async function GET(
       return NextResponse.json({ error: 'ID do convite não fornecido' }, { status: 400 });
     }
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-    
-    // Pegar token de autenticação
     const authToken = request.headers.get('authorization');
-    
-    const res = await fetch(`${apiUrl}/invites/id/${inviteId}`, {
+    const res = await fetch(`${API_ENDPOINTS.BASE_URL}${API_ENDPOINTS.ENDPOINTS.INVITES.BY_ID(inviteId)}`, {
       method: "GET",
       headers: { 
         "Content-Type": "application/json",
@@ -35,14 +32,6 @@ export async function GET(
       }, { status: res.status });
     }
     
-    // Verificar se a resposta tem o formato esperado com success
-    if (!data.success) {
-      return NextResponse.json({ 
-        error: data.message || 'Convite não encontrado' 
-      }, { status: 404 });
-    }
-    
-    // Converter resposta do backend para formato esperado pelo frontend
     const invite = data.data.invite;
     return NextResponse.json({
       id: invite.id,
@@ -73,24 +62,18 @@ export async function DELETE(
   try {
     const { id: inviteId } = await params;
 
-
     if (!inviteId) {
       return NextResponse.json({ error: 'ID do convite não fornecido' }, { status: 400 });
     }
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-    
     const authToken = request.headers.get('authorization');
-    
-    
-    const res = await fetch(`${apiUrl}/invites/${inviteId}`, {
+    const res = await fetch(`${API_ENDPOINTS.BASE_URL}${API_ENDPOINTS.ENDPOINTS.INVITES.BY_ID}/${inviteId}`, {
       method: "DELETE",
       headers: { 
         "Content-Type": "application/json",
         ...(authToken && { 'Authorization': authToken })
       },
     });
-
 
     if (!res.ok) {
       let errorMessage = 'Erro ao excluir convite';
@@ -115,15 +98,10 @@ export async function DELETE(
         console.warn('Erro ao fazer parse da resposta JSON:', jsonError);
         return NextResponse.json({ success: true, message: 'Convite excluído com sucesso' });
       }
-    }
-    
-    if (!data || !data.success) {
-      if (res.status >= 200 && res.status < 300) {
-        return NextResponse.json({ success: true, message: 'Convite excluído com sucesso' });
-      }
+      
       return NextResponse.json({ 
         error: data?.message || 'Erro ao excluir convite' 
-      }, { status: 400 });
+      }, { status: res.status });
     }
 
     return NextResponse.json({ success: true, message: 'Convite excluído com sucesso' });

@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { API_ENDPOINTS } from "../../../../config/api";
 
 export async function POST(request: NextRequest) {
   try {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-    
     const authHeader = request.headers.get('authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json({ error: "Token de autenticação não fornecido" }, { status: 401 });
@@ -12,7 +11,7 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     
     
-    const res = await fetch(`${apiUrl}/users/avatar`, {
+    const res = await fetch(`${API_ENDPOINTS.BASE_URL}${API_ENDPOINTS.ENDPOINTS.USERS.AVATAR}`, {
       method: "POST",
       headers: { 
         "Authorization": authHeader

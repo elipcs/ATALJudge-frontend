@@ -64,7 +64,7 @@ export default function ListsComponent() {
       id: list.id,
       title: list.title,
       description: list.description,
-      class_ids: list.classIds.map(id => ({ $oid: id })),
+      classIds: list.classIds.map(id => ({ $oid: id })),
       questions: list.questions,
       start_date: list.startDate,
       end_date: list.endDate,

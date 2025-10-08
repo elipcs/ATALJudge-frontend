@@ -3,8 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 
-import { getToken, getRefreshToken, isTokenExpired, refreshAccessToken } from "@/services/auth";
-import AuthLoadingTimeout from "./AuthLoadingTimeout";
+import { checkAuthentication } from "@/services/auth";
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -36,21 +35,23 @@ export default function AuthGuard({ children }: AuthGuardProps) {
   const router = useRouter();
   const pathname = usePathname();
   
-  // Verificar se é uma rota pública imediatamente
-  const isPublicRoute = PUBLIC_ROUTES.some(route => 
-    pathname === route || pathname.startsWith(route + '/')
-  );
-  
-  const [isChecking, setIsChecking] = useState(!isPublicRoute);
-  const [isAuthenticated, setIsAuthenticated] = useState(isPublicRoute);
-  const [hasTimedOut, setHasTimedOut] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
     const checkAuth = async () => {
+      // Verificar se é uma rota pública
+      const isPublicRoute = PUBLIC_ROUTES.some(route => 
+        pathname === route || pathname.startsWith(route + '/')
+      );
+
       if (isPublicRoute) {
+        setIsAuthenticated(true);
+        setIsChecking(false);
         return;
       }
 
+      // Verificar se é uma rota protegida
       const isProtectedRoute = PROTECTED_ROUTES.some(route => 
         pathname === route || pathname.startsWith(route + '/')
       );
@@ -61,43 +62,9 @@ export default function AuthGuard({ children }: AuthGuardProps) {
         return;
       }
 
-      // Criar timeout para verificação de autenticação
-      const timeoutPromise = new Promise<boolean>((_, reject) => {
-        setTimeout(() => {
-          reject(new Error('Timeout: Verificação de autenticação demorou muito'));
-        }, 10000);
-      });
-
-      const authPromise = async (): Promise<boolean> => {
-        const token = getToken();
-        const refreshToken = getRefreshToken();
-
-        if (!token && !refreshToken) {
-          return false;
-        }
-
-        if (token) {
-          if (isTokenExpired(token)) {
-            if (refreshToken) {
-              const newToken = await refreshAccessToken();
-              return !!newToken;
-            } else {
-              return false;
-            }
-          } else {
-            return true;
-          }
-        } else if (refreshToken) {
-          const newToken = await refreshAccessToken();
-          return !!newToken;
-        }
-
-        return false;
-      };
-
       try {
-        // Executar verificação com timeout
-        const isAuth = await Promise.race([authPromise(), timeoutPromise]);
+        // Verificação silenciosa de autenticação
+        const isAuth = await checkAuthentication();
         
         if (!isAuth) {
           router.replace("/login");
@@ -108,32 +75,19 @@ export default function AuthGuard({ children }: AuthGuardProps) {
         setIsChecking(false);
       } catch (error) {
         console.error('Erro na verificação de autenticação:', error);
-        setHasTimedOut(true);
-        setIsChecking(false);
+        router.replace("/login");
       }
     };
 
     checkAuth();
-  }, [router, pathname, isPublicRoute]);
+  }, [router, pathname]);
 
-  // Mostrar timeout se ocorreu
-  if (hasTimedOut) {
-    return (
-      <AuthLoadingTimeout
-        timeoutMs={10000}
-        message="Timeout na verificação de autenticação"
-        onTimeout={() => router.push("/login")}
-      />
-    );
-  }
-
-  // Mostrar loading durante verificação
+  // Mostrar loading mínimo durante verificação para evitar tela branca
   if (isChecking) {
     return (
-      <AuthLoadingTimeout
-        timeoutMs={10000}
-        message="Verificando autenticação..."
-      />
+      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-200 border-t-blue-600"></div>
+      </div>
     );
   }
 

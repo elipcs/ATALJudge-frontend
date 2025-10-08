@@ -1,16 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
+import { API_ENDPOINTS } from "../../../../config/api";
 
 export async function GET(request: NextRequest) {
   try {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-    
-    // Obter o token do header Authorization
+        // Obter o token do header Authorization
     const authHeader = request.headers.get('authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json({ error: "Token de autenticação não fornecido" }, { status: 401 });
     }
         
-    const res = await fetch(`${apiUrl}/users/profile`, {
+    const res = await fetch(`${API_ENDPOINTS.BASE_URL}${API_ENDPOINTS.ENDPOINTS.USERS.PROFILE}`, {
       method: "GET",
       headers: { 
         "Content-Type": "application/json",
@@ -38,9 +37,7 @@ export async function GET(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-    
-    // Obter o token do header Authorization
+        // Obter o token do header Authorization
     const authHeader = request.headers.get('authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json({ error: "Token de autenticação não fornecido" }, { status: 401 });
@@ -49,7 +46,7 @@ export async function PUT(request: NextRequest) {
     // Obter o corpo da requisição
     const body = await request.json();
         
-    const res = await fetch(`${apiUrl}/users/profile`, {
+    const res = await fetch(`${API_ENDPOINTS.BASE_URL}${API_ENDPOINTS.ENDPOINTS.USERS.PROFILE}`, {
       method: "PUT",
       headers: { 
         "Content-Type": "application/json",

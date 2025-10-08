@@ -47,8 +47,8 @@ export default function UnauthorizedPage() {
               
               <button 
                 onClick={() => {
-                  localStorage.removeItem('access_token');
-                  localStorage.removeItem('refresh_token');
+                  localStorage.removeItem('accessToken');
+                  localStorage.removeItem('refreshToken');
                   window.location.href = '/';
                 }}
                 className="flex-1 sm:flex-none"

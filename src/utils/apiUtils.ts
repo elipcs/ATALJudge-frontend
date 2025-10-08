@@ -2,6 +2,7 @@
  * Utilitários para chamadas de API
  */
 
+import { API_ENDPOINTS as API_ENDPOINTS } from '../config/api';
 import { API_CONFIG } from '../constants';
 
 export interface ApiResponse<T = unknown> {

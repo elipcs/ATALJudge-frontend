@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import { API_ENDPOINTS } from "../../../../config/api";
 
 export async function POST(request: NextRequest) {
   
   try {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-    
-    const authHeader = request.headers.get('authorization');
+        const authHeader = request.headers.get('authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json({ error: "Token de autenticação não fornecido" }, { status: 401 });
     }
@@ -33,7 +32,7 @@ export async function POST(request: NextRequest) {
       new_password: body.newPassword
     };
     
-    const backendUrl = `${apiUrl}/auth/change-password`;
+    const backendUrl = `${API_ENDPOINTS.BASE_URL}${API_ENDPOINTS.ENDPOINTS.AUTH.CHANGE_PASSWORD}`;
     
     const res = await fetch(backendUrl, {
       method: "POST",

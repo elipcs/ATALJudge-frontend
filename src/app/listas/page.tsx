@@ -67,9 +67,7 @@ export default function ListsPage() {
         startDate: listData.startDate,
         endDate: listData.endDate,
         questions: [],
-        classId: listData.classIds[0] || '',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        classIds: listData.classIds || []
       };
       
       setLists(prev => [newList, ...prev]);
@@ -91,8 +89,7 @@ export default function ListsPage() {
         description: listData.description,
         startDate: listData.startDate,
         endDate: listData.endDate,
-        classId: listData.classIds[0] || editingList.classId,
-        updated_at: new Date().toISOString()
+        classIds: listData.classIds || editingList.classIds
       };
       
       setLists(prev => prev.map(list => 
@@ -333,7 +330,7 @@ export default function ListsPage() {
           description: editingList.description || '',
           startDate: editingList.startDate,
           endDate: editingList.endDate,
-          classIds: [editingList.classId]
+          classIds: editingList.classIds
         } : undefined}
       />
     </div>
