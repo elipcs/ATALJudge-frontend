@@ -41,8 +41,10 @@ export interface Question {
   title: string;
   description?: string;
   statement: string;
-  input: string;
-  output: string;
+  input_format?: string;
+  output_format?: string;
+  constraints?: string;
+  notes?: string;
   examples: Array<{
     input: string;
     output: string;

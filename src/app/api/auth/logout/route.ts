@@ -6,17 +6,18 @@ export async function POST(request: NextRequest) {
   try {
     
     const authHeader = request.headers.get('authorization');
-
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    const hasBearer = authHeader ? /^[Bb]earer\s+/.test(authHeader) : false;
+    if (!authHeader || !hasBearer) {
       return NextResponse.json({ error: "Token de autenticação não fornecido" }, { status: 401 });
     }
+    const token = authHeader.replace(/^[Bb]earer\s+/, '');
     
     const body = await request.json();
     const res = await fetch(`${API_ENDPOINTS.BASE_URL}${API_ENDPOINTS.ENDPOINTS.AUTH.LOGOUT}`, {
       method: "POST",
       headers: { 
         "Content-Type": "application/json",
-        "Authorization": authHeader
+        "authorization": `Bearer ${token}`
       },
       body: JSON.stringify(body),
     });

@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { Invite } from "@/types";
 import { invitesApi } from "../services/invites";
+import { createBrazilianDate } from "../utils";
 
 export function useInvites() {
   const [invites, setInvites] = useState<Invite[]>([]);
@@ -27,15 +28,34 @@ export function useInvites() {
       
       const queryString = params.toString();
       const invites = await invitesApi.getAll(queryString);
-      
-      const sortedInvites = invites.sort((a, b) => {
-        const aIsActive = !a.used && new Date(a.expiresAt) > new Date();
-        const bIsActive = !b.used && new Date(b.expiresAt) > new Date();
+
+      const now = new Date();
+      const filtered = invites.filter((inv) => {
+        const roleOk = filterRole === 'all' || inv.role === filterRole;
+        const expiresAt = createBrazilianDate(inv.expiresAt);
+        const isActive = !inv.used && expiresAt && now < expiresAt;
+        const isExpired = expiresAt && now >= expiresAt;
+        const isUsed = inv.used;
+        const statusOk =
+          filterStatus === 'all' ||
+          (filterStatus === 'active' && !!isActive) ||
+          (filterStatus === 'used' && !!isUsed) ||
+          (filterStatus === 'expired' && !!isExpired);
+        return roleOk && statusOk;
+      });
+
+      const sortedInvites = filtered.sort((a, b) => {
+        const aExpiresAt = createBrazilianDate(a.expiresAt);
+        const bExpiresAt = createBrazilianDate(b.expiresAt);
+        const aIsActive = !a.used && aExpiresAt && now < aExpiresAt;
+        const bIsActive = !b.used && bExpiresAt && now < bExpiresAt;
         
         if (aIsActive && !bIsActive) return -1;
         if (!aIsActive && bIsActive) return 1;
         
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        const aCreatedAt = createBrazilianDate(a.createdAt);
+        const bCreatedAt = createBrazilianDate(b.createdAt);
+        return (bCreatedAt?.getTime() || 0) - (aCreatedAt?.getTime() || 0);
       });
       
       setInvites(sortedInvites);

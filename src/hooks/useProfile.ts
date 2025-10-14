@@ -22,15 +22,8 @@ export function useProfile() {
       setLoading(true);
       setError('');
       
-      const response = await profileApi.getProfile();
-      
-      console.log('🔍 Debug - Resposta do profileApi.getProfile():', response);
-      
-      const profileData = (response as { data?: ProfileData }).data || response;
-      
-      console.log('🔍 Debug - ProfileData final:', profileData);
-      
-      setUser(profileData);
+  const profileData = await profileApi.getProfile();
+  setUser(profileData);
     } catch (error) {
       console.error('useProfile: Erro ao carregar dados:', error);
       if (error instanceof Error && (error.message.includes('Não autorizado') || error.message.includes('Token expirado'))) {
@@ -85,10 +78,8 @@ export function useProfile() {
       setError('');
       setSuccess('');
       
-      const response = await profileApi.updateProfile(updateData);
-      
-      const updatedProfile = (response as { data?: ProfileData }).data || response;
-      setUser(updatedProfile);
+  const updatedProfile = await profileApi.updateProfile(updateData);
+  setUser(updatedProfile);
 
       setButtonSuccess(true);
       setTimeout(() => setButtonSuccess(false), 3000);

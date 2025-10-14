@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Card } from "../ui/card";
 import { useActiveLists } from "../../hooks/useHomeData";
 import { QuestionList } from "../../types";
+import { createBrazilianDate } from "../../utils";
 
 export default function ListsComponent() {
   const { data: lists, loading, error } = useActiveLists();
@@ -77,13 +78,11 @@ export default function ListsComponent() {
 
   const availableLists = listsArray.map((list: QuestionList) => {
     const now = new Date();
-    const start = new Date(list.startDate);
-    const end = new Date(list.endDate);
-    
-    end.setHours(23, 59, 59, 999);
+    const start = createBrazilianDate(list.startDate);
+    const end = createBrazilianDate(list.endDate);
     
     let status: 'open' | 'closed' = 'closed';
-    if (now >= start && now <= end) {
+    if (start && end && now >= start && now <= end) {
       status = 'open';
     }
     

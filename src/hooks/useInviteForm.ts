@@ -28,11 +28,11 @@ export function useInviteForm() {
       setClassesLoading(true);
       setClassesError(null);
       const classes = await classesApi.getAll();
-      const formattedClasses = classes.map(cls => ({
+      const safeClasses = Array.isArray(classes) ? classes : [];
+      const formattedClasses = safeClasses.map(cls => ({
         id: cls.id,
         name: cls.name
       }));
-      
       setAvailableClasses(formattedClasses);
     } catch (error) {
       console.error('Erro ao carregar turmas:', error);

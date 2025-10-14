@@ -1,4 +1,5 @@
 import { VALIDATION_RULES } from '../constants';
+import { createBrazilianDate } from './dateUtils';
 
 
 export function isValidEmail(email: string): boolean {
@@ -151,13 +152,15 @@ export function isValidDate(date: string | Date): boolean {
 
 
 export function isFutureDate(date: string | Date): boolean {
-  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  const dateObj = typeof date === 'string' ? createBrazilianDate(date) : date;
+  if (!dateObj) return false;
   return dateObj > new Date();
 }
 
 
 export function isPastDate(date: string | Date): boolean {
-  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  const dateObj = typeof date === 'string' ? createBrazilianDate(date) : date;
+  if (!dateObj) return false;
   return dateObj < new Date();
 }
 

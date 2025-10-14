@@ -14,7 +14,8 @@ export default function TurmasPage() {
     userRole,
     currentUser,
     classes,
-    classDetails,    error,
+    classDetails,    
+    error,
     success,
     showDetails,
     createClassModal,
@@ -98,13 +99,14 @@ export default function TurmasPage() {
           iconColor="indigo"
         >
           {userRole === 'professor' && (
-            <Button 
+            <Button
+              variant="outline"
               onClick={() => setCreateClassModal(true)}
-              className="bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 border border-blue-200 shadow-sm hover:shadow-md font-semibold transition-all duration-200 transform hover:scale-[1.02]"
+              className="border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold"
             >
               <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>            
+              </svg>
               Nova Turma
             </Button>
           )}

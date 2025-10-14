@@ -1,13 +1,11 @@
 "use client";
 
 import { useEffect } from "react";
-import { ConfirmationModal } from "../../components/ui/ConfirmationModal";
 import PageHeader from "../../components/PageHeader";
 import { InviteForm, InviteList, InviteGuide } from "../../components/invites";
 import { useUserRole } from "../../hooks/useUserRole";
 import { useInvites } from "../../hooks/useInvites";
 import { useInviteFilters } from "../../hooks/useInviteFilters";
-import { useInviteActions } from "../../hooks/useInviteActions";
 
 
 export default function InvitesPage() {
@@ -23,19 +21,6 @@ export default function InvitesPage() {
     deleteInvite, 
     revokeInvite 
   } = useInvites();
-  
-  const {
-    showDeleteModal,
-    showRevokeModal,
-    inviteToDelete,
-    inviteToRevoke,
-    showDeleteConfirmation,
-    showRevokeConfirmation,
-    confirmDelete,
-    confirmRevoke,
-    closeDeleteModal,
-    closeRevokeModal,
-  } = useInviteActions();
 
 
   useEffect(() => {
@@ -49,18 +34,6 @@ export default function InvitesPage() {
 
   const handleInviteCreated = () => {
     loadInvites(filterRole, filterStatus);
-  };
-
-  const handleDeleteConfirm = async () => {
-    await confirmDelete(() => {
-      loadInvites(filterRole, filterStatus);
-    });
-  };
-
-  const handleRevokeConfirm = async () => {
-    await confirmRevoke(() => {
-      loadInvites(filterRole, filterStatus);
-    });
   };
 
   if (isLoading) {
@@ -96,36 +69,28 @@ export default function InvitesPage() {
         error={invitesError}
         copied={copied}
         onCopyLink={copyLink}
-        onDelete={showDeleteConfirmation}
-        onRevoke={showRevokeConfirmation}
+        onDelete={async (invite) => {
+          try {
+            await deleteInvite(invite.id);
+            await loadInvites(filterRole, filterStatus);
+          } catch (e) {
+            console.error('Erro ao excluir convite:', e);
+            alert('Erro ao excluir convite');
+          }
+        }}
+        onRevoke={async (invite) => {
+          try {
+            await revokeInvite(invite.id);
+            await loadInvites(filterRole, filterStatus);
+          } catch (e) {
+            console.error('Erro ao revogar convite:', e);
+            alert('Erro ao revogar convite');
+          }
+        }}
         onReload={() => loadInvites(filterRole, filterStatus)}
       />
 
       <InviteGuide />
-
-      {/* Modal de Confirmação de Exclusão */}
-      <ConfirmationModal
-        isOpen={showDeleteModal}
-        onClose={closeDeleteModal}
-        onConfirm={handleDeleteConfirm}
-        title="Excluir Convite"
-        message={`Tem certeza que deseja excluir este convite? Esta ação não pode ser desfeita e o convite será permanentemente removido do sistema.`}
-        confirmText="Sim, Excluir"
-        cancelText="Cancelar"
-        type="danger"
-      />
-
-      {/* Modal de Confirmação de Revogação */}
-      <ConfirmationModal
-        isOpen={showRevokeModal}
-        onClose={closeRevokeModal}
-        onConfirm={handleRevokeConfirm}
-        title="Revogar Convite"
-        message={`Tem certeza que deseja revogar este convite? O convite será marcado como usado e não poderá mais ser utilizado para cadastros.`}
-        confirmText="Sim, Revogar"
-        cancelText="Cancelar"
-        type="warning"
-      />
     </div>
   );
 }

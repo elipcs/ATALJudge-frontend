@@ -47,7 +47,7 @@ export default function UnauthorizedPage() {
               
               <button 
                 onClick={() => {
-                  localStorage.removeItem('accessToken');
+                  localStorage.removeItem('token');
                   localStorage.removeItem('refreshToken');
                   window.location.href = '/';
                 }}

@@ -79,61 +79,49 @@ export function ConfirmationModal({
   const styles = getTypeStyles();
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
-      {/* Backdrop */}
-      <div 
-        className="fixed inset-0 bg-black/50 transition-opacity"
-        onClick={onClose}
-      />
-      
-      {/* Modal */}
-      <div className="flex min-h-full items-center justify-center p-4">
-        <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4 transform transition-all">
-          {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-200">
-            <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-full ${styles.iconBg}`}>
-                {styles.icon}
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900">
-                {title}
-              </h3>
+    <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 p-4 overflow-y-auto">
+      <div className="bg-white rounded-3xl shadow-xl p-8 w-full max-w-md mx-4 my-8">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div className={`p-3 rounded-xl ${styles.iconBg}`}>
+              {styles.icon}
             </div>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+            <h3 className="text-2xl font-bold text-slate-900">
+              {title}
+            </h3>
           </div>
+          <button
+            onClick={onClose}
+            className="text-slate-400 hover:text-slate-600 transition-colors p-2 rounded-lg hover:bg-slate-100"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
 
-          {/* Content */}
-          <div className="p-6">
-            <p className="text-gray-600 leading-relaxed">
-              {message}
-            </p>
-          </div>
+        <div className="mb-8">
+          <p className="text-slate-600 leading-relaxed text-lg">
+            {message}
+          </p>
+        </div>
 
-          {/* Footer */}
-          <div className="flex gap-3 p-6 border-t border-gray-200 bg-gray-50 rounded-b-lg">
-            <button
-              onClick={onClose}
-              className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
-            >
-              {cancelText}
-            </button>
-            <button
-              onClick={() => {
-                onConfirm();
-                onClose();
-              }}
-              className={`flex-1 px-4 py-2 text-sm font-medium text-white rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors ${styles.confirmButton}`}
-            >
-              {confirmText}
-            </button>
-          </div>
+        <div className="flex gap-3 mt-8 pt-6 border-t border-slate-200">
+          <button
+            onClick={onClose}
+            className="flex-1 h-12 px-4 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition-all duration-200 font-semibold"
+          >
+            {cancelText}
+          </button>
+          <button
+            onClick={() => {
+              onConfirm();
+              onClose();
+            }}
+            className={`flex-1 h-12 px-4 text-sm font-medium text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 transform hover:scale-[1.02] font-semibold ${styles.confirmButton}`}
+          >
+            {confirmText}
+          </button>
         </div>
       </div>
     </div>

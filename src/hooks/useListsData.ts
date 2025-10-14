@@ -1,29 +1,31 @@
 import { useState, useEffect, useCallback } from 'react';
 
-import { listsApi, CreateListRequest, UpdateListRequest, ListFilters, ListStats } from '@/services/lists';
+import { listsApi, CreateListRequest, ListFilters } from '@/services/lists';
 import { classesApi } from '@/services/classes';
 import { QuestionList, Class } from '@/types';
 
 interface UseListsDataReturn {
   lists: QuestionList[];
   classes: Class[];
-  stats: ListStats | null;
   loading: boolean;
   error: string | null;
   refreshLists: () => Promise<void>;
   createList: (listData: CreateListRequest) => Promise<QuestionList>;
-  updateList: (id: string, updates: UpdateListRequest) => Promise<QuestionList>;
+  updateList: (id: string, updates: CreateListRequest) => Promise<QuestionList>;
   deleteList: (id: string) => Promise<void>;
-  duplicateList: (id: string) => Promise<QuestionList>;
+  duplicateList: (id: string, newTitle?: string) => Promise<QuestionList>;
+  publishList: (id: string) => Promise<QuestionList>;
+  unpublishList: (id: string) => Promise<QuestionList>;
+  addQuestionToList: (listId: string, questionId: string) => Promise<void>;
+  removeQuestionFromList: (listId: string, questionId: string) => Promise<void>;
   filters: ListFilters;
   setFilters: (filters: ListFilters) => void;
   clearFilters: () => void;
 }
 
-export function useListsData(userRole?: string): UseListsDataReturn {
+export function useListsData(userRole?: string, currentUser?: any): UseListsDataReturn {
   const [lists, setLists] = useState<QuestionList[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
-  const [stats, setStats] = useState<ListStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<ListFilters>({});
@@ -33,22 +35,28 @@ export function useListsData(userRole?: string): UseListsDataReturn {
       setLoading(true);
       setError(null);
 
-      const [listsData, classesData, statsData] = await Promise.all([
-        listsApi.getLists(filters, userRole),
-        classesApi.getAll(),
-        listsApi.getStats()
+      const [listsData, classesData] = await Promise.all([
+        listsApi.getLists(filters, userRole, currentUser),
+        classesApi.getAll().then(classes => Array.isArray(classes) ? classes : []).catch(err => {
+          console.warn('⚠️ [useListsData] Erro ao carregar classes, continuando sem elas:', err);
+          return [];
+        })
       ]);
 
-      setLists(listsData);
-      setClasses(classesData);
-      setStats(statsData);
+      const processedLists = Array.isArray(listsData) 
+        ? listsData.filter(list => list && list.id)
+        : [];
+      const processedClasses = Array.isArray(classesData) ? classesData : [];
+
+      setLists(processedLists);
+      setClasses(processedClasses);
     } catch (err) {
-      console.error('Erro ao carregar dados:', err);
+      console.error('❌ [useListsData] Erro ao carregar dados:', err);
       setError(err instanceof Error ? err.message : 'Erro desconhecido');
     } finally {
       setLoading(false);
     }
-  }, [filters, userRole]);
+  }, [filters, userRole, currentUser]);
 
   useEffect(() => {
     loadData();
@@ -73,8 +81,6 @@ export function useListsData(userRole?: string): UseListsDataReturn {
       
       setLists(prev => [newList, ...prev]);
       
-      const newStats = await listsApi.getStats();
-      setStats(newStats);
       
       return newList;
     } catch (err) {
@@ -84,10 +90,14 @@ export function useListsData(userRole?: string): UseListsDataReturn {
     }
   }, []);
 
-  const updateList = useCallback(async (id: string, updates: UpdateListRequest): Promise<QuestionList> => {
+  const updateList = useCallback(async (id: string, updates: CreateListRequest): Promise<QuestionList> => {
     try {
       setError(null);
       const updatedList = await listsApi.update(id, updates);
+      
+      if (!updatedList || !updatedList.id) {
+        throw new Error('Resposta inválida da API ao atualizar lista');
+      }
       
       setLists(prev => prev.map(list => list.id === id ? updatedList : list));
       
@@ -106,8 +116,6 @@ export function useListsData(userRole?: string): UseListsDataReturn {
       
       setLists(prev => prev.filter(list => list.id !== id));
       
-      const newStats = await listsApi.getStats();
-      setStats(newStats);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao deletar lista';
       setError(errorMessage);
@@ -115,15 +123,13 @@ export function useListsData(userRole?: string): UseListsDataReturn {
     }
   }, []);
 
-  const duplicateList = useCallback(async (id: string): Promise<QuestionList> => {
+  const duplicateList = useCallback(async (id: string, newTitle?: string): Promise<QuestionList> => {
     try {
       setError(null);
-      const duplicatedList = await listsApi.duplicateList(id);
+      const duplicatedList = await listsApi.duplicateList(id, newTitle);
       
       setLists(prev => [duplicatedList, ...prev]);
       
-      const newStats = await listsApi.getStats();
-      setStats(newStats);
       
       return duplicatedList;
     } catch (err) {
@@ -133,10 +139,73 @@ export function useListsData(userRole?: string): UseListsDataReturn {
     }
   }, []);
 
+  const publishList = useCallback(async (id: string): Promise<QuestionList> => {
+    try {
+      setError(null);
+      const publishedList = await listsApi.publishList(id);
+      
+      setLists(prev => prev.map(list => list.id === id ? publishedList : list));
+      
+    
+      return publishedList;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao publicar lista';
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    }
+  }, []);
+
+  const unpublishList = useCallback(async (id: string): Promise<QuestionList> => {
+    try {
+      setError(null);
+      const unpublishedList = await listsApi.unpublishList(id);
+      
+      setLists(prev => prev.map(list => list.id === id ? unpublishedList : list));
+      
+      
+      return unpublishedList;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao despublicar lista';
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    }
+  }, []);
+
+  const addQuestionToList = useCallback(async (listId: string, questionId: string): Promise<void> => {
+    try {
+      setError(null);
+      await listsApi.addQuestionToList(listId, questionId);
+      
+      const updatedList = await listsApi.getById(listId);
+      if (updatedList) {
+        setLists(prev => prev.map(list => list.id === listId ? updatedList : list));
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao adicionar questão à lista';
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    }
+  }, []);
+
+  const removeQuestionFromList = useCallback(async (listId: string, questionId: string): Promise<void> => {
+    try {
+      setError(null);
+      await listsApi.removeQuestionFromList(listId, questionId);
+      
+      const updatedList = await listsApi.getById(listId);
+      if (updatedList) {
+        setLists(prev => prev.map(list => list.id === listId ? updatedList : list));
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao remover questão da lista';
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    }
+  }, []);
+
   return {
     lists,
     classes,
-    stats,
     loading,
     error,
     refreshLists,
@@ -144,6 +213,10 @@ export function useListsData(userRole?: string): UseListsDataReturn {
     updateList,
     deleteList,
     duplicateList,
+    publishList,
+    unpublishList,
+    addQuestionToList,
+    removeQuestionFromList,
     filters,
     setFilters: handleSetFilters,
     clearFilters

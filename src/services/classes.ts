@@ -5,18 +5,17 @@ export const classesApi = {
   async getAll(): Promise<Class[]> {
     try {
       const response = await authenticatedFetch<Class[]>('/api/classes');
-
-      return response.data;
+      return Array.isArray(response.data) ? response.data : [];
     } catch (error) {
-      console.error('Erro ao buscar turmas:', error);
+      console.error('❌ [classesApi.getAll] Erro ao buscar turmas:', error);
       throw error;
     }
   },
 
   async getById(id: string): Promise<Class | null> {
     try {
-      const response = await authenticatedFetch<Class>(`/api/classes/${id}`);
-      return response.data;
+      const response = await authenticatedFetch<{ class: Class }>(`/api/classes/${id}`);
+      return response.data.class || null;
     } catch (error) {
       console.error('Erro ao buscar turma:', error);
       return null;
@@ -25,9 +24,7 @@ export const classesApi = {
 
   async getUserClasses(userId: string, userRole: string): Promise<Class[]> {
     try {
-      const response = await authenticatedFetch<Class[]>('/api/classes');
-      const allClasses = response.data;
-      
+      const allClasses = await this.getAll();
       if (userRole === 'student') {
         const studentClasses = allClasses.filter((cls: Class) => 
           cls.students && cls.students.some(student => student.id === userId)
@@ -48,7 +45,7 @@ export const classesApi = {
     professorName: string;
   }): Promise<Class> {
     try {
-      const response = await authenticatedFetch<Class>('/api/classes', {
+      const response = await authenticatedFetch<{ class: Class }>('/api/classes', {
         method: 'POST',
         body: JSON.stringify({
           nome: data.name,
@@ -56,7 +53,7 @@ export const classesApi = {
         }),
       });
 
-      return response.data;
+      return response.data.class;
     } catch (error) {
       console.error('Erro ao criar turma:', error);
       throw error;
@@ -65,14 +62,14 @@ export const classesApi = {
 
   async update(id: string, data: { name: string }): Promise<Class> {
     try {
-      const response = await authenticatedFetch<Class>(`/api/classes/${id}`, {
+      const response = await authenticatedFetch<{ class: Class }>(`/api/classes/${id}`, {
         method: 'PUT',
         body: JSON.stringify({
           name: data.name
         }),
       });
 
-      return response.data;
+      return response.data.class;
     } catch (error) {
       console.error('Erro ao atualizar turma:', error);
       throw error;
@@ -94,9 +91,8 @@ export const classesApi = {
 
   async getClassStudents(classId: string): Promise<Student[]> {
     try {
-      const response = await authenticatedFetch<Student[]>(`/api/classes/${classId}/students`);
-
-      return response.data;
+      const response = await authenticatedFetch<{ students: { students: Student[] } }>(`/api/classes/${classId}/students`);
+      return response.data.students?.students || [];
     } catch (error) {
       console.error('Erro ao buscar alunos da turma:', error);
       throw error;

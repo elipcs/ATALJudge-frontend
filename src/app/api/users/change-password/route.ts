@@ -5,13 +5,14 @@ export async function POST(request: NextRequest) {
   
   try {
         const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        const normalized = authHeader?.toLowerCase() || '';
+        if (!authHeader || !normalized.startsWith('Bearer')) {
       return NextResponse.json({ error: "Token de autenticação não fornecido" }, { status: 401 });
     }
     
     const body = await request.json();
     
-    const token = authHeader.replace('Bearer ', '');
+  const token = authHeader.replace(/^[Bb]earer\s+/, '');
     let userId = body.userId;
     
     if (!userId) {
@@ -35,7 +36,7 @@ export async function POST(request: NextRequest) {
       method: "POST",
       headers: { 
         "Content-Type": "application/json",
-        "Authorization": authHeader
+        "authorization": `Bearer ${token}`
       },
       body: JSON.stringify(requestBody),
     });

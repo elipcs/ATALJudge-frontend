@@ -1,0 +1,70 @@
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { QuestionList } from "@/types";
+import ListCard from "./ListCard";
+
+import { Class } from "@/types";
+
+interface ListsGridProps {
+  lists: QuestionList[];
+  userRole: string;
+  onEdit: (list: QuestionList) => void;
+  onDelete: (list: QuestionList) => void;
+  onDuplicate: (list: QuestionList) => void;
+  onCreateList: () => void;
+  classes: Class[];
+}
+
+export default function ListsGrid({
+  lists,
+  userRole,
+  onEdit,
+  onDelete,
+  onDuplicate,
+  onCreateList,
+  classes
+}: ListsGridProps) {
+  if (lists.length === 0) {
+    return (
+      <Card className="bg-white border-slate-200 rounded-3xl shadow-lg p-12 text-center">
+        <div className="p-4 bg-gradient-to-r from-slate-50 to-slate-100 text-slate-600 rounded-xl shadow-lg border border-slate-200 mx-auto mb-6 w-fit">
+          <svg className="w-16 h-16 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+        </div>
+        <h3 className="text-2xl font-bold text-slate-900 mb-4">Nenhuma lista encontrada</h3>
+        <p className="text-slate-600 text-lg leading-relaxed max-w-lg mx-auto mb-8">
+          Tente ajustar os filtros ou criar uma nova lista.
+        </p>
+        {userRole !== 'student' && (
+          <Button 
+            onClick={onCreateList}
+            className="bg-gradient-to-r from-slate-50 to-slate-100 text-slate-700 border border-slate-200 shadow-sm hover:shadow-md font-semibold transition-all duration-200 transform hover:scale-[1.02]"
+          >
+            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Criar Primeira Lista
+          </Button>
+        )}
+      </Card>
+    );
+  }
+
+  const classIdToName = Object.fromEntries(classes.map(cls => [cls.id, cls.name]));
+  return (
+    <div className="grid gap-6">
+      {lists.filter(list => list && list.id).map((list) => (
+        <ListCard
+          key={list.id}
+          list={list}
+          userRole={userRole}
+          onEdit={onEdit}
+          onDelete={onDelete}
+          onDuplicate={onDuplicate}
+          classNames={list.classIds?.map(cid => classIdToName[cid]).filter(Boolean) || []}
+        />
+      ))}
+    </div>
+  );
+}

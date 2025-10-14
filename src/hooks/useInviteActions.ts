@@ -33,7 +33,7 @@ export function useInviteActions() {
         }, 0);
       }
     } catch (error) {
-      alert('Erro ao excluir convite: ' + error);
+      console.error('Erro ao excluir convite:', error);
     } finally {
       setInviteToDelete(null);
     }
@@ -53,10 +53,10 @@ export function useInviteActions() {
           window.scrollTo(0, scrollPosition);
         }, 0);
       } else {
-        alert('Erro ao revogar convite: Convite não encontrado');
+        console.error('Erro ao revogar convite: Convite não encontrado');
       }
     } catch (error) {
-      alert('Erro ao revogar convite: ' + error);
+      console.error('Erro ao revogar convite:', error);
     } finally {
       setInviteToRevoke(null);
     }

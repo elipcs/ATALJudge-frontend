@@ -14,17 +14,24 @@ export async function OPTIONS(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-     const authHeader = request.headers.get('authorization');
-
-     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    let authHeader = request.headers.get('authorization') || request.headers.get('Authorization');
+    if (authHeader) {
+      const match = authHeader.match(/^Bearer(.+)$/i);
+      if (match) {
+        authHeader = `Bearer ${match[1]}`;
+      }
+    }
+     const hasBearer = authHeader ? /^[Bb]earer\s+/.test(authHeader) : false;
+     if (!authHeader || !hasBearer) {
        return NextResponse.json({ error: "Token de autenticação não fornecido" }, { status: 401 });
      }
+     const token = authHeader.replace(/^[Bb]earer\s+/, '');
 
       const res = await fetch(`${API_ENDPOINTS.BASE_URL}${API_ENDPOINTS.ENDPOINTS.CLASSES.BASE}`, {
         method: "GET",
-        headers: { 
+         headers: { 
           "Content-Type": "application/json",
-          "Authorization": authHeader
+        "Authorization": authHeader
         },
       });
 
@@ -34,7 +41,8 @@ export async function GET(request: NextRequest) {
         throw new Error(data.message || data.msg || data.error || 'Erro ao buscar turmas');
       }
       
-      const classes = data.data.map((cls: unknown) => {
+      const classesArray = data.data?.classes || data.data || [];
+      const classes = classesArray.map((cls: unknown) => {
         const classData = cls as Record<string, unknown>;
         
         const processedClass = {
@@ -92,13 +100,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'ID do professor é obrigatório' }, { status: 400 });
     }
 
-    const authToken = request.headers.get('authorization');
+  const authToken = request.headers.get('authorization');
+  const token = authToken ? authToken.replace(/^[Bb]earer\s+/, '') : '';
     
     const res = await fetch(`${API_ENDPOINTS.BASE_URL}${API_ENDPOINTS.ENDPOINTS.CLASSES.CREATE}`, {
       method: "POST",
       headers: { 
         "Content-Type": "application/json",
-        ...(authToken && { 'Authorization': authToken })
+        ...(authToken && { 'authorization': `Bearer ${token}` })
       },
       body: JSON.stringify({
         name: nome.trim(),
@@ -114,22 +123,24 @@ export async function POST(request: NextRequest) {
       }, { status: res.status });
     }
     
+    const classData = data.data?.class || data.data;
+    
     const newClass = {
-      id: data.data.id,
-      name: data.data.name,
-      professor: data.data.professor ? {
-        id: data.data.professor.id,
-        name: data.data.professor.name,
-        email: data.data.professor.email,
+      id: classData.id,
+      name: classData.name,
+      professor: classData.professor ? {
+        id: classData.professor.id,
+        name: classData.professor.name,
+        email: classData.professor.email,
         role: 'professor'
       } : null,
-      students: data.data.students || [],
-      student_count: data.data.student_count || 0,
-      created_at: data.data.created_at,
-      updated_at: data.data.updated_at
+      students: classData.students || [],
+      student_count: classData.student_count || 0,
+      created_at: classData.created_at,
+      updated_at: classData.updated_at
     };
 
-    return NextResponse.json(newClass, { status: 201 });
+    return NextResponse.json({ class: newClass }, { status: 201 });
 
   } catch (error) {
     console.error('Erro ao criar turma:', error);

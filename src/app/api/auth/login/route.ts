@@ -44,7 +44,6 @@ export async function POST(req: Request) {
     });
     const data = await res.json();
     
-    console.log('🔍 Debug - Resposta do backend:', { status: res.status, data });
 
     if (!res.ok) {
       let errorMessage = "Email ou senha incorretos";

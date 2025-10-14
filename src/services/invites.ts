@@ -6,9 +6,10 @@ export const invitesApi = {
   async getAll(queryParams?: string): Promise<Invite[]> {
     try {
       const endpoint = queryParams ? `/api/invites?${queryParams}` : '/api/invites';
-      const response = await authenticatedFetch<Invite[]>(endpoint);
-
-      return response.data;
+      const response = await authenticatedFetch<Invite[] | { invites: Invite[] }>(endpoint);
+      const payload = response.data as any;
+      const list: Invite[] = Array.isArray(payload) ? payload : (payload?.invites ?? []);
+      return list;
     } catch (error) {
       console.error('Erro ao buscar convites:', error);
       throw error;
@@ -17,9 +18,10 @@ export const invitesApi = {
 
   async getById(id: string): Promise<Invite | null> {
     try {
-      const response = await authenticatedFetch<Invite>(`/api/invites/${id}`);
-
-      return response.data;
+      const response = await authenticatedFetch<Invite | { invite: Invite }>(`/api/invites/${id}`);
+      const payload = response.data as any;
+      const invite: Invite | undefined = (payload && 'invite' in payload) ? payload.invite : payload;
+      return (invite as Invite) || null;
     } catch (error) {
       console.error('Erro ao buscar convite:', error);
       throw error;
@@ -36,7 +38,7 @@ export const invitesApi = {
     creatorName: string;
   }): Promise<Invite> {
     try {
-      const response = await authenticatedFetch<Invite>('/api/invites/create', {
+      const response = await authenticatedFetch<Invite | { invite: Invite }>('/api/invites/create', {
         method: 'POST',
         body: JSON.stringify({
           role: data.role,
@@ -49,7 +51,9 @@ export const invitesApi = {
         }),
       });
 
-      return response.data;
+      const payload = response.data as any;
+      const invite: Invite = (payload && 'invite' in payload) ? payload.invite : payload;
+      return invite;
     } catch (error) {
       console.error('Erro ao gerar convite:', error);
       throw error;
@@ -108,7 +112,7 @@ export const invitesApi = {
         return null;
       }
 
-      const data = response.data.data || response.data;
+      const data = response.data.data;
       return {
         id: data.id,
         role: data.role as 'student' | 'assistant' | 'professor',
@@ -147,7 +151,7 @@ export const invitesApi = {
         return false;
       }
 
-      const data = response.data.data || response.data;
+      const data = response.data.data;
       if (data.current_uses >= data.max_uses) {
         return false;
       }

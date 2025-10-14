@@ -63,7 +63,6 @@ export const MESSAGES = {
   ERROR_LOADING_SUBMISSIONS: 'Erro ao carregar submissões',
   ERROR_LOADING_LISTS: 'Erro ao carregar listas',
   ERROR_LOADING_NOTICES: 'Erro ao carregar avisos',
-  ERROR_LOADING_STATISTICS: 'Erro ao carregar estatísticas',
   SUCCESS_SAVED: 'Dados salvos com sucesso',
   SUCCESS_CREATED: 'Criado com sucesso',
   SUCCESS_UPDATED: 'Atualizado com sucesso',

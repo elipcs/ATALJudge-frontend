@@ -321,31 +321,29 @@ export function InviteForm({ onInviteCreated }: InviteFormProps) {
 
       <div className="flex justify-end">
         <Button 
-          onClick={createInvite} 
-          disabled={loading || (formData.role === 'student' && !formData.classId)} 
-          className={`px-8 py-3 font-medium rounded-lg transition-all duration-300 flex items-center gap-2 shadow-lg hover:shadow-xl disabled:cursor-not-allowed ${
+          onClick={createInvite}
+          disabled={loading || (formData.role === 'student' && !formData.classId)}
+          className={`shadow-sm hover:shadow-md font-semibold transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none px-8 py-3 rounded-xl ${
             buttonSuccess 
-              ? 'bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700' 
-              : 'bg-blue-600 hover:bg-blue-700 text-white disabled:bg-gray-400 disabled:hover:bg-gray-400'
-          }`}
+              ? 'bg-gradient-to-r from-green-500 to-green-600 text-white border border-green-600' 
+              : 'bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 border border-blue-200'
+          } flex items-center`}
         >
           {loading ? (
             <>
-              <svg className="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
+              <div className="animate-spin rounded-full h-4 w-4 border-2 border-t-transparent mr-2 border-blue-600"></div>
               Gerando Convite...
             </>
           ) : buttonSuccess ? (
             <>
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
               Convite Criado!
             </>
           ) : (
             <>
-              <svg className="w-5 h-5" fill="none" stroke="white" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
               </svg>
               Gerar Convite

@@ -19,12 +19,13 @@ export async function GET(
   try {
 
     const { id: classId } = await params;
-    const authToken = request.headers.get('authorization');
+  const authToken = request.headers.get('authorization');
+  const token = authToken ? authToken.replace(/^[Bb]earer\s+/, '') : '';
     const res = await fetch(`${API_ENDPOINTS.BASE_URL}${API_ENDPOINTS.ENDPOINTS.CLASSES.BY_ID(classId)}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        ...(authToken && { 'Authorization': authToken })
+        ...(authToken && { 'authorization': `Bearer ${token}` })
       },
     });
 
@@ -36,17 +37,19 @@ export async function GET(
       }, { status: res.status });
     }
 
+    const classData = data.data?.class || data.data;
+    
     const classWithInfo = {
-      id: data.data.id,
-      name: data.data.name,
-      professor: data.data.professor,
-      students: data.data.students,
-      studentCount: data.data.student_count,
-      createdAt: data.data.created_at,
-      updatedAt: data.data.updated_at
+      id: classData.id,
+      name: classData.name,
+      professor: classData.professor,
+      students: classData.students,
+      student_count: classData.student_count,
+      created_at: classData.created_at,
+      updated_at: classData.updated_at
     };
 
-    return NextResponse.json(classWithInfo);
+    return NextResponse.json({ class: classWithInfo });
 
   } catch (error) {
     console.error('Erro ao buscar turma:', error);
@@ -61,12 +64,13 @@ export async function PUT(
     const { id: classId } = await params;
     const body = await request.json();
 
-    const authToken = request.headers.get('authorization');
+  const authToken = request.headers.get('authorization');
+  const token = authToken ? authToken.replace(/^[Bb]earer\s+/, '') : '';
     const res = await fetch(`${API_ENDPOINTS.BASE_URL}${API_ENDPOINTS.ENDPOINTS.CLASSES.UPDATE(classId)}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
-        ...(authToken && { 'Authorization': authToken })
+        ...(authToken && { 'authorization': `Bearer ${token}` })
       },
       body: JSON.stringify(body),
     });
@@ -79,17 +83,19 @@ export async function PUT(
       }, { status: res.status });
     }
 
+    const classData = data.data?.class || data.data;
+    
     const updatedClass = {
-      id: data.data.id,
-      name: data.data.name,
-      professor: data.data.professor,
-      students: data.data.students,
-      studentCount: data.data.student_count,
-      createdAt: data.data.created_at,
-      updatedAt: data.data.updated_at
+      id: classData.id,
+      name: classData.name,
+      professor: classData.professor,
+      students: classData.students,
+      student_count: classData.student_count,
+      created_at: classData.created_at,
+      updated_at: classData.updated_at
     };
     
-    return NextResponse.json(updatedClass);
+    return NextResponse.json({ class: updatedClass });
 
   } catch (error) {
     console.error('Erro ao atualizar turma:', error);
@@ -103,12 +109,13 @@ export async function DELETE(
 ) {
   try {
     const { id: classId } = await params;
-    const authToken = request.headers.get('authorization');
+  const authToken = request.headers.get('authorization');
+  const token = authToken ? authToken.replace(/^[Bb]earer\s+/, '') : '';
     const res = await fetch(`${API_ENDPOINTS.BASE_URL}${API_ENDPOINTS.ENDPOINTS.CLASSES.DELETE(classId)}`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
-        ...(authToken && { 'Authorization': authToken })
+        ...(authToken && { 'authorization': `Bearer ${token}` })
       },
     });
     const data = await res.json();

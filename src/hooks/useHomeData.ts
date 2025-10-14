@@ -17,12 +17,6 @@ export const useStaffHomeData = () => {
   );
 };
 
-export const useStatistics = () => {
-  return useAsyncData(
-    () => homeApi.staff.getStatistics(),
-    { immediate: true }
-  );
-};
 
 export const useCurrentUser = () => {
   const hasToken = authApi.getToken();
@@ -34,14 +28,6 @@ export const useCurrentUser = () => {
 
   return result;
 };
-
-export const useStudentSubmissions = (userId: string, limit: number = 5) => {
-  return useAsyncData(
-    () => homeApi.student.getStudentSubmissions(userId, limit),
-    { immediate: true }
-  );
-};
-
 export const useActiveLists = () => {
   return useAsyncData(
     () => homeApi.staff.getActiveLists(),

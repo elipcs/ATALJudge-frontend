@@ -1,5 +1,8 @@
+import React from "react";
 import { Invite } from "@/types";
 import { Button } from "../ui/button";
+import { createBrazilianDate, formatDate, translateUserRole } from "@/utils";
+import InviteConfirmModal from "./InviteConfirmModal";
 
 interface InviteItemProps {
   invite: Invite;
@@ -10,9 +13,30 @@ interface InviteItemProps {
 }
 
 export function InviteItem({ invite, copied, onCopyLink, onDelete, onRevoke }: InviteItemProps) {
-  const isActive = !invite.used && new Date(invite.expiresAt) > new Date();
-  const isExpired = new Date(invite.expiresAt) < new Date();
+  const now = new Date();
+  const expiresAt = createBrazilianDate(invite.expiresAt);
+  const isActive = !invite.used && expiresAt && now < expiresAt;
+  const isExpired = expiresAt && now >= expiresAt;
   const isUsed = invite.used;
+
+  const inviteeDisplay = invite.className || invite.classId || translateUserRole(invite.role);
+
+  const [modalOpen, setModalOpen] = React.useState<null | "delete" | "revoke">(null);
+  const [loading, setLoading] = React.useState(false);
+
+  const handleConfirm = async () => {
+    setLoading(true);
+    try {
+      if (modalOpen === "delete") {
+        await onDelete(invite);
+      } else if (modalOpen === "revoke") {
+        await onRevoke(invite);
+      }
+      setModalOpen(null);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getRoleIcon = (role: string) => {
     if (role === 'student') {
@@ -118,10 +142,7 @@ export function InviteItem({ invite, copied, onCopyLink, onDelete, onRevoke }: I
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {/* Tipo e Status Texto */}
             <div>
-              <div className="text-sm font-medium text-gray-900">
-                {invite.role === 'student' ? 'Aluno' : 
-                 invite.role === 'assistant' ? 'Monitor' : 'Professor'}
-              </div>
+              <div className="text-sm font-medium text-gray-900">{translateUserRole(invite.role)}</div>
               <div className={`text-xs font-medium ${
                 isActive 
                   ? 'text-green-700' 
@@ -159,26 +180,14 @@ export function InviteItem({ invite, copied, onCopyLink, onDelete, onRevoke }: I
             <div>
               <div className="text-xs text-gray-500">Criado</div>
               <div className="text-sm font-medium text-gray-900">
-                {new Date(invite.createdAt).toLocaleDateString('pt-BR', {
-                  day: '2-digit',
-                  month: '2-digit',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                  timeZone: 'America/Sao_Paulo'
-                })}
+                {formatDate(invite.createdAt)}
               </div>
             </div>
             
             <div>
               <div className="text-xs text-gray-500">Expira</div>
               <div className="text-sm font-medium text-gray-900">
-                {new Date(invite.expiresAt).toLocaleDateString('pt-BR', {
-                  day: '2-digit',
-                  month: '2-digit',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                  timeZone: 'America/Sao_Paulo'
-                })}
+                {formatDate(invite.expiresAt)}
               </div>
             </div>
           </div>
@@ -218,18 +227,13 @@ export function InviteItem({ invite, copied, onCopyLink, onDelete, onRevoke }: I
             {/* Botão de Ação (Revogar/Excluir) */}
             <Button
               variant="outline"
-              onClick={() => {
-                if (isExpired || isUsed) {
-                  onDelete(invite);
-                } else {
-                  onRevoke(invite);
-                }
-              }}
+              onClick={() => setModalOpen(isExpired || isUsed ? "delete" : "revoke")}
               className={`w-full px-6 py-2.5 text-xs font-medium rounded-lg transition-all duration-200 flex items-center justify-center gap-1.5 ${
                 (isExpired || isUsed) 
                   ? 'bg-red-600 hover:bg-red-700 text-white border-red-600' 
                   : 'border-red-200 text-red-700 hover:bg-red-50'
               }`}
+              aria-label={isExpired || isUsed ? "Excluir convite" : "Revogar convite"}
             >
               {isExpired || isUsed ? (
                 <>
@@ -247,6 +251,14 @@ export function InviteItem({ invite, copied, onCopyLink, onDelete, onRevoke }: I
                 </>
               )}
             </Button>
+            <InviteConfirmModal
+              isOpen={!!modalOpen}
+              onCancel={() => setModalOpen(null)}
+              onConfirm={handleConfirm}
+              type={modalOpen === "delete" ? "delete" : "revoke"}
+              invitee={inviteeDisplay}
+              loading={loading}
+            />
           </div>
         </div>
       </div>

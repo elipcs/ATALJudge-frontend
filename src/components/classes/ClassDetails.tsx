@@ -89,18 +89,19 @@ export default function ClassDetails({
     <div className="space-y-6">
       {/* Cabeçalho com botões de ação */}
       <div className="flex items-center justify-between">
-        <Button 
-          onClick={onBack}
-          variant="outline"
-          className="flex items-center gap-2"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          Voltar
-        </Button>
-        
-        {userRole === 'professor' && (
+        {userRole !== 'student' && (
+          <Button 
+            onClick={onBack}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Voltar
+          </Button>
+        )}
+        {userRole === 'professor' || userRole === 'assistant' ? (
           <div className="flex gap-2">
             {onEditClass && (
               <Button 
@@ -114,8 +115,7 @@ export default function ClassDetails({
                 Editar Turma
               </Button>
             )}
-            
-            {onDeleteClass && (
+              {onDeleteClass && (
               <Button 
                 onClick={() => onDeleteClass(cls)}
                 variant="outline"
@@ -128,7 +128,7 @@ export default function ClassDetails({
               </Button>
             )}
           </div>
-        )}
+        ) : null}
       </div>
 
       {/* Lista de alunos */}
@@ -137,7 +137,7 @@ export default function ClassDetails({
           <h2 className="text-2xl font-bold text-slate-900">
             Alunos da Turma ({students.length})
           </h2>
-          {userRole === 'professor' && students.length > 0 && (
+          {(userRole === 'professor' || userRole === 'assistant') && students.length > 0 && (
             <Button 
               onClick={exportToCSV}
               className="flex items-center gap-2 bg-gradient-to-r from-green-50 to-emerald-50 text-green-700 border border-green-200 shadow-sm hover:shadow-md font-semibold transition-all duration-200 transform hover:scale-[1.02] rounded-xl"

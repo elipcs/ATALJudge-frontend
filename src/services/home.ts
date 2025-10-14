@@ -16,8 +16,8 @@ export const homeApi = {
     classParticipants: Student[];
   }> {
     try {
-        const userResponse = await authenticatedFetch<{data: User, message: string}>('/api/users/profile');
-        const currentUser = userResponse.data.data;
+  const userResponse = await authenticatedFetch<{data: User, message: string}>('/api/users/profile');
+  const currentUser = userResponse.data.data;
         
         let userClass: Class | null = null;
         
@@ -27,9 +27,9 @@ export const homeApi = {
         
         if (!userClass) {
           const allClasses = await classesApi.getAll();
-          userClass = allClasses.find(cls => 
-            cls.students && cls.students.some(student => student.id === currentUser.id)
-          ) || null;
+          userClass = Array.isArray(allClasses)
+            ? allClasses.find(cls => cls.students && cls.students.some(student => student.id === currentUser.id)) || null
+            : null;
         }
         
         if (!userClass) {
@@ -44,7 +44,6 @@ export const homeApi = {
             list.classIds && list.classIds.includes(userClass.id) && list.status === 'published'
           );
         } catch (error) {
-          console.log('Nenhuma lista encontrada no backend, retornando array vazio');
           availableLists = [];
         }
         
@@ -89,7 +88,7 @@ export const homeApi = {
           authenticatedFetch<SystemNotice[]>('/api/system/notices?audience=professors&limit=5').catch(() => ({ data: [] }))
         ]);
 
-        const classes = classesData.status === 'fulfilled' ? classesData.value : [];
+        const classes = classesData.status === 'fulfilled' && Array.isArray(classesData.value) ? classesData.value : [];
         const submissions = submissionsData.status === 'fulfilled' ? submissionsData.value.data : [];
         const notices = noticesData.status === 'fulfilled' ? noticesData.value.data : [];
 
@@ -112,26 +111,6 @@ export const homeApi = {
     }
   },
 
-  async getStatistics(): Promise<{
-    totalStudents: number;
-    totalClasses: number;
-    totalSubmissions: number;
-    recentSubmissions: Submission[];
-  }> {
-    try {
-      const response = await authenticatedFetch<{
-        totalStudents: number;
-        totalClasses: number;
-        totalSubmissions: number;
-        recentSubmissions: Submission[];
-        }>('/api/statistics?type=general');
-
-      return response.data;
-    } catch (error) {
-      console.error('Erro ao buscar estatísticas:', error);
-      throw error;
-    }
-  },
 
   async getSystemNotices(): Promise<SystemNotice[]> {
     try {
@@ -157,13 +136,13 @@ export const homeApi = {
   user: {
   async getCurrentUser(): Promise<User> {
     try {
-      const response = await authenticatedFetch<{ data: User; message: string }>('/api/users/profile');
+  const response = await authenticatedFetch<{ data: User; message: string }>('/api/users/profile');
 
       if (!response.success) {
         throw new Error('Erro ao buscar dados do usuário');
       }
 
-      const userData = response.data.data || response.data;
+  const userData = response.data.data;
       return userData;
     } catch (error) {
       console.error('Erro ao buscar dados do usuário:', error);

@@ -13,13 +13,14 @@ export async function GET(
       return NextResponse.json({ error: 'ID da turma não fornecido' }, { status: 400 });
     }
 
-    const authToken = request.headers.get('authorization');
+  const authToken = request.headers.get('authorization');
+  const token = authToken ? authToken.replace(/^[Bb]earer\s+/, '') : '';
 
     const res = await fetch(`${API_ENDPOINTS.BASE_URL}${API_ENDPOINTS.ENDPOINTS.CLASSES.STUDENTS(turmaId)}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        ...(authToken && { 'Authorization': authToken })
+        ...(authToken && { 'authorization': `Bearer ${token}` })
       },
     });
 

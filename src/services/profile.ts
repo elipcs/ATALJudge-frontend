@@ -26,24 +26,19 @@ export const profileApi = {
 
   async getProfile(): Promise<ProfileData> {
     try {
-      const response = await authenticatedFetch<any>('/api/users/profile');
+      const response = await authenticatedFetch<{ data: any }>('/api/users/profile');
       
-      console.log('🔍 Debug - Resposta completa:', response);
-      console.log('🔍 Debug - Dados do perfil recebidos:', response.data);
-
-      const rawData = response.data;
+      const userData = response.data.data;
 
       const profileData: ProfileData = {
-        id: rawData.id,
-        name: rawData.name,
-        email: rawData.email,
-        role: rawData.role,
-        studentRegistration: rawData.studentRegistration || rawData.registration || rawData.matricula || rawData.student_registration,
-        created_at: rawData.created_at || rawData.createdAt,
-        last_login: rawData.last_login || rawData.lastLogin
+        id: userData.id,
+        name: userData.name,
+        email: userData.email,
+        role: userData.role,
+        studentRegistration: userData.studentRegistration || userData.registration || userData.matricula || userData.student_registration,
+        created_at: userData.created_at || userData.createdAt,
+        last_login: userData.last_login || userData.lastLogin
       };
-
-      console.log('🔍 Debug - Dados mapeados finais:', profileData);
 
       return profileData;
     } catch (error) {
@@ -59,21 +54,19 @@ export const profileApi = {
         student_registration: data.studentRegistration
       };
 
-      const response = await authenticatedFetch<any>('/api/users/profile', {
+      const response = await authenticatedFetch<{ data: any }>('/api/users/profile', {
         method: 'PUT',
         body: JSON.stringify(backendData),
       });
-
-      const rawData = response.data;
-
+      const userData = response.data.data;
       const profileData: ProfileData = {
-        id: rawData.id,
-        name: rawData.name,
-        email: rawData.email,
-        role: rawData.role,
-        studentRegistration: rawData.student_registration,
-        created_at: rawData.created_at || rawData.createdAt,
-        last_login: rawData.last_login || rawData.lastLogin
+        id: userData.id,
+        name: userData.name,
+        email: userData.email,
+        role: userData.role,
+        studentRegistration: userData.studentRegistration || userData.registration || userData.matricula || userData.student_registration,
+        created_at: userData.created_at || userData.createdAt,
+        last_login: userData.last_login || userData.lastLogin
       };
 
       return profileData;

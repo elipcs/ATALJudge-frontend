@@ -20,7 +20,7 @@ export const API_ENDPOINTS = {
       CREATE: '/api/invites/create',
       REVOKE: (id: string) => `/api/invites/revoke/${id}`,
       DELETE: (id: string) => `/api/invites/${id}`,
-      CLEANUP: '/api/invites/cleanup/',
+      CLEANUP: '/api/invites/cleanup',
     },
     CLASSES: {
       BASE: '/api/classes',
@@ -34,6 +34,15 @@ export const API_ENDPOINTS = {
     },
     USERS: {
       PROFILE: '/api/users/profile',
+      STUDENTS: '/api/users/students',
+      ADD_STUDENTS: '/api/config/add-students',
+      REMOVE_STUDENTS: '/api/config/remove-students',
+    },
+    CONFIG: {
+      ALLOWED_IPS: '/api/config/allowed-ips',
+      ALLOWED_IPS_BY_ID: (id: string) => `/api/config/allowed-ips/${id}`,
+      ALLOWED_IPS_TOGGLE: (id: string) => `/api/config/allowed-ips/${id}/toggle`,
+      SYSTEM_RESET: '/api/config/system-reset',
     },
     
   }
@@ -57,7 +66,7 @@ export async function frontendFetch<T = unknown>(
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || errorData.msg || `HTTP ${response.status}: ${response.statusText}`);
+      throw new Error(errorData.error || errorData.message || errorData.msg || `HTTP ${response.status}: ${response.statusText}`);
     }
 
     const data = await response.json();
@@ -77,25 +86,64 @@ export async function authenticatedFetch<T = unknown>(
   options: RequestInit = {}
 ): Promise<ApiResponse<T>> {
   try {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const getCookie = (name: string) => {
+      if (typeof document === 'undefined') return null;
+      const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+      return match ? decodeURIComponent(match[2]) : null;
+    };
+
+    const token = (typeof window !== 'undefined')
+      ? (localStorage.getItem('token') || getCookie('token') || null)
+      : null;
     
-    const url = endpoint.startsWith('http') || endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    const url = endpoint.startsWith('/api/') 
+      ? endpoint 
+      : endpoint.startsWith('http') 
+        ? endpoint 
+        : `${API_ENDPOINTS.BASE_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
     
+    const defaultHeaders: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
+    let passedHeaders: Record<string, string> = {};
+    if (options.headers instanceof Headers) {
+      options.headers.forEach((value, key) => { passedHeaders[key.toLowerCase()] = value; });
+    } else if (Array.isArray(options.headers)) {
+      (options.headers as Array<[string, string]>).forEach(([k, v]) => { passedHeaders[k.toLowerCase()] = v; });
+    } else if (options.headers && typeof options.headers === 'object') {
+      passedHeaders = Object.entries(options.headers as Record<string, string>)
+        .reduce((acc, [k, v]) => { acc[k.toLowerCase()] = v as string; return acc; }, {} as Record<string, string>);
+    }
+
+    const headers = {
+      ...defaultHeaders,
+      ...passedHeaders,
+      ...(token ? { authorization: `Bearer ${token}` } : {}),
+    } as Record<string, string>;
+
     const response = await fetch(url, {
       ...options,
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { 'Authorization': `Bearer ${token}` }),
-          ...options.headers,
-        },
+      headers,
     });
 
+    console.log('📡 [authenticatedFetch] Resposta recebida - Status:', response.status, response.statusText);
+
     if (!response.ok) {
+      console.error('❌ [authenticatedFetch] Erro na requisição');
+      console.error('❌ [authenticatedFetch] URL:', url);
+      console.error('❌ [authenticatedFetch] Método:', options.method || 'GET');
+      console.error('❌ [authenticatedFetch] Status:', response.status, response.statusText);
+      console.error('❌ [authenticatedFetch] Body enviado:', options.body);
+      
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || errorData.msg || `HTTP ${response.status}: ${response.statusText}`);
+      console.error('❌ [authenticatedFetch] Resposta de erro do servidor:', errorData);
+      
+      throw new Error(errorData.error || errorData.message || errorData.msg || `HTTP ${response.status}: ${response.statusText}`);
     }
 
     const data = await response.json();
+    console.log('✅ [authenticatedFetch] Dados recebidos com sucesso');
     
     return {
       data,

@@ -1,226 +1,159 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 
-import { mockDataApi } from '@/services/mockData';
-import { Question, List, Submission } from '@/types/question';
+import { Question, QuestionList, Submission } from '@/types';
+import { listsApi } from '@/services/lists';
+import { questionsApi } from '@/services/questions';
+import { submissionsApi } from '@/services/submissions';
 
 import { useUserRole } from './useUserRole';
 
-interface MockQuestion {
-  id: string;
-  title: string;
-  description?: string;
-  statement: string;
-  input: string;
-  output: string;
-  examples: Array<{ input: string; output: string }>;
-  tags?: string[];
-  timeLimit: string;
-  memoryLimit?: string;
-}
-
-interface MockList {
-  id: string;
-  title: string;
-  status: string;
-  classIds?: string[];
-  questions: MockQuestion[];
-}
-
-interface MockSubmission {
-  id: string;
-  questionId: string;
-  code: string;
-  language: string;
-  status: string;
-  score?: number;
-  attempt?: number;
-  submittedAt: string;
-  executionTime?: number;
-  memoryUsed?: number;
-  feedback?: string;
-  testCases?: unknown;
-}
-
-export function useQuestionData() {
+export const useQuestionData = () => {
   const params = useParams();
   const router = useRouter();
+
   const listId = params.id as string;
-  const questionId = params.questaoId as string;
+  const questionIndex = params.questionIndex ? parseInt(params.questionIndex as string) : 0;
 
   const [question, setQuestion] = useState<Question | null>(null);
-  const [list, setList] = useState<List | null>(null);
+  const [list, setList] = useState<QuestionList | null>(null);
   const [allQuestions, setAllQuestions] = useState<Question[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const { userRole } = useUserRole();
 
-  const mockLists = mockDataApi.questionLists() as MockList[];
-  const mockSubmissions = mockDataApi.submissions() as unknown as MockSubmission[];
+  const loadList = useCallback(async (listId: string): Promise<QuestionList | null> => {
+    try {
+      const response = await listsApi.getById(listId);
+      return response;
+    } catch (error) {
+      console.error('Error loading list:', error);
+      return null;
+    }
+  }, []);
 
-  const getQuestionFromMocks = useCallback((questionId: string): Question | null => {
-    for (const list of mockLists) {
-      const question = list.questions.find((q: MockQuestion) => q.id === questionId);
-      if (question) {
-        return {
-          id: question.id,
-          title: question.title,
-          points: 10,
-          description: question.description || '',
-          category: 'General',
-          timeLimit: 30,
-          group: question.tags?.[0] || "A",
-          statement: `
-**Problem:**
-${question.statement}
+  const loadQuestion = useCallback(async (questionId: string): Promise<Question | null> => {
+    try {
+      const response = await questionsApi.getById(questionId);
+      return response;
+    } catch (error) {
+      console.error('Error loading question:', error);
+      return null;
+    }
+  }, []);
 
-**Input:**
-${question.input}
+  const loadSubmissions = useCallback(async (questionId: string, listId: string): Promise<Submission[]> => {
+    try {
+      const response = await submissionsApi.getQuestionSubmissions(questionId, listId);
+      return response;
+    } catch (error) {
+      console.error('Error loading submissions:', error);
+      return [];
+    }
+  }, []);
 
-**Output:**
-${question.output}
-          `,
-          examples: question.examples.map((ex: { input: string; output: string }, index: number) => ({
-            input: ex.input,
-            output: ex.output,
-            explanation: `Example ${index + 1}`
-          })),
-          constraints: [
-            `Time limit: ${question.timeLimit}`,
-            `Memory limit: ${question.memoryLimit || '256MB'}`
-          ],
-          notes: [
-            "Read the statement carefully",
-            "Test with the provided examples"
-          ]
-        };
+  const fetchData = useCallback(async () => {
+    if (!listId) return;
+
+    setLoading(true);
+    try {
+      const listData = await loadList(listId);
+      if (!listData) {
+        setLoading(false);
+        return;
       }
-    }
-    return null;
-  }, [mockLists]);
 
-  const getListFromMocks = useCallback((listId: string): List | null => {
-    const list = mockLists.find((l: MockList) => l.id === listId);
-    if (list) {
-      return {
-        id: list.id,
-        title: list.title,
-        status: list.status === 'draft' ? 'draft' : list.status === 'published' ? 'published' : 'closed',
-        class: list.classIds?.[0] || 'default-class',
-      };
-    }
-    return null;
-  }, [mockLists]);
+      setList(listData);
+      const questions = (listData as any)?.questions || [];
+      setAllQuestions(questions);
 
-  const getSubmissionsFromMocks = useCallback((questionId: string): Submission[] => {
-    return mockSubmissions
-      .filter((s: MockSubmission) => s.questionId === questionId)
-      .map((s: MockSubmission): Submission => ({
-        id: s.id,
-        code: s.code,
-        language: s.language,
-        status: s.status === 'aceita' ? 'accepted' : s.status === 'erro' ? 'error' : s.status === 'pendente' ? 'pending' : 'timeout',
-        score: s.score || 0,
-        attempt: s.attempt || 1,
-        submittedAt: s.submittedAt,
-        executionTime: s.executionTime,
-        memoryUsed: s.memoryUsed,
-        feedback: s.feedback,
-        testCases: s.testCases as Submission['testCases']
-      }));
-  }, [mockSubmissions]);
+      if (questions && questions.length > 0) {
+        const currentQuestion = questions[questionIndex] || questions[0];
+        setQuestion(currentQuestion);
+
+        if (currentQuestion) {
+          const questionSubmissions = await loadSubmissions(currentQuestion.id, listId);
+          setSubmissions(questionSubmissions);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [listId, questionIndex, loadList, loadSubmissions]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      const mockList = mockLists.find(list => list.id === listId);
-      if (mockList) {
-        const questions: Question[] = mockList.questions.map((q: MockQuestion): Question => {
-          return {
-            id: q.id,
-            title: q.title,
-            points: 10,
-            description: q.description || '',
-            category: 'General',
-            timeLimit: 30,
-            group: q.tags?.[0] || "A",
-            statement: `
-**Problem:**
-${q.statement}
+    fetchData();
+  }, [fetchData]);
 
-**Input:**
-${q.input}
-
-**Output:**
-${q.output}
-            `,
-            examples: q.examples.map((ex: { input: string; output: string }, index: number) => ({
-              input: ex.input,
-              output: ex.output,
-              explanation: `Example ${index + 1}`
-            })),
-            constraints: [
-              `Time limit: ${q.timeLimit}`,
-              `Memory limit: ${q.memoryLimit || '256MB'}`
-            ],
-            notes: [
-              "Read the statement carefully",
-              "Test with the provided examples"
-            ]
-          };
-        });
-
-        setAllQuestions(questions);
-        setList(getListFromMocks(listId));
-        setQuestion(getQuestionFromMocks(questionId));
-        setSubmissions(getSubmissionsFromMocks(questionId));
-        
-        setLoading(false);
-      } else {
-        setLoading(false);
-      }
-    }, 1000);
-
-    return () => clearTimeout(timer);
-  }, [listId, questionId, getListFromMocks, getQuestionFromMocks, getSubmissionsFromMocks, mockLists]);
-
-  const navigateToQuestion = (newQuestionId: string) => {
-    setQuestion(getQuestionFromMocks(newQuestionId));
-    setSubmissions(getSubmissionsFromMocks(newQuestionId));
-  };
-
-  const goBack = () => {
-    router.push(`/listas/${listId}`);
-  };
-
-  const handleSubmit = async () => {
-    if (!question) return;
+  const submitSolution = async (code: string, language: string): Promise<{ success: boolean; message?: string; submissionId?: string }> => {
+    if (!question) {
+      return { success: false, message: 'Nenhuma questão selecionada' };
+    }
 
     setSubmitting(true);
-    
-    setTimeout(() => {
-      const newSubmission: Submission = {
-        id: `s${Date.now()}`,
-        code: "// Mock submission code",
-        language: "python",
-        status: 'pending',
-        score: 0,
-        attempt: submissions.length + 1,
-        submittedAt: new Date().toISOString(),
-        feedback: "Submissão enviada com sucesso! Aguarde o resultado..."
-      };
-      
-      setSubmissions(prev => [newSubmission, ...prev]);
-      setSubmitting(false);
+    try {
+      const response = await submissionsApi.create({
+        questionId: question.id,
+        listId: listId,
+        code,
+        language: language as 'python' | 'java'
+      });
+
+      if (response) {
+        const updatedSubmissions = await loadSubmissions(question.id, listId);
+        setSubmissions(updatedSubmissions);
         
-      setTimeout(() => {
-        setSubmissions(prev => prev.map(s => 
-          s.id === newSubmission.id 
-            ? { ...s, status: 'accepted', score: question.points, feedback: "Solução aceita!" }
-            : s
-        ));
-      }, 3000);
-    }, 1000);
+        return { 
+          success: true, 
+          message: 'Código submetido com sucesso!',
+          submissionId: response.id 
+        };
+      } else {
+        return { success: false, message: 'Erro ao submeter código' };
+      }
+    } catch (error) {
+      console.error('Error submitting solution:', error);
+      return { success: false, message: 'Erro inesperado ao submeter código' };
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const navigateToQuestion = (newIndex: number) => {
+    if (newIndex >= 0 && newIndex < allQuestions.length) {
+      router.push(`/listas/${listId}/questoes?q=${newIndex}`);
+    }
+  };
+
+  const nextQuestion = () => {
+    navigateToQuestion(questionIndex + 1);
+  };
+
+  const previousQuestion = () => {
+    navigateToQuestion(questionIndex - 1);
+  };
+
+  const canGoNext = questionIndex < allQuestions.length - 1;
+  const canGoPrevious = questionIndex > 0;
+
+  const getQuestionSubmission = (questionId: string): Submission | null => {
+    return submissions.find(sub => sub.question.id === questionId) || null;
+  };
+
+  const hasSubmission = (questionId: string): boolean => {
+    return submissions.some(sub => sub.question.id === questionId);
+  };
+
+  const getSubmissionScore = (questionId: string): number => {
+    const submission = getQuestionSubmission(questionId);
+    return submission?.score || 0;
+  };
+
+  const refreshData = () => {
+    fetchData();
   };
 
   return {
@@ -231,8 +164,17 @@ ${q.output}
     loading,
     submitting,
     userRole,
-    navigateToQuestion,
-    goBack,
-    handleSubmit
+    questionIndex,
+    listId,
+    submitSolution,
+    nextQuestion,
+    previousQuestion,
+    canGoNext,
+    canGoPrevious,
+    getQuestionSubmission,
+    hasSubmission,
+    getSubmissionScore,
+    refreshData,
+    navigateToQuestion
   };
-}
+};

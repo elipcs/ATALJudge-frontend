@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 
 import { Button } from "../ui/button";
+import { Input } from "../ui/input";
 import { Class } from "../../types";
 
 interface EditClassModalProps {
@@ -74,82 +75,86 @@ export default function EditClassModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Editar Turma</h2>
-            <button
-              onClick={handleClose}
-              disabled={loading}
-              className="text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+    <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 p-4 overflow-y-auto">
+      <div className="bg-white rounded-3xl shadow-xl p-8 w-full max-w-2xl mx-4 my-8">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-3 bg-blue-100 rounded-xl">
+              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
               </svg>
-            </button>
+          </div>
+          <h2 className="text-2xl font-bold text-slate-900">Editar Turma</h2>
+          <button
+            onClick={handleClose}
+            disabled={loading}
+            className="ml-auto text-slate-400 hover:text-slate-600 transition-colors p-2 rounded-lg hover:bg-slate-100"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label htmlFor="name" className="block text-sm font-medium text-slate-700 mb-2">
+              Nome da Turma
+            </label>
+            <Input
+              id="name"
+              type="text"
+              value={name}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setName(e.target.value)}
+              placeholder="Ex: Algoritmos 2024.1"
+              required
+              className="h-12 text-sm bg-white border-slate-200 focus:border-blue-400 focus:ring-blue-400/20 text-slate-900 placeholder:text-slate-500 rounded-xl"
+              disabled={loading}
+              maxLength={50}
+            />
+            <div className="mt-1 text-right text-xs text-gray-500">
+              {name.length}/50 caracteres
+            </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                Nome da Turma
-              </label>
-               <input
-                 type="text"
-                 id="name"
-                 value={name || ''}
-                 onChange={(e) => setName(e.target.value)}
-                 disabled={loading}
-                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                 placeholder="Digite o nome da turma"
-                 maxLength={50}
-               />
-               <div className="mt-1 text-right text-xs text-gray-500">
-                 {(name || '').length}/50 caracteres
-               </div>
-            </div>
-
-            {/* Mensagens de erro */}
-            {(localError || error) && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl">
-                <div className="flex items-center gap-2">
-                  <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <span className="text-sm font-medium">{localError || error}</span>
-                </div>
+          {/* Mensagens de erro */}
+          {(localError || error) && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl">
+              <div className="flex items-center gap-2">
+                <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span className="text-sm font-medium">{localError || error}</span>
               </div>
-            )}
-
-            {/* Botões */}
-            <div className="flex gap-3 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleClose}
-                disabled={loading}
-                className="flex-1"
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="submit"
-                disabled={loading || !name.trim()}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                {loading ? (
-                  <div className="flex items-center gap-2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    Salvando...
-                  </div>
-                ) : (
-                  "Salvar Alterações"
-                )}
-              </Button>
             </div>
-          </form>
-        </div>
+          )}
+
+          {/* Botões */}
+          <div className="flex gap-3 mt-8 pt-6 border-t border-slate-200">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleClose}
+              disabled={loading}
+              className="flex-1 h-12 border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold rounded-xl transition-all duration-200 order-1"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              disabled={loading || !name.trim()}
+              className="flex-1 h-12 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed order-2"
+            >
+              {loading ? (
+                <div className="flex items-center gap-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  Salvando...
+                </div>
+              ) : (
+                "Salvar Alterações"
+              )}
+            </Button>
+          </div>
+        </form>
       </div>
     </div>
   );

@@ -29,11 +29,19 @@ export async function GET(req: Request) {
     const queryString = queryParams.toString();
     const endpoint = `/api/lists${queryString ? `?${queryString}` : ''}`;
     
+    let authHeader = req.headers.get('authorization') || req.headers.get('Authorization');
+    if (authHeader) {
+      const match = authHeader.match(/^Bearer(.+)$/i);
+      if (match) {
+        authHeader = `Bearer ${match[1]}`;
+      }
+    }
+    const token = authHeader ? authHeader.replace(/^[Bb]earer\s+/, '') : '';
     const res = await fetch(`${API_ENDPOINTS.BASE_URL}${endpoint}`, {
       method: "GET",
       headers: { 
         "Content-Type": "application/json",
-        ...(req.headers.get('authorization') ? { 'Authorization': req.headers.get('authorization')! } : {})
+        ...(authHeader ? { 'Authorization': authHeader } : {})
       },
     });
     
@@ -58,11 +66,13 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     
+    const authHeader = req.headers.get('authorization');
+    const token = authHeader ? authHeader.replace(/^[Bb]earer\s+/, '') : '';
     const res = await fetch(`${API_ENDPOINTS.BASE_URL}/api/lists`, {
       method: "POST",
       headers: { 
         "Content-Type": "application/json",
-        ...(req.headers.get('authorization') ? { 'Authorization': req.headers.get('authorization')! } : {})
+        ...(authHeader ? { 'authorization': `Bearer ${token}` } : {})
       },
       body: JSON.stringify(body),
     });
