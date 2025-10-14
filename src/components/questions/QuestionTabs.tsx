@@ -11,7 +11,7 @@ export default function QuestionTabs({ labels, activeIndex, onSelect, userRole =
   const base = "px-4 py-2 rounded-xl font-semibold text-sm transition-all duration-200";
   const activeRoleClass =
     userRole === 'professor'
-      ? 'bg-gradient-to-r from-purple-50 to-purple-100 text-purple-700 border-purple-200'
+      ? 'bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 border-blue-200'
       : userRole === 'student'
       ? 'bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 border-blue-200'
       : 'bg-gradient-to-r from-green-50 to-green-100 text-green-700 border-green-200';

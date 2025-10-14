@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils"
 export interface CheckboxProps
   extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "size"> {
   indeterminate?: boolean
-  variant?: "default" | "danger" | "warning" | "success"
+  variant?: "default" | "danger" | "warning" | "success" | "blue"
   size?: "sm" | "md" | "lg"
 }
 
@@ -52,6 +52,11 @@ const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
         border: "border-slate-300",
         bgChecked: "bg-green-600",
       },
+      blue: {
+        ring: "ring-blue-500",
+        border: "border-slate-300",
+        bgChecked: "bg-blue-600",
+      },
     }[variant]
 
     return (
@@ -97,6 +102,7 @@ const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
             variant === "default" && "peer-checked:bg-blue-600", 
             variant === "warning" && "peer-checked:bg-yellow-500",
             variant === "success" && "peer-checked:bg-green-600",
+            variant === "blue" && "peer-checked:bg-blue-600",
             "peer-disabled:opacity-50 peer-disabled:cursor-not-allowed"
           )}
         >

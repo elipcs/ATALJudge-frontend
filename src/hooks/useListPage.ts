@@ -25,6 +25,7 @@ export function useListPage() {
   
   const [list, setList] = useState<QuestionList | null>(null);
   const [submissions, setSubmissions] = useState<LocalSubmission[]>([]);
+  const [backendScore, setBackendScore] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { userRole } = useUserRole();
@@ -39,6 +40,20 @@ export function useListPage() {
   } | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'question'>('list');
   const [selectedLanguage, setSelectedLanguage] = useState<'python' | 'java'>('python');
+
+  const loadBackendScore = useCallback(async () => {
+    if (!listId) return;
+    
+    try {
+      console.log('📊 [useListPage] Carregando pontuação do backend para lista:', listId);
+      const scoreData = await listsApi.getListScore(listId);
+      console.log('✅ [useListPage] Pontuação carregada:', scoreData);
+      setBackendScore(scoreData);
+    } catch (err) {
+      console.error('❌ [useListPage] Erro ao carregar pontuação:', err);
+      setBackendScore(null);
+    }
+  }, [listId]);
 
   const loadListData = useCallback(async () => {
     try {
@@ -68,6 +83,7 @@ export function useListPage() {
       
       if (userRole === 'student') {
         await loadSubmissions(listData);
+        await loadBackendScore();
       }
       
     } catch (err) {
@@ -76,7 +92,7 @@ export function useListPage() {
     } finally {
       setLoading(false);
     }
-  }, [listId, userRole]);
+  }, [listId, userRole, loadBackendScore]);
 
   const isListStarted = useCallback(() => {
     if (!list || userRole !== 'student') return true;
@@ -250,6 +266,7 @@ export function useListPage() {
   return {
     list,
     submissions,
+    backendScore,
     selectedQuestion,
     currentQuestionIndex,
     code,

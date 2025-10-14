@@ -13,7 +13,7 @@ export default function QuestionHeader({ question, list, bestSubmission, onBack 
     const colors = {
       'A': 'text-blue-600 bg-blue-100',
       'B': 'text-green-600 bg-green-100', 
-      'C': 'text-purple-600 bg-purple-100',
+      'C': 'text-cyan-600 bg-cyan-100',
       'D': 'text-orange-600 bg-orange-100'
     };
     return colors[group as keyof typeof colors] || 'text-gray-600 bg-gray-100';

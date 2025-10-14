@@ -27,15 +27,59 @@ export default function QuestionsPage() {
 
   const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
 
+  // Reordena as questões por grupos se o modo for 'groups'
+  const getOrderedQuestions = () => {
+    if (!list || list.scoringMode !== 'groups' || !list.questionGroups || list.questionGroups.length === 0) {
+      return list?.questions || [];
+    }
+
+    const orderedQuestions: any[] = [];
+    const questionMap = new Map(list.questions.map(q => [q.id, q]));
+
+    // Adiciona questões na ordem dos grupos
+    for (const group of list.questionGroups) {
+      if (!group || !group.questionIds) continue;
+      const questionIds = Array.isArray(group.questionIds) ? group.questionIds : [];
+      for (const questionId of questionIds) {
+        const question = questionMap.get(questionId);
+        if (question && !orderedQuestions.find(q => q.id === question.id)) {
+          orderedQuestions.push(question);
+        }
+      }
+    }
+
+    // Adiciona questões que não estão em nenhum grupo no final
+    for (const question of list.questions) {
+      if (!orderedQuestions.find(q => q.id === question.id)) {
+        orderedQuestions.push(question);
+      }
+    }
+
+    return orderedQuestions;
+  };
+
+  const orderedQuestions = getOrderedQuestions();
+
+  // Logs de diagnóstico para inspecionar os dados retornados do backend
+  useEffect(() => {
+    try {
+      console.log('[diagnostic] list loaded', list);
+      console.log('[diagnostic] list.questionGroups', list?.questionGroups);
+      console.log('[diagnostic] orderedQuestions (count)', orderedQuestions.length, orderedQuestions.map(q => q.id));
+    } catch (err) {
+      console.error('[diagnostic] error logging list data', err);
+    }
+  }, [list, orderedQuestions]);
+
   useEffect(() => {
     const qParam = searchParams.get('q');
-    if (qParam !== null && list?.questions) {
+    if (qParam !== null && orderedQuestions.length > 0) {
       const questionIndex = parseInt(qParam, 10);
-      if (!isNaN(questionIndex) && questionIndex >= 0 && questionIndex < list.questions.length) {
+      if (!isNaN(questionIndex) && questionIndex >= 0 && questionIndex < orderedQuestions.length) {
         setActiveQuestionIndex(questionIndex);
       }
     }
-  }, [searchParams, list]);
+  }, [searchParams, orderedQuestions]);
 
   if (loading) {
     return <PageLoading message="Carregando questões..." description="Preparando as informações" />;
@@ -122,9 +166,9 @@ export default function QuestionsPage() {
     );
   }
 
-  const questionLabels = list.questions.map((_, idx) => String.fromCharCode(65 + idx));
+  const questionLabels = orderedQuestions.map((_, idx) => String.fromCharCode(65 + idx));
   const activeIndex = activeQuestionIndex;
-  const activeQuestion = list.questions[activeIndex];
+  const activeQuestion = orderedQuestions[activeIndex];
 
   const goToQuestion = (idx: number) => {
     setActiveQuestionIndex(idx);
@@ -164,19 +208,31 @@ export default function QuestionsPage() {
       {/* Exibe a questão ativa */}
       <Card className="bg-white border-slate-200 rounded-3xl shadow-lg p-6">
         <div className="mb-6">
-          <h2 className="text-2xl font-bold text-slate-900 mb-4">
-            {questionLabels[activeIndex]}. {activeQuestion.title}
-          </h2>
-          
-          {/* Debug: Mostra estrutura da questão */}
-          {process.env.NODE_ENV === 'development' && (
-            <details className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <summary className="cursor-pointer font-semibold text-yellow-800">Debug: Dados da Questão</summary>
-              <pre className="mt-2 text-xs overflow-x-auto">
-                {JSON.stringify(activeQuestion, null, 2)}
-              </pre>
-            </details>
-          )}
+          <div className="flex items-center gap-3 mb-4">
+            <h2 className="text-2xl font-bold text-slate-900">
+              {questionLabels[activeIndex]}. {activeQuestion.title}
+            </h2>
+            
+            {/* Badge do grupo (se modo for groups) */}
+            {list.scoringMode === 'groups' && list.questionGroups && (() => {
+              // Safely find group and log diagnostic info
+              const group = list.questionGroups.find(g => {
+                if (!g || !g.questionIds) return false;
+                const qids = Array.isArray(g.questionIds) ? g.questionIds : [];
+                return qids.includes(activeQuestion.id);
+              });
+              try {
+                console.log('[diagnostic] activeQuestion.id', activeQuestion?.id, 'foundGroup', group?.id ?? null);
+              } catch (e) {
+                console.error('[diagnostic] error logging active question group', e);
+              }
+              return group ? (
+                <span className="px-3 py-1 bg-blue-100 text-blue-700 text-sm font-semibold rounded-full border border-blue-200">
+                  {group.name}
+                </span>
+              ) : null;
+            })()}
+          </div>
           
           {/* Enunciado */}
           {activeQuestion.statement && (
@@ -223,7 +279,7 @@ export default function QuestionsPage() {
             <div className="mb-6">
               <h3 className="text-lg font-semibold text-slate-800 mb-2">Exemplos</h3>
               <div className="space-y-4">
-                {activeQuestion.examples.map((example, idx) => (
+                {activeQuestion.examples.map((example: { input: string; output: string }, idx: number) => (
                   <div key={idx} className="bg-slate-50 rounded-xl p-4">
                     <p className="text-sm font-semibold text-slate-600 mb-3">Exemplo {idx + 1}:</p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

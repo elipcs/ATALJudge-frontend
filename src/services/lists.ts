@@ -14,6 +14,15 @@ export interface CreateListRequest {
   end_time?: string;
   class_ids?: string[];
   status?: 'draft' | 'published';
+  scoring_mode?: 'simple' | 'groups';
+  max_score?: number;
+  min_questions_for_max_score?: number;
+  question_groups?: Array<{
+    id: string;
+    name: string;
+    question_ids: string[];
+    percentage?: number;
+  }>;
 }
 
 export interface ListFilters {
@@ -95,6 +104,15 @@ export const listsApi = {
       console.log('  - listAny.questions length:', listAny.questions?.length);
       console.log('  - listAny.questions isArray:', Array.isArray(listAny.questions));
       
+      // Mapear question_groups do backend (snake_case) para questionGroups (camelCase)
+      const questionGroups = (listAny.question_groups || listAny.questionGroups || []).map((group: any) => ({
+        id: group.id,
+        name: group.name,
+        questionIds: group.question_ids || group.questionIds || [],
+        weight: group.weight,
+        percentage: group.percentage
+      }));
+
       const mappedList = {
   ...list,
   startDate: listAny.startDate || listAny.start_date || listAny.start_time || listAny.startTime,
@@ -103,16 +121,12 @@ export const listsApi = {
   updatedAt: listAny.updatedAt || listAny.updated_at,
   classIds: listAny.classIds || listAny.class_ids || listAny.classes || [],
   questions: listAny.questions_detail || listAny.questions || [],
-  status: listAny.status || 'draft'
+  status: listAny.status || 'draft',
+  scoringMode: listAny.scoring_mode || listAny.scoringMode || 'simple',
+  maxScore: listAny.max_score || listAny.maxScore || 10,
+  minQuestionsForMaxScore: listAny.min_questions_for_max_score || listAny.minQuestionsForMaxScore,
+  questionGroups: questionGroups
       };
-      
-      console.log('✅ [listsApi.getById] Lista mapeada:');
-      console.log('  - ID:', mappedList.id);
-      console.log('  - Título:', mappedList.title);
-      console.log('  - Questões:', mappedList.questions);
-      console.log('  - Número de questões:', mappedList.questions?.length);
-      console.log('  - Questões é array:', Array.isArray(mappedList.questions));
-      console.log('  - Questões detalhadas:', mappedList.questions);
       
       return mappedList;
 
@@ -236,6 +250,16 @@ export const listsApi = {
       return response.data.list;
     } catch (error) {
       console.error('❌ [listsApi.duplicateListWithTitle] Erro ao duplicar lista:', error);
+      throw error;
+    }
+  },
+
+  async getListScore(listId: string): Promise<any> {
+    try {
+      const response = await authenticatedFetch<any>(`/api/lists/${listId}/score`);
+      return response.data;
+    } catch (error) {
+      console.error('❌ [listsApi.getListScore] Erro ao buscar pontuação:', error);
       throw error;
     }
   }

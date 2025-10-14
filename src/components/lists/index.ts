@@ -12,4 +12,5 @@ export { default as ListsGrid } from './ListsGrid';
 export { default as ListCard } from './ListCard';
 export { default as ListsError } from './ListsError';
 export { default as ListsDiagnostic } from './ListsDiagnostic';
-
+export { default as ScoreSummary } from './ScoreSummary';
+export { default as ScoreSystemConfigModal } from './ScoreSystemConfigModal';

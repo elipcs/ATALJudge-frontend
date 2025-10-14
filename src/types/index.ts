@@ -102,6 +102,16 @@ export interface QuestionList {
   createdAt?: string;
   updatedAt?: string;
   calculatedStatus?: 'next' | 'open' | 'closed';
+  scoringMode?: 'simple' | 'groups';
+  minQuestionsForMaxScore?: number;
+  maxScore?: number;
+  questionGroups?: Array<{
+    id: string;
+    name: string;
+    questionIds: string[];
+    weight: number;
+    percentage?: number;
+  }>;
 }
 
 export interface QuickAction {
