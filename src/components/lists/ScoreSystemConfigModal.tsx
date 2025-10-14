@@ -119,6 +119,17 @@ export default function ScoreSystemConfigModal({
     }
   };
 
+  // Verifica se um nome de grupo está duplicado
+  const isDuplicateGroupName = (groupId: string, name: string) => {
+    const trimmedName = name.trim().toLowerCase();
+    if (!trimmedName) return false;
+    
+    return questionGroups.some(g => 
+      g.id !== groupId && 
+      g.name.trim().toLowerCase() === trimmedName
+    );
+  };
+
   const handleGroupChange = (
     groupId: string, 
     field: 'name' | 'weight' | 'percentage', 
@@ -380,8 +391,15 @@ export default function ScoreSystemConfigModal({
                             onChange={(e) => handleGroupChange(group.id, 'name', e.target.value)}
                             disabled={loading}
                             placeholder="Nome do grupo"
-                            className="h-10 text-sm bg-white border-slate-200 focus:border-blue-400 focus:ring-blue-400/20 text-slate-900 rounded-lg"
+                            className={`h-10 text-sm bg-white text-slate-900 rounded-lg ${
+                              isDuplicateGroupName(group.id, group.name)
+                                ? 'border-red-400 focus:border-red-500 focus:ring-red-400/20'
+                                : 'border-slate-200 focus:border-blue-400 focus:ring-blue-400/20'
+                            }`}
                           />
+                          {isDuplicateGroupName(group.id, group.name) && (
+                            <p className="text-xs text-red-600 mt-1">Nome duplicado</p>
+                          )}
                         </div>
                         <div>
                           <label className="block text-xs font-medium text-slate-600 mb-1">
