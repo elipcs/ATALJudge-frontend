@@ -4,8 +4,13 @@ import React, { useState } from "react";
 import Link from "next/link";
 
 import { Button } from "../ui/button";
-import { SubmissionsTableProps } from "../../types";
+import { Submission } from "@/types";
 import { normalizeStatus, getSubmissionStatusColor } from "../../utils/statusUtils";
+
+interface SubmissionsTableProps {
+  submissions: Submission[];
+  showActions?: boolean;
+}
 
 export default function SubmissionsTable({ submissions, showActions = false }: SubmissionsTableProps) {
   const [selectedSubmission, setSelectedSubmission] = useState<SubmissionsTableProps["submissions"][number] | null>(null);

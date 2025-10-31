@@ -1,4 +1,5 @@
-import { authenticatedFetch } from '../config/api';
+import { API } from '../config/api';
+import { UserResponseDTO } from '@/types/dtos';
 
 export interface ProfileData {
   id: string;
@@ -6,8 +7,8 @@ export interface ProfileData {
   email: string;
   role: 'professor' | 'student' | 'assistant';
   studentRegistration?: string;
-  created_at: string;
-  last_login?: string;
+  createdAt: string;
+  lastLogin?: string;
   avatarUrl?: string;
 }
 
@@ -26,18 +27,17 @@ export const profileApi = {
 
   async getProfile(): Promise<ProfileData> {
     try {
-      const response = await authenticatedFetch<{ data: any }>('/api/users/profile');
-      
-      const userData = response.data.data;
+      const { data } = await API.users.profile();
+      const userData = data as UserResponseDTO;
 
       const profileData: ProfileData = {
         id: userData.id,
         name: userData.name,
         email: userData.email,
         role: userData.role,
-        studentRegistration: userData.studentRegistration || userData.registration || userData.matricula || userData.student_registration,
-        created_at: userData.created_at || userData.createdAt,
-        last_login: userData.last_login || userData.lastLogin
+        studentRegistration: userData.studentRegistration,
+        createdAt: String(userData.createdAt),
+        lastLogin: userData.lastLogin ? String(userData.lastLogin) : undefined
       };
 
       return profileData;
@@ -51,22 +51,18 @@ export const profileApi = {
     try {
       const backendData = {
         name: data.name,
-        student_registration: data.studentRegistration
+        studentRegistration: data.studentRegistration
       };
 
-      const response = await authenticatedFetch<{ data: any }>('/api/users/profile', {
-        method: 'PUT',
-        body: JSON.stringify(backendData),
-      });
-      const userData = response.data.data;
+      const { data: userData } = await API.users.updateProfile(backendData);
       const profileData: ProfileData = {
         id: userData.id,
         name: userData.name,
         email: userData.email,
         role: userData.role,
-        studentRegistration: userData.studentRegistration || userData.registration || userData.matricula || userData.student_registration,
-        created_at: userData.created_at || userData.createdAt,
-        last_login: userData.last_login || userData.lastLogin
+        studentRegistration: userData.studentRegistration,
+        createdAt: String(userData.createdAt),
+        lastLogin: userData.lastLogin ? String(userData.lastLogin) : undefined
       };
 
       return profileData;
@@ -78,19 +74,13 @@ export const profileApi = {
 
   async changePassword(data: ChangePasswordData): Promise<boolean> {
     try {
-      await authenticatedFetch('/api/users/change-password', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      });
-
+      await API.users.changePassword(data);
       return true;
     } catch (error) {
       console.error('Erro ao alterar senha:', error);
-      
       if (error instanceof Error) {
         throw new Error(error.message);
       }
-      
       throw new Error(String(error));
     }
   },

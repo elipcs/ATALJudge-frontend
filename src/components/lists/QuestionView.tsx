@@ -23,7 +23,7 @@ interface QuestionViewProps {
   onViewTestCases: (question: Question) => void;
 }
 
-const QuestionView: React.FC<QuestionViewProps> = ({
+export default function QuestionView({
   question,
   code,
   setCode,
@@ -37,7 +37,7 @@ const QuestionView: React.FC<QuestionViewProps> = ({
   totalQuestions,
   onViewReferenceCode,
   onViewTestCases
-}) => {
+}: QuestionViewProps) {
   if (!question) return null;
   return (
     <div className="space-y-6">
@@ -115,4 +115,3 @@ const QuestionView: React.FC<QuestionViewProps> = ({
   );
 };
 
-export default QuestionView;

@@ -1,21 +1,23 @@
 import { AuthForm, AuthInput, AlertMessage, AuthFooter, PasswordValidation } from "./index";
 import { useResetPassword } from "../../hooks/useResetPassword";
 
+export type ResetPasswordHookReturn = ReturnType<typeof useResetPassword>;
+
 interface ResetPasswordFormProps {
   token: string | null;
+  resetPasswordHook: ResetPasswordHookReturn;
 }
 
-export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
+export function ResetPasswordForm({ token, resetPasswordHook }: ResetPasswordFormProps) {
   const {
     password,
     setPassword,
     confirmPassword,
     setConfirmPassword,
     error,
-    success,
     loading,
     handleSubmit,
-  } = useResetPassword(token);
+  } = resetPasswordHook;
 
   const resetIcon = (
     <svg className="w-5 h-5 mr-2" fill="none" stroke="white" viewBox="0 0 24 24">

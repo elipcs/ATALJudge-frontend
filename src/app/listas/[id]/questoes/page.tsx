@@ -1,7 +1,7 @@
 "use client";
 
-import { useParams, useSearchParams } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useParams, useSearchParams, useRouter } from "next/navigation";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 
 import { Card } from "@/components/ui/card";
@@ -10,10 +10,13 @@ import PageLoading from "@/components/PageLoading";
 import { useListPage } from "@/hooks/useListPage";
 import ListTabs from "@/components/lists/ListTabs";
 import QuestionTabs from "@/components/questions/QuestionTabs";
+import CodeSubmission from "@/components/questions/CodeSubmission";
+import { logger } from '@/utils/logger';
 
 export default function QuestionsPage() {
   const params = useParams();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const id = params.id as string;
   
   const {
@@ -22,12 +25,13 @@ export default function QuestionsPage() {
     error,
     formatDateTime,
     hasQuestions,
-    userRole
+    userRole,
+    isListStarted,
+    isListEnded
   } = useListPage();
 
   const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
 
-  // Reordena as questões por grupos se o modo for 'groups'
   const getOrderedQuestions = () => {
     if (!list || list.scoringMode !== 'groups' || !list.questionGroups || list.questionGroups.length === 0) {
       return list?.questions || [];
@@ -36,7 +40,6 @@ export default function QuestionsPage() {
     const orderedQuestions: any[] = [];
     const questionMap = new Map(list.questions.map(q => [q.id, q]));
 
-    // Adiciona questões na ordem dos grupos
     for (const group of list.questionGroups) {
       if (!group || !group.questionIds) continue;
       const questionIds = Array.isArray(group.questionIds) ? group.questionIds : [];
@@ -48,7 +51,6 @@ export default function QuestionsPage() {
       }
     }
 
-    // Adiciona questões que não estão em nenhum grupo no final
     for (const question of list.questions) {
       if (!orderedQuestions.find(q => q.id === question.id)) {
         orderedQuestions.push(question);
@@ -60,32 +62,27 @@ export default function QuestionsPage() {
 
   const orderedQuestions = getOrderedQuestions();
 
-  // Logs de diagnóstico para inspecionar os dados retornados do backend
-  useEffect(() => {
-    try {
-      console.log('[diagnostic] list loaded', list);
-      console.log('[diagnostic] list.questionGroups', list?.questionGroups);
-      console.log('[diagnostic] orderedQuestions (count)', orderedQuestions.length, orderedQuestions.map(q => q.id));
-    } catch (err) {
-      console.error('[diagnostic] error logging list data', err);
-    }
-  }, [list, orderedQuestions]);
+  const queryQuestionIndex = useMemo(() => {
+    const qParam = searchParams.get('q');
+    if (qParam === null || orderedQuestions.length === 0) return null;
+    const idx = parseInt(qParam, 10);
+    if (Number.isNaN(idx)) return null;
+    if (idx < 0 || idx >= orderedQuestions.length) return null;
+    return idx;
+  }, [searchParams, orderedQuestions.length]);
 
   useEffect(() => {
-    const qParam = searchParams.get('q');
-    if (qParam !== null && orderedQuestions.length > 0) {
-      const questionIndex = parseInt(qParam, 10);
-      if (!isNaN(questionIndex) && questionIndex >= 0 && questionIndex < orderedQuestions.length) {
-        setActiveQuestionIndex(questionIndex);
-      }
+    if (queryQuestionIndex !== null && queryQuestionIndex !== activeQuestionIndex) {
+      const id = setTimeout(() => setActiveQuestionIndex(queryQuestionIndex), 0);
+      return () => clearTimeout(id);
     }
-  }, [searchParams, orderedQuestions]);
+  }, [queryQuestionIndex, activeQuestionIndex]);
 
   if (loading) {
     return <PageLoading message="Carregando questões..." description="Preparando as informações" />;
   }
 
-  if (error) {
+  if (error && error !== 'ipRestricted') {
     return (
       <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white flex items-center justify-center p-4">
         <div className="w-full max-w-2xl mx-auto">
@@ -170,8 +167,43 @@ export default function QuestionsPage() {
   const activeIndex = activeQuestionIndex;
   const activeQuestion = orderedQuestions[activeIndex];
 
+  // Bloquear acesso se lista não começou para estudante
+  if (userRole === 'student' && !isListStarted()) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white flex items-center justify-center p-4">
+        <div className="w-full max-w-2xl mx-auto">
+          <Card className="bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200 rounded-3xl shadow-lg p-8 text-center">
+            <div className="p-4 bg-amber-100 rounded-xl mx-auto mb-6 w-fit">
+              <svg className="w-16 h-16 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent mb-4">
+              Lista ainda não começou
+            </h1>
+            <p className="text-slate-600 mb-2 text-lg">
+              Esta lista começará em:
+            </p>
+            <p className="text-amber-700 font-semibold mb-8 text-lg">
+              {list?.startDate ? formatDateTime(list.startDate) : 'Data não definida'}
+            </p>
+            <p className="text-slate-600 mb-8">
+              O acesso às questões será liberado automaticamente na data e hora de início.
+            </p>
+            <Link href="/listas">
+              <Button className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-8 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl">
+                Voltar às Listas
+              </Button>
+            </Link>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   const goToQuestion = (idx: number) => {
     setActiveQuestionIndex(idx);
+    router.push(`/listas/${id}/questoes?q=${idx}`, { scroll: false });
   };
 
   return (
@@ -196,70 +228,92 @@ export default function QuestionsPage() {
         <ListTabs id={id} activeTab="questoes" hasQuestions={!!hasQuestions()} userRole={userRole || 'student'} />
       </div>
 
-      {/* Navegação entre questões */}
-      <QuestionTabs
-        labels={questionLabels}
-        activeIndex={activeIndex}
-        onSelect={(idx) => goToQuestion(idx)}
-        userRole={userRole || 'student'}
-      />
-
-
-      {/* Exibe a questão ativa */}
-      <Card className="bg-white border-slate-200 rounded-3xl shadow-lg p-6">
-        <div className="mb-6">
-          <div className="flex items-center gap-3 mb-4">
-            <h2 className="text-2xl font-bold text-slate-900">
-              {questionLabels[activeIndex]}. {activeQuestion.title}
-            </h2>
-            
-            {/* Badge do grupo (se modo for groups) */}
-            {list.scoringMode === 'groups' && list.questionGroups && (() => {
-              // Safely find group and log diagnostic info
-              const group = list.questionGroups.find(g => {
-                if (!g || !g.questionIds) return false;
-                const qids = Array.isArray(g.questionIds) ? g.questionIds : [];
-                return qids.includes(activeQuestion.id);
-              });
-              try {
-                console.log('[diagnostic] activeQuestion.id', activeQuestion?.id, 'foundGroup', group?.id ?? null);
-              } catch (e) {
-                console.error('[diagnostic] error logging active question group', e);
-              }
-              return group ? (
-                <span className="px-3 py-1 bg-blue-100 text-blue-700 text-sm font-semibold rounded-full border border-blue-200">
-                  {group.name}
-                </span>
-              ) : null;
-            })()}
-          </div>
-          
-          {/* Enunciado */}
-          {activeQuestion.statement && (
-            <div className="mb-6">
-              <h3 className="text-lg font-semibold text-slate-800 mb-2">Enunciado</h3>
-              <div className="text-slate-700 text-base leading-relaxed bg-slate-50 rounded-xl p-4">
-                {activeQuestion.statement}
-              </div>
+      {/* Aviso de IP restrito */}
+      {error === 'ipRestricted' && (
+        <Card className="bg-gradient-to-r from-red-50 to-pink-50 border-red-200 rounded-2xl shadow-lg p-6 mb-6">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-red-100 rounded-xl">
+              <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
             </div>
-          )}
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-red-800">Acesso Restrito por IP</h3>
+              <p className="text-red-700">
+                Esta lista possui restrição de acesso por IP. Seu endereço IP atual não está autorizado para visualizar o conteúdo desta lista. Entre em contato com seu professor para mais informações.
+              </p>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* Navegação entre questões */}
+      {error !== 'ipRestricted' && (
+        <QuestionTabs
+          labels={questionLabels}
+          activeIndex={activeIndex}
+          onSelect={(idx) => goToQuestion(idx)}
+          userRole={userRole || 'student'}
+        />
+      )}
+
+      {/* Grid com questão e submissão lado a lado */}
+      {error !== 'ipRestricted' && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Exibe a questão ativa */}
+        <Card className="bg-white border-slate-200 rounded-3xl shadow-lg p-6">
+          <div className="mb-6">
+            <div className="flex items-center gap-3 mb-4">
+              <h2 className="text-2xl font-bold text-slate-900">
+                {questionLabels[activeIndex]}. {activeQuestion.title}
+              </h2>
+              
+              {/* Badge do grupo (se modo for groups) */}
+              {list.scoringMode === 'groups' && list.questionGroups && (() => {
+                const group = list.questionGroups.find(g => {
+                  if (!g || !g.questionIds) return false;
+                  const qids = Array.isArray(g.questionIds) ? g.questionIds : [];
+                  return qids.includes(activeQuestion.id);
+                });
+                try {
+                  logger.debug('Diagnostic info', { questionId: activeQuestion?.id, groupId: group?.id ?? null });
+                } catch (e) {
+                  logger.error('Error logging active question group', { error: e });
+                }
+                return group ? (
+                  <span className="px-3 py-1 bg-blue-100 text-blue-700 text-sm font-semibold rounded-full border border-blue-200">
+                    {group.name}
+                  </span>
+                ) : null;
+              })()}
+            </div>
+            
+            {/* Enunciado */}
+            {activeQuestion.statement && (
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-slate-800 mb-2">Enunciado</h3>
+                <div className="text-slate-700 text-base leading-relaxed bg-slate-50 rounded-xl p-4">
+                  {activeQuestion.statement}
+                </div>
+              </div>
+            )}
 
           {/* Entrada */}
-          {activeQuestion.input_format && (
+          {activeQuestion.inputFormat && (
             <div className="mb-6">
               <h3 className="text-lg font-semibold text-slate-800 mb-2">Entrada</h3>
               <div className="text-slate-700 text-base leading-relaxed bg-slate-50 rounded-xl p-4">
-                {activeQuestion.input_format}
+                {activeQuestion.inputFormat}
               </div>
             </div>
           )}
 
           {/* Saída */}
-          {activeQuestion.output_format && (
+          {activeQuestion.outputFormat && (
             <div className="mb-6">
               <h3 className="text-lg font-semibold text-slate-800 mb-2">Saída</h3>
               <div className="text-slate-700 text-base leading-relaxed bg-slate-50 rounded-xl p-4">
-                {activeQuestion.output_format}
+                {activeQuestion.outputFormat}
               </div>
             </div>
           )}
@@ -314,6 +368,39 @@ export default function QuestionsPage() {
 
         </div>
       </Card>
+
+      {/* Área de submissão de código - ocultar se lista não começou ou já terminou */}
+      {!(userRole === 'student' && !isListStarted()) && !(userRole === 'student' && isListEnded()) && (
+        <CodeSubmission
+          questionId={activeQuestion.id}
+          listId={id}
+          userRole={userRole}
+          onSubmit={(code, language) => {
+            logger.info('Código submetido', { language, questionId: activeQuestion.id });
+          }}
+        />
+      )}
+
+      {/* Aviso quando lista já terminou */}
+      {userRole === 'student' && isListEnded() && (
+        <Card className="bg-gradient-to-r from-red-50 to-pink-50 border-red-200 rounded-3xl shadow-lg p-6">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-red-100 rounded-xl">
+              <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-red-900">Prazo finalizado</h3>
+              <p className="text-red-800 mt-1">
+                O prazo para submeter soluções nesta lista já terminou em {list?.endDate ? formatDateTime(list.endDate) : 'data não definida'}. Você pode visualizar as questões mas não é possível enviar novas submissões.
+              </p>
+            </div>
+          </div>
+        </Card>
+      )}
+    </div>
+      )}
     </div>
   );
 }

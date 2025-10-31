@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { QuestionList, Question, Submission } from '@/types';
-import { listsApi } from '@/services/lists';
+import { QuestionList, Question } from '@/types';
+import { listsApi, isCurrentIpAllowedForList } from '@/services/lists';
 import { submissionsApi } from '@/services/submissions';
 import { useUserRole } from './useUserRole';
+import { logger } from '@/utils/logger';
 
 interface LocalSubmission {
   id: string;
@@ -17,15 +18,25 @@ interface LocalSubmission {
   feedback?: string;
 }
 
+/**
+ * Hook para gerenciar a página de uma lista de questões
+ * 
+ * Funcionalidades:
+ * - Carrega dados da lista e questões
+ * - Gerencia submissões de código
+ * - Controla navegação entre questões
+ * - Valida permissões de acesso (IP whitelisting)
+ * - Gerencia estado de visualização (lista vs questão individual)
+ * 
+ * @returns Objeto com estado e funções para gerenciar a lista
+ */
 export function useListPage() {
   const params = useParams();
   const router = useRouter();
   const listId = params.id as string;
-  const questionId = params.questaoId as string;
   
   const [list, setList] = useState<QuestionList | null>(null);
   const [submissions, setSubmissions] = useState<LocalSubmission[]>([]);
-  const [backendScore, setBackendScore] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { userRole } = useUserRole();
@@ -41,58 +52,51 @@ export function useListPage() {
   const [viewMode, setViewMode] = useState<'list' | 'question'>('list');
   const [selectedLanguage, setSelectedLanguage] = useState<'python' | 'java'>('python');
 
-  const loadBackendScore = useCallback(async () => {
-    if (!listId) return;
-    
-    try {
-      console.log('📊 [useListPage] Carregando pontuação do backend para lista:', listId);
-      const scoreData = await listsApi.getListScore(listId);
-      console.log('✅ [useListPage] Pontuação carregada:', scoreData);
-      setBackendScore(scoreData);
-    } catch (err) {
-      console.error('❌ [useListPage] Erro ao carregar pontuação:', err);
-      setBackendScore(null);
-    }
-  }, [listId]);
 
   const loadListData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       
-      console.log('🔍 [useListPage] Carregando lista com ID:', listId);
-      console.log('🔍 [useListPage] User role:', userRole);
+      logger.debug('[useListPage] Carregando lista', { listId, userRole });
       
       const listData = await listsApi.getById(listId);
-      console.log('📦 [useListPage] Dados recebidos:', listData);
+      logger.debug('[useListPage] Dados recebidos', { listData });
       
       if (!listData) {
-        console.log('❌ [useListPage] Lista não encontrada para ID:', listId);
+        logger.warn('[useListPage] Lista não encontrada', { listId });
         setError(`Lista não encontrada (ID: ${listId})`);
         return;
       }
       
-      console.log('✅ [useListPage] Lista carregada com sucesso:');
-      console.log('  - ID:', listData.id);
-      console.log('  - Título:', listData.title);
-      console.log('  - Questões:', listData.questions);
-      console.log('  - Número de questões:', listData.questions?.length);
-      console.log('  - Questões é array:', Array.isArray(listData.questions));
+      logger.debug('[useListPage] Lista carregada com sucesso', {
+        id: listData.id,
+        title: listData.title,
+        questionsCount: listData.questions?.length,
+        isArray: Array.isArray(listData.questions)
+      });
       
       setList(listData);
-      
+
       if (userRole === 'student') {
+        if (listData.isRestricted) {
+          const allowed = await isCurrentIpAllowedForList(listId);
+          if (!allowed) {
+            setError('ipRestricted');
+            setLoading(false);
+            return;
+          }
+        }
         await loadSubmissions(listData);
-        await loadBackendScore();
       }
       
     } catch (err) {
-      console.error('❌ [useListPage] Erro ao carregar dados da lista:', err);
+      logger.error('[useListPage] Erro ao carregar dados da lista', { error: err });
       setError(`Erro ao carregar dados da lista: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
     } finally {
       setLoading(false);
     }
-  }, [listId, userRole, loadBackendScore]);
+  }, [listId, userRole]);
 
   const isListStarted = useCallback(() => {
     if (!list || userRole !== 'student') return true;
@@ -105,17 +109,36 @@ export function useListPage() {
     return now >= startDate;
   }, [list, userRole]);
 
+  const isListEnded = useCallback(() => {
+    if (!list || userRole !== 'student') return false;
+    
+    if (!list.endDate) return false;
+    
+    const now = new Date();
+    const endDate = new Date(list.endDate);
+    
+    return now > endDate;
+  }, [list, userRole]);
+
   const hasQuestions = useCallback(() => {
     return list && list.questions && list.questions.length > 0;
   }, [list]);
 
   const loadSubmissions = useCallback(async (listData: QuestionList) => {
     try {
-      const allSubmissions: LocalSubmission[] = [];
+      // Otimização: buscar todas as submissões em paralelo em vez de sequencialmente
+      const submissionsPromises = listData.questions.map(question =>
+        submissionsApi.getSubmissions({ questionId: question.id, listId })
+          .then(questionSubmissions => ({
+            question,
+            submissions: questionSubmissions
+          }))
+      );
       
-      for (const question of listData.questions) {
-        const questionSubmissions = await submissionsApi.getQuestionSubmissions(question.id, listId);
-        
+      const results = await Promise.all(submissionsPromises);
+      
+      const allSubmissions: LocalSubmission[] = [];
+      results.forEach(({ question, submissions: questionSubmissions }) => {
         const localSubmissions = questionSubmissions.map((sub, index) => ({
           id: sub.id,
           questionId: question.id,
@@ -129,11 +152,11 @@ export function useListPage() {
         }));
         
         allSubmissions.push(...localSubmissions);
-      }
+      });
       
       setSubmissions(allSubmissions);
     } catch (err) {
-      console.error('Erro ao carregar submissões:', err);
+      logger.error('Erro ao carregar submissões', { error: err });
     }
   }, [listId]);
 
@@ -162,7 +185,7 @@ export function useListPage() {
     setSubmissionResult(null);
     
     try {
-      const submission = await submissionsApi.create({
+      const submission = await submissionsApi.submitCode({
         questionId: selectedQuestion.id,
         listId: listId,
         code: code.trim(),
@@ -172,28 +195,29 @@ export function useListPage() {
       const newSubmission: LocalSubmission = {
         id: submission.id,
         questionId: selectedQuestion.id,
-        status: submission.status,
-        score: submission.score,
+        status: submission.status.toLowerCase() as 'pending' | 'accepted' | 'error' | 'timeout',
+        score: submission.totalScore || 0,
         attempt: submissions.filter(s => s.questionId === selectedQuestion.id).length + 1,
-        submittedAt: submission.submittedAt,
+        submittedAt: submission.createdAt,
         code: submission.code,
         language: submission.language,
-        feedback: submission.verdict
+        feedback: undefined
       };
 
       setSubmissions(prev => [newSubmission, ...prev]);
       
+      const statusLower = submission.status.toLowerCase();
       setSubmissionResult({
-        status: submission.status,
-        message: submission.status === 'accepted' ? 'Solução aceita!' : 
-                submission.status === 'error' ? 'Erro na solução' :
-                submission.status === 'timeout' ? 'Tempo limite excedido' :
+        status: statusLower as 'pending' | 'accepted' | 'error' | 'timeout',
+        message: statusLower === 'accepted' ? 'Solução aceita!' : 
+                statusLower === 'error' ? 'Erro na solução' :
+                statusLower === 'timeout' ? 'Tempo limite excedido' :
                 'Submissão enviada com sucesso!',
-        score: submission.score
+        score: submission.totalScore || 0
       });
 
     } catch (err) {
-      console.error('Erro ao enviar solução:', err);
+      logger.error('Erro ao enviar solução', { error: err });
       setSubmissionResult({
         status: 'error',
         message: 'Erro ao enviar solução. Tente novamente.',
@@ -266,7 +290,6 @@ export function useListPage() {
   return {
     list,
     submissions,
-    backendScore,
     selectedQuestion,
     currentQuestionIndex,
     code,
@@ -286,6 +309,7 @@ export function useListPage() {
     getStatusColor,
     formatDateTime,
     isListStarted,
+    isListEnded,
     hasQuestions
   };
 }

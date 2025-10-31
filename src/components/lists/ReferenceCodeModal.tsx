@@ -8,11 +8,11 @@ interface ReferenceCodeModalProps {
   onClose: () => void;
 }
 
-const ReferenceCodeModal: React.FC<ReferenceCodeModalProps> = ({
+export default function ReferenceCodeModal({
   isOpen,
   question,
   onClose
-}) => {
+}: ReferenceCodeModalProps) {
   if (!isOpen || !question) return null;
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -32,4 +32,3 @@ const ReferenceCodeModal: React.FC<ReferenceCodeModalProps> = ({
   );
 };
 
-export default ReferenceCodeModal;

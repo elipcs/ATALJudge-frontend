@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 
 import { authApi } from "@/services/auth";
+import { logger } from "@/utils/logger";
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -38,11 +39,14 @@ export default function AuthGuard({ children }: AuthGuardProps) {
 
   useEffect(() => {
     const checkAuth = async () => {
+      logger.debug('Verificando autenticação', { pathname });
+      
       const isPublicRoute = PUBLIC_ROUTES.some(route => 
         pathname === route || pathname.startsWith(route + '/')
       );
 
       if (isPublicRoute) {
+        logger.debug('Rota pública, permitindo acesso');
         setIsAuthenticated(true);
         setIsChecking(false);
         return;
@@ -53,23 +57,31 @@ export default function AuthGuard({ children }: AuthGuardProps) {
       );
 
       if (!isProtectedRoute) {
+        logger.debug('Rota não protegida, permitindo acesso');
         setIsAuthenticated(true);
         setIsChecking(false);
         return;
       }
 
+      logger.debug('Rota protegida, verificando autenticação');
+      
       try {
         const isAuth = await authApi.checkAuthentication();
+        logger.debug('Resultado da verificação', { isAuth });
         
         if (!isAuth) {
+          logger.info('Não autenticado, redirecionando para /login');
+          setIsChecking(false);
           router.replace("/login");
           return;
         }
 
+        logger.debug('Autenticado com sucesso');
         setIsAuthenticated(true);
         setIsChecking(false);
       } catch (error) {
-        console.error('Erro na verificação de autenticação:', error);
+        logger.error('Erro na verificação de autenticação', { error });
+        setIsChecking(false);
         router.replace("/login");
       }
     };

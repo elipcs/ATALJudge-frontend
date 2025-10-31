@@ -1,26 +1,52 @@
 import { QuestionList } from '../types';
-import { authenticatedFetch } from '../config/api';
+import { API } from '../config/api';
+import { logger } from '../utils/logger';
+import { QuestionListResponseDTO } from '@/types/dtos';
 
-export interface Class {
-  id: string;
-  name: string;
-  active: boolean;
+/**
+ * Calcula o status da lista baseado nas datas de início e fim
+ */
+function calculateListStatus(startDate?: string, endDate?: string): 'scheduled' | 'open' | 'closed' {
+  const now = new Date();
+  
+  // Se não tem datas definidas, considera aberta
+  if (!startDate && !endDate) {
+    return 'open';
+  }
+  
+  // Se tem data de início e ainda não começou
+  if (startDate) {
+    const start = new Date(startDate);
+    if (now < start) {
+      return 'scheduled';
+    }
+  }
+  
+  // Se tem data de fim e já passou
+  if (endDate) {
+    const end = new Date(endDate);
+    if (now > end) {
+      return 'closed';
+    }
+  }
+  
+  // Se está entre as datas ou só tem data de início no passado
+  return 'open';
 }
 
 export interface CreateListRequest {
   title: string;
   description?: string;
-  start_time?: string;
-  end_time?: string;
-  class_ids?: string[];
-  status?: 'draft' | 'published';
-  scoring_mode?: 'simple' | 'groups';
-  max_score?: number;
-  min_questions_for_max_score?: number;
-  question_groups?: Array<{
+  startTime?: string;
+  endTime?: string;
+  classIds?: string[];
+  scoringMode?: 'simple' | 'groups';
+  maxScore?: number;
+  minQuestionsForMaxScore?: number;
+  questionGroups?: Array<{
     id: string;
     name: string;
-    question_ids: string[];
+    questionIds: string[];
     percentage?: number;
   }>;
 }
@@ -28,148 +54,142 @@ export interface CreateListRequest {
 export interface ListFilters {
   search?: string;
   classId?: string;
-  status?: 'all' | 'draft' | 'published';
 }
 
+export async function isCurrentIpAllowedForList(listId?: string): Promise<boolean> {
+  try {
+    if (typeof window === 'undefined') return false;
+    const { data } = await API.config.checkAllowedIp(listId);
+    return Boolean((data as any).allowed ?? data);
+  } catch {
+    return false;
+  }
+}
 
+/**
+ * API de listas de questões
+ * 
+ * Gerencia todas as operações relacionadas a listas de questões, incluindo:
+ * - CRUD de listas (criar, ler, atualizar, deletar)
+ * - Filtragem e busca
+ * - Gerenciamento de permissões e restrições de IP
+ * - Cálculo automático de status (scheduled/open/closed)
+ * 
+ * @example
+ * ```typescript
+ * // Buscar todas as listas
+ * const lists = await listsApi.getLists();
+ * 
+ * // Criar nova lista
+ * await listsApi.create({
+ *   title: "Lista 1",
+ *   description: "Primeira lista",
+ *   classIds: ["class-id-1"]
+ * });
+ * 
+ * // Verificar se IP está permitido
+ * const allowed = await isCurrentIpAllowedForList("list-id");
+ * ```
+ */
 export const listsApi = {
-  async getLists(filters?: ListFilters, userRole?: string, currentUser?: any): Promise<QuestionList[]> {
+  async getLists(filters?: ListFilters, userRole?: string, currentUser?: { classId?: string }): Promise<QuestionList[]> {
     try {
-      const queryParams = new URLSearchParams();
-      
-      if (filters) {
-        if (filters.search) queryParams.append('search', filters.search);
-        if (filters.classId) queryParams.append('class_id', filters.classId);
-        if (filters.status && filters.status !== 'all') queryParams.append('status', filters.status);
-      }
-      
-      if (userRole === 'student' && currentUser?.classId) {
-        queryParams.append('class_id', currentUser.classId);
-      }
-      
-      const queryString = queryParams.toString();
-      const endpoint = `/api/lists${queryString ? `?${queryString}` : ''}`;
-      
-      const response = await authenticatedFetch<{data: {count: number, lists: QuestionList[]}}>(endpoint);
-      
-      const data = response.data.data;
-      const lists = data?.lists || [];
-      
-      const mappedLists = lists.map((list: any) => ({
-  ...list,
-  startDate: list.startDate || list.start_date || list.start_time || list.startTime,
-  endDate: list.endDate || list.end_date || list.end_time || list.endTime,
-  createdAt: list.createdAt || list.created_at,
-  updatedAt: list.updatedAt || list.updated_at,
-  classIds: list.classIds || list.class_ids || list.classes || [],
-  questions: Array(list.question_count || 0).fill(null),
-  status: list.status || 'draft'
-      }));
-      
-      const result = Array.isArray(mappedLists) ? mappedLists : [];
-      
-      return result;
+      const queryParams: Record<string, string> = {};
+      if (filters?.search) queryParams.search = filters.search;
+      if (filters?.classId) queryParams.classId = filters.classId;
+      if (userRole === 'student' && currentUser?.classId) queryParams.classId = currentUser.classId;
+
+      const { data } = await API.lists.list(queryParams);
+      const lists = data.lists as QuestionListResponseDTO[];
+
+      const mappedLists: QuestionList[] = (lists || []).map((list) => {
+        const startDate = list.startDate;
+        const endDate = list.endDate;
+        return {
+          id: list.id,
+          title: list.title,
+          description: list.description,
+          startDate,
+          endDate,
+          createdAt: String(list.createdAt),
+          updatedAt: String(list.updatedAt),
+          classIds: list.classIds || [],
+          questions: [],
+          isRestricted: list.isRestricted,
+          scoringMode: list.scoringMode,
+          maxScore: list.maxScore,
+          minQuestionsForMaxScore: list.minQuestionsForMaxScore,
+          questionGroups: (list.questionGroups as any) || [],
+          calculatedStatus: calculateListStatus(startDate, endDate)
+        };
+      });
+
+      return mappedLists;
     } catch (error) {
-      console.error('Erro ao buscar listas:', error);
+      logger.error('Erro ao buscar listas', { error });
       return [];
     }
   },
 
   async getById(id: string): Promise<QuestionList | null> {
     try {
-      console.log('🔍 [listsApi.getById] Buscando lista com ID:', id);
-      
-  const response = await authenticatedFetch<{ list: any }>(`/api/lists/${id}`);
-      
-  console.log('📦 [listsApi.getById] Resposta recebida');
-      
-  const list = response.data.list;
-      
-  console.log('🔍 [listsApi.getById] list extraída:', typeof list, list?.id);
-      
-      if (!list) {
-        console.log('❌ [listsApi.getById] Lista não encontrada na resposta');
-        console.log('❌ [listsApi.getById] Estrutura completa da resposta:', JSON.stringify(response, null, 2));
-        return null;
-      }
-      
-      const listAny = list as any;
-      console.log('🔍 [listsApi.getById] Dados da lista antes do mapeamento:');
-      console.log('  - listAny.questions:', listAny.questions);
-      console.log('  - listAny.questions type:', typeof listAny.questions);
-      console.log('  - listAny.questions length:', listAny.questions?.length);
-      console.log('  - listAny.questions isArray:', Array.isArray(listAny.questions));
-      console.log('  - listAny.questions:', listAny.questions);
-      console.log('  - listAny.questions type:', typeof listAny.questions);
-      console.log('  - listAny.questions length:', listAny.questions?.length);
-      console.log('  - listAny.questions isArray:', Array.isArray(listAny.questions));
-      
-      // Mapear question_groups do backend (snake_case) para questionGroups (camelCase)
-      const questionGroups = (listAny.question_groups || listAny.questionGroups || []).map((group: any) => ({
-        id: group.id,
-        name: group.name,
-        questionIds: group.question_ids || group.questionIds || [],
-        weight: group.weight,
-        percentage: group.percentage
-      }));
+      const { data: list } = await API.lists.get(id);
+      if (!list) return null;
 
-      const mappedList = {
-  ...list,
-  startDate: listAny.startDate || listAny.start_date || listAny.start_time || listAny.startTime,
-  endDate: listAny.endDate || listAny.end_date || listAny.end_time || listAny.endTime,
-  createdAt: listAny.createdAt || listAny.created_at,
-  updatedAt: listAny.updatedAt || listAny.updated_at,
-  classIds: listAny.classIds || listAny.class_ids || listAny.classes || [],
-  questions: listAny.questions_detail || listAny.questions || [],
-  status: listAny.status || 'draft',
-  scoringMode: listAny.scoring_mode || listAny.scoringMode || 'simple',
-  maxScore: listAny.max_score || listAny.maxScore || 10,
-  minQuestionsForMaxScore: listAny.min_questions_for_max_score || listAny.minQuestionsForMaxScore,
-  questionGroups: questionGroups
+      const startDate = list.startDate || undefined;
+      const endDate = list.endDate || undefined;
+
+      const mapped: QuestionList = {
+        id: list.id,
+        title: list.title,
+        description: list.description,
+        startDate,
+        endDate,
+        createdAt: String(list.createdAt),
+        updatedAt: String(list.updatedAt),
+        classIds: list.classIds || [],
+        questions: (list.questions as any) || [],
+        scoringMode: list.scoringMode || 'simple',
+        maxScore: list.maxScore || 10,
+        minQuestionsForMaxScore: list.minQuestionsForMaxScore,
+        questionGroups: (list.questionGroups as any) || [],
+        isRestricted: list.isRestricted ?? false,
+        calculatedStatus: calculateListStatus(startDate, endDate)
       };
-      
-      return mappedList;
 
+      return mapped;
     } catch (error) {
-      console.error('❌ [listsApi.getById] Erro ao buscar lista:', error);
+      logger.error('[listsApi.getById] Erro ao buscar lista', { error });
       return null;
     }
   },
 
   async create(listData: CreateListRequest): Promise<QuestionList> {
     try {
-      const response = await authenticatedFetch<{list: QuestionList}>('/api/lists', {
-        method: 'POST',
-        body: JSON.stringify(listData),
-      });
-      return response.data.list;
+      const { data } = await API.lists.create(listData);
+      return await this.getById(data.id) as QuestionList;
     } catch (error) {
-      console.error('Erro ao criar lista:', error);
+      logger.error('Erro ao criar lista', { error });
       throw error;
     }
   },
 
   async update(id: string, listData: CreateListRequest): Promise<QuestionList> {
     try {
-      const response = await authenticatedFetch<{list: QuestionList}>(`/api/lists/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify(listData),
-      });
-      return response.data.list;
+      const { data } = await API.lists.update(id, listData);
+      return await this.getById(data.id) as QuestionList;
     } catch (error) {
-      console.error('Erro ao atualizar lista:', error);
+      logger.error('Erro ao atualizar lista', { error });
       throw error;
     }
   },
 
   async delete(id: string): Promise<boolean> {
     try {
-      await authenticatedFetch(`/api/lists/${id}`, {
-        method: 'DELETE',
-      });
+      await API.lists.delete(id);
       return true;
     } catch (error) {
-      console.error('Erro ao excluir lista:', error);
+      logger.error('Erro ao excluir lista', { error });
       throw error;
     }
   },
@@ -177,90 +197,58 @@ export const listsApi = {
   async duplicateList(id: string, newTitle?: string): Promise<QuestionList> {
     try {
       const originalList = await this.getById(id);
-      if (!originalList) {
-        throw new Error('Lista não encontrada');
-      }
+      if (!originalList) throw new Error('Lista não encontrada');
 
       const title = newTitle || `${originalList.title} (Cópia)`;
-      return await this.duplicateListWithTitle(id, title);
-    } catch (error) {
-      console.error('Erro ao duplicar lista:', error);
-      throw error;
-    }
-  },
+      const newListData: CreateListRequest = {
+        title,
+        description: originalList.description,
+        startTime: originalList.startDate,
+        endTime: originalList.endDate,
+        classIds: originalList.classIds,
+        scoringMode: originalList.scoringMode,
+        maxScore: originalList.maxScore,
+        minQuestionsForMaxScore: originalList.minQuestionsForMaxScore,
+        questionGroups: originalList.questionGroups?.map(group => ({
+          id: group.id,
+          name: group.name,
+          questionIds: group.questionIds || [],
+          percentage: group.percentage
+        })),
+      };
 
+      const newList = await this.create(newListData);
 
-  async publishList(id: string): Promise<QuestionList> {
-    try {
-      
-      const response = await authenticatedFetch<{list: QuestionList}>(`/api/lists/${id}/publish`, {
-        method: 'POST',
-      });
-      
-      return response.data.list;
-    } catch (error) {
-      throw error;
-    }
-  },
+      if (originalList.questions && originalList.questions.length > 0) {
+        for (const question of originalList.questions) {
+          if (question && (question as any).id) {
+            await this.addQuestionToList(newList.id, (question as any).id);
+          }
+        }
+      }
 
-  async unpublishList(id: string): Promise<QuestionList> {
-    try {
-      const response = await authenticatedFetch<{list: QuestionList}>(`/api/lists/${id}/unpublish`, {
-        method: 'POST',
-      });
-      
-      return response.data.list;
+      return newList;
     } catch (error) {
-      console.error('❌ [listsApi.unpublishList] Erro ao despublicar lista:', error);
+      logger.error('Erro ao duplicar lista', { error });
       throw error;
     }
   },
 
   async addQuestionToList(listId: string, questionId: string): Promise<void> {
     try {
-      await authenticatedFetch(`/api/lists/${listId}/questions`, {
-        method: 'POST',
-        body: JSON.stringify({ question_id: questionId }),
-      });
+      await API.lists.addQuestion(listId, questionId);
     } catch (error) {
-      console.error('❌ [listsApi.addQuestionToList] Erro ao adicionar questão:', error);
+      logger.error('[listsApi.addQuestionToList] Erro ao adicionar questão', { error });
       throw error;
     }
   },
 
   async removeQuestionFromList(listId: string, questionId: string): Promise<void> {
     try {
-      await authenticatedFetch(`/api/lists/${listId}/questions/${questionId}`, {
-        method: 'DELETE',
-      });
+      await API.lists.removeQuestion(listId, questionId);
     } catch (error) {
-      console.error('❌ [listsApi.removeQuestionFromList] Erro ao remover questão:', error);
+      logger.error('[listsApi.removeQuestionFromList] Erro ao remover questão', { error });
       throw error;
     }
   },
-
-
-  async duplicateListWithTitle(id: string, newTitle: string): Promise<QuestionList> {
-    try {
-      const response = await authenticatedFetch<{list: QuestionList}>(`/api/lists/${id}/duplicate`, {
-        method: 'POST',
-        body: JSON.stringify({ title: newTitle }),
-      });
-      
-      return response.data.list;
-    } catch (error) {
-      console.error('❌ [listsApi.duplicateListWithTitle] Erro ao duplicar lista:', error);
-      throw error;
-    }
-  },
-
-  async getListScore(listId: string): Promise<any> {
-    try {
-      const response = await authenticatedFetch<any>(`/api/lists/${listId}/score`);
-      return response.data;
-    } catch (error) {
-      console.error('❌ [listsApi.getListScore] Erro ao buscar pontuação:', error);
-      throw error;
-    }
-  }
 };

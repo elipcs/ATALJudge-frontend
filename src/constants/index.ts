@@ -8,16 +8,22 @@ export const LANGUAGE_OPTIONS = [
   { value: PROGRAMMING_LANGUAGES.JAVA, label: 'Java' }
 ];
 
-export const LIST_STATUS = {
-  DRAFT: 'draft',
-  PUBLISHED: 'published',
-  CLOSED: 'closed'
+export const JUDGE_TYPES = {
+  LOCAL: 'local',
+  CODEFORCES: 'codeforces'
 } as const;
 
-export const LIST_STATUS_OPTIONS = [
-  { value: 'all', label: 'Todos os status' },
-  { value: LIST_STATUS.PUBLISHED, label: 'Publicadas' },
-  { value: LIST_STATUS.DRAFT, label: 'Rascunhos' }
+export const JUDGE_TYPE_OPTIONS = [
+  { 
+    value: JUDGE_TYPES.LOCAL, 
+    label: 'Local (Judge0)', 
+    description: 'Executado localmente com casos de teste cadastrados' 
+  },
+  { 
+    value: JUDGE_TYPES.CODEFORCES, 
+    label: 'Codeforces', 
+    description: 'Vinculado a um problema do Codeforces' 
+  }
 ];
 
 export const SUBMISSION_STATUS = {
@@ -85,7 +91,7 @@ export const PAGINATION_CONFIG = {
 
 export const VALIDATION_RULES = {
   EMAIL: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-  PASSWORD_MIN_LENGTH: 8,
+  PASSWORD_MIN_LENGTH: 12,
   NAME_MIN_LENGTH: 2,
   NAME_MAX_LENGTH: 100,
   DESCRIPTION_MAX_LENGTH: 500,

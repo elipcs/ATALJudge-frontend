@@ -9,7 +9,7 @@ interface ListTabsProps {
   userRole?: string;
 }
 
-export default function ListTabs({ id, activeTab, hasQuestions, userRole = 'student' }: ListTabsProps) {
+export default function ListTabs({ id, activeTab, hasQuestions, userRole: _userRole = 'student' }: ListTabsProps) {
   const activeBase = "px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-200 shadow-sm border";
   const inactiveBase = "px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50";
   const disabledBase = "px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-200 text-slate-400 cursor-not-allowed";

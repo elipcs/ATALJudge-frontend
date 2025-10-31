@@ -1,4 +1,4 @@
-import { QuestionList, Submission } from '@/types';
+import { QuestionList } from '@/types';
 
 export interface SubmissionScore {
   questionId: string;
@@ -25,10 +25,7 @@ export interface FinalScore {
   questionScores?: SubmissionScore[];
 }
 
-/**
- * Calcula a pontuação final no modo simples
- * Considera as N melhores notas das submissões
- */
+
 export function calculateSimpleScore(
   submissions: SubmissionScore[],
   minQuestionsForMaxScore: number,
@@ -44,7 +41,6 @@ export function calculateSimpleScore(
     };
   }
 
-  // Agrupa submissões por questão e pega a melhor nota de cada
   const bestScoresByQuestion = new Map<string, SubmissionScore>();
   
   submissions.forEach(sub => {
@@ -54,18 +50,14 @@ export function calculateSimpleScore(
     }
   });
 
-  // Ordena as melhores notas em ordem decrescente
   const sortedScores = Array.from(bestScoresByQuestion.values())
     .sort((a, b) => b.score - a.score);
 
-  // Pega as N melhores notas (limitado pelo minQuestionsForMaxScore)
   const topScores = sortedScores.slice(0, minQuestionsForMaxScore);
 
-  // Calcula a média das N melhores notas
   const totalPoints = topScores.reduce((sum, score) => sum + score.score, 0);
   const averageScore = topScores.length > 0 ? totalPoints / topScores.length : 0;
   
-  // Converte para a escala de maxScore (0-100 para 0-maxScore)
   const finalScore = (averageScore / 100) * maxScore;
   const percentage = (finalScore / maxScore) * 100;
 
@@ -78,11 +70,7 @@ export function calculateSimpleScore(
   };
 }
 
-/**
- * Calcula a pontuação final no modo por grupos
- * Cada grupo exige resolver pelo menos uma questão
- * A nota final é calculada baseada nas porcentagens de cada grupo (total de 100%)
- */
+
 export function calculateGroupScore(
   submissions: SubmissionScore[],
   questionGroups: Array<{
@@ -126,7 +114,6 @@ export function calculateGroupScore(
     };
   }
 
-  // Agrupa submissões por questão e pega a melhor nota de cada
   const bestScoresByQuestion = new Map<string, SubmissionScore>();
   
   submissions.forEach(sub => {
@@ -136,7 +123,6 @@ export function calculateGroupScore(
     }
   });
 
-  // Calcula a melhor nota de cada grupo
   const groupScores: GroupScore[] = questionGroups.map(group => {
     if (!group || !group.questionIds) {
       return {
@@ -169,23 +155,19 @@ export function calculateGroupScore(
     };
   });
 
-  // Calcula a nota final usando porcentagens (se disponíveis) ou pesos
   const usePercentages = questionGroups.every(g => g.percentage !== undefined);
   
   let finalScore: number;
   
   if (usePercentages) {
-    // Modo baseado em porcentagem (total deve ser 100%)
     const percentageSum = groupScores.reduce((sum, groupScore) => {
       const percentage = groupScore.percentage || 0;
-      // Converte de 0-100 para 0-1 e multiplica pela porcentagem do grupo
       const normalizedScore = groupScore.bestScore / 100;
       return sum + (normalizedScore * percentage);
     }, 0);
     
     finalScore = (percentageSum / 100) * maxScore;
   } else {
-    // Modo baseado em peso (compatibilidade com versão antiga)
     const totalWeight = questionGroups.reduce((sum, g) => sum + g.weight, 0);
     const weightedSum = groupScores.reduce((sum, groupScore) => {
       const normalizedScore = groupScore.bestScore / 100;
@@ -208,9 +190,7 @@ export function calculateGroupScore(
   };
 }
 
-/**
- * Calcula a pontuação baseado na configuração da lista
- */
+
 export function calculateListScore(
   list: QuestionList,
   submissions: SubmissionScore[]
@@ -222,21 +202,16 @@ export function calculateListScore(
     return calculateGroupScore(submissions, list.questionGroups, maxScore);
   }
 
-  // Modo simples (padrão)
   const minQuestionsForMaxScore = list.minQuestionsForMaxScore || list.questions.length;
   return calculateSimpleScore(submissions, minQuestionsForMaxScore, maxScore);
 }
 
-/**
- * Formata a pontuação para exibição
- */
+
 export function formatScore(score: number, decimals: number = 1): string {
   return score.toFixed(decimals);
 }
 
-/**
- * Obtém a cor baseada na porcentagem da nota
- */
+
 export function getScoreColor(percentage: number): string {
   if (percentage >= 90) return 'text-green-600 bg-green-50';
   if (percentage >= 70) return 'text-blue-600 bg-blue-50';
@@ -245,9 +220,7 @@ export function getScoreColor(percentage: number): string {
   return 'text-red-600 bg-red-50';
 }
 
-/**
- * Obtém a cor do badge baseada na porcentagem
- */
+
 export function getScoreBadgeColor(percentage: number): string {
   if (percentage >= 90) return 'bg-gradient-to-r from-green-500 to-green-600';
   if (percentage >= 70) return 'bg-gradient-to-r from-blue-500 to-blue-600';

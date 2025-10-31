@@ -19,13 +19,14 @@ export function useClassPage() {
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
   const { classes, loading: classesLoading, error: classesError, refetch: refetchClasses } = useUserClasses(currentUser?.id || '', userRole || 'student');
   const { createClass, loading: createLoading, error: createError } = useCreateClass();
-  const { editClass, loading: editLoading, error: editError } = useEditClass();
-  const { deleteClass, loading: deleteLoading, error: deleteError } = useDeleteClass();
+  const { editClass, loading: editLoading, error: _editError } = useEditClass();
+  const { deleteClass, loading: deleteLoading, error: _deleteError } = useDeleteClass();
   const { students, loading: studentsLoading } = useClassStudents(selectedClassId || '');
 
   useEffect(() => {
     if (userRole === 'student' && classes.length > 0 && !selectedClassId) {
-      setSelectedClassId(classes[0].id);
+      const id = setTimeout(() => setSelectedClassId(classes[0].id), 0);
+      return () => clearTimeout(id);
     }
   }, [userRole, classes.length, selectedClassId]);
 
@@ -36,12 +37,14 @@ export function useClassPage() {
       const classData = classes.find(cls => cls.id === selectedClassId);
       if (classData) {
         const studentsToUse = students.length > 0 ? students : (classData.students || []);
-        
-        setClassDetails({
-          cls: classData,
-          students: studentsToUse
-        });
-        setShowDetails(true);
+        const id = setTimeout(() => {
+          setClassDetails({
+            cls: classData,
+            students: studentsToUse
+          });
+          setShowDetails(true);
+        }, 0);
+        return () => clearTimeout(id);
       }
     }
   }, [userRole, selectedClassId, studentsLoading, classes.length, students.length]);
@@ -51,11 +54,13 @@ export function useClassPage() {
       const classData = classes.find(cls => cls.id === selectedClassId);
       if (classData) {
         const studentsToUse = students.length > 0 ? students : (classData.students || []);
-        
-        setClassDetails({
-          cls: classData,
-          students: studentsToUse
-        });
+        const id = setTimeout(() => {
+          setClassDetails({
+            cls: classData,
+            students: studentsToUse
+          });
+        }, 0);
+        return () => clearTimeout(id);
       }
     }
   }, [userRole, selectedClassId, studentsLoading, classes.length, students.length]);

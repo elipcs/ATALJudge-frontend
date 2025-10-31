@@ -8,17 +8,13 @@ interface UseListsActionsProps {
   updateList: (id: string, listData: any) => Promise<any>;
   deleteList: (id: string) => Promise<any>;
   duplicateList: (id: string) => Promise<any>;
-  publishList: (id: string) => Promise<any>;
-  unpublishList: (id: string) => Promise<any>;
 }
 
 export function useListsActions({
   createList,
   updateList,
   deleteList,
-  duplicateList,
-  publishList,
-  unpublishList
+  duplicateList
 }: UseListsActionsProps) {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -62,47 +58,6 @@ export function useListsActions({
     }
   };
 
-  const handlePublishList = async (list: QuestionList) => {
-    try {
-      await publishList(list.id);
-    } catch (error) {
-      console.error('Erro ao publicar lista:', error);
-      throw error;
-    }
-  };
-
-  const handleUnpublishList = async (list: QuestionList) => {
-    try {
-      const now = new Date();
-      const startTime = createBrazilianDate(list.startDate);
-      
-      if (startTime && now >= startTime) {
-        throw new Error('Não é possível despublicar uma lista que já começou.');
-      }
-      
-      await unpublishList(list.id);
-    } catch (error) {
-      console.error('Erro ao despublicar lista:', error);
-      throw error;
-    }
-  };
-
-  const handleUnpublishListById = async (listId: string) => {
-    try {
-      // Verifica se a lista já começou antes de despublicar (protege caminho por id)
-      const fetched = await listsApi.getById(listId);
-      const now = new Date();
-      const startTime = createBrazilianDate(fetched?.startDate);
-      if (startTime && now >= startTime) {
-        throw new Error('Não é possível despublicar uma lista que já começou.');
-      }
-      await unpublishList(listId);
-    } catch (error) {
-      console.error('Erro ao despublicar lista:', error);
-      throw error;
-    }
-  };
-
   const handleDuplicateList = async (list: QuestionList) => {
     try {
       await duplicateList(list.id);
@@ -141,9 +96,6 @@ export function useListsActions({
     handleCreateList,
     handleEditList,
     handleDeleteList,
-    handlePublishList,
-    handleUnpublishList,
-    handleUnpublishListById,
     handleDuplicateList,
     handleEditClick,
     handleDeleteClick,

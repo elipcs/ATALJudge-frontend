@@ -5,8 +5,8 @@ import { Question } from '../../types';
 interface QuestionFormData {
   title: string;
   statement: string;
-  input_format: string;
-  output_format: string;
+  inputFormat: string;
+  outputFormat: string;
   constraints?: string;
   notes?: string;
   examples: Array<{
@@ -26,18 +26,18 @@ interface QuestionModalProps {
   title: string;
 }
 
-const QuestionModal: React.FC<QuestionModalProps> = ({
+export default function QuestionModal({
   isOpen,
   onClose,
   onSave,
   question,
   title
-}) => {
+}: QuestionModalProps) {
   const [formData, setFormData] = React.useState({
     title: question?.title || '',
     statement: question?.statement || '',
-    input_format: question?.input_format || '',
-    output_format: question?.output_format || '',
+    inputFormat: question?.inputFormat || '',
+    outputFormat: question?.outputFormat || '',
     constraints: question?.constraints || '',
     notes: question?.notes || '',
     timeLimit: question?.timeLimit || '1s',
@@ -51,8 +51,8 @@ const QuestionModal: React.FC<QuestionModalProps> = ({
       setFormData({
         title: question.title || '',
         statement: question.statement || '',
-        input_format: question.input_format || '',
-        output_format: question.output_format || '',
+        inputFormat: question.inputFormat || '',
+        outputFormat: question.outputFormat || '',
         constraints: question.constraints || '',
         notes: question.notes || '',
         timeLimit: question.timeLimit || '1s',
@@ -64,8 +64,8 @@ const QuestionModal: React.FC<QuestionModalProps> = ({
       setFormData({
         title: '',
         statement: '',
-        input_format: '',
-        output_format: '',
+        inputFormat: '',
+        outputFormat: '',
         constraints: '',
         notes: '',
         timeLimit: '1s',
@@ -158,8 +158,8 @@ const QuestionModal: React.FC<QuestionModalProps> = ({
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">Formato de Entrada</label>
               <textarea 
-                name="input_format" 
-                value={formData.input_format} 
+                name="inputFormat" 
+                value={formData.inputFormat} 
                 onChange={handleChange} 
                 className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 bg-white text-slate-900 placeholder:text-slate-500 h-20" 
                 placeholder="Descreva o formato de entrada..."
@@ -168,8 +168,8 @@ const QuestionModal: React.FC<QuestionModalProps> = ({
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">Formato de Saída</label>
               <textarea 
-                name="output_format" 
-                value={formData.output_format} 
+                name="outputFormat" 
+                value={formData.outputFormat} 
                 onChange={handleChange} 
                 className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 bg-white text-slate-900 placeholder:text-slate-500 h-20" 
                 placeholder="Descreva o formato de saída..."
@@ -292,5 +292,3 @@ const QuestionModal: React.FC<QuestionModalProps> = ({
     </div>
   );
 };
-
-export default QuestionModal;

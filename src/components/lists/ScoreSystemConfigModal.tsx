@@ -5,6 +5,7 @@ import { QuestionList } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
+import { logger } from '@/utils/logger';
 
 interface ScoreSystemConfigModalProps {
   isOpen: boolean;
@@ -50,7 +51,7 @@ export default function ScoreSystemConfigModal({
 
   useEffect(() => {
     if (isOpen) {
-      console.log('🔧 [ScoreModal] Opening modal with list:', {
+      logger.debug('Opening modal with list', {
         scoringMode: list.scoringMode,
         questionGroups: list.questionGroups,
         questionsCount: list.questions.length
@@ -59,13 +60,12 @@ export default function ScoreSystemConfigModal({
       setScoringMode(list.scoringMode || 'simple');
       setMinQuestionsForMaxScore(list.minQuestionsForMaxScore || list.questions.length);
       setMaxScore(list.maxScore || 10);
-      // Garantir que questionIds seja sempre um array
       const normalizedGroups = (list.questionGroups || []).map(group => ({
         ...group,
         questionIds: Array.isArray(group.questionIds) ? group.questionIds : []
       }));
       
-      console.log('🔧 [ScoreModal] Normalized groups:', normalizedGroups);
+      logger.debug('Normalized groups', { groups: normalizedGroups });
       setQuestionGroups(normalizedGroups);
       setErrors({ groups: '', percentage: '' });
     }
@@ -90,10 +90,8 @@ export default function ScoreSystemConfigModal({
       percentage: 0
     };
     
-    // Adiciona o novo grupo
     const updatedGroups = [...questionGroups, newGroup];
     
-    // Redistribui as porcentagens igualmente entre todos os grupos
     const equalPercentage = 100 / updatedGroups.length;
     const groupsWithEqualPercentages = updatedGroups.map(g => ({
       ...g,
@@ -106,7 +104,6 @@ export default function ScoreSystemConfigModal({
   const handleRemoveGroup = (groupId: string) => {
     const remainingGroups = questionGroups.filter(g => g.id !== groupId);
     
-    // Se ainda há grupos, redistribui as porcentagens igualmente
     if (remainingGroups.length > 0) {
       const equalPercentage = 100 / remainingGroups.length;
       const groupsWithEqualPercentages = remainingGroups.map(g => ({
@@ -119,7 +116,6 @@ export default function ScoreSystemConfigModal({
     }
   };
 
-  // Verifica se um nome de grupo está duplicado
   const isDuplicateGroupName = (groupId: string, name: string) => {
     const trimmedName = name.trim().toLowerCase();
     if (!trimmedName) return false;
@@ -165,7 +161,6 @@ export default function ScoreSystemConfigModal({
     };
 
     if (scoringMode === 'groups') {
-      // Validar nomes duplicados
       const groupNames = questionGroups.map(g => g.name.trim().toLowerCase()).filter(name => name !== '');
       const duplicateNames = groupNames.filter((name, index) => groupNames.indexOf(name) !== index);
       if (duplicateNames.length > 0) {
@@ -216,7 +211,7 @@ export default function ScoreSystemConfigModal({
       });
       onClose();
     } catch (error) {
-      console.error('Erro ao salvar configuração:', error);
+      logger.error('Erro ao salvar configuração', { error });
     } finally {
       setLoading(false);
     }

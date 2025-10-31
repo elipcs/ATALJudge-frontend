@@ -1,5 +1,5 @@
 import { Card } from "@/components/ui/card";
-import { Question } from "@/types/question";
+import { Question } from "@/types";
 
 interface QuestionProblemProps {
   question: Question;

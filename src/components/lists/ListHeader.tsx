@@ -10,12 +10,12 @@ interface ListHeaderProps {
   switchArrangementScenario: (index: number) => void;
 }
 
-const ListHeader: React.FC<ListHeaderProps> = ({
+export default function ListHeader({
   list,
   availableArrangements,
   currentArrangementIndex,
   switchArrangementScenario
-}) => {
+}: ListHeaderProps) {
   if (!list) return null;
   return (
     <div className="flex items-center justify-between mb-8">
@@ -27,12 +27,6 @@ const ListHeader: React.FC<ListHeaderProps> = ({
         </div>
       </div>
       <div className="flex items-center gap-3">
-        <span className={`px-4 py-2 rounded-full text-sm font-medium ${
-          list.status === 'published' ? 'text-green-600 bg-green-100' :
-          'text-yellow-600 bg-yellow-100'
-        }`}>
-          {list.status === 'published' ? 'Publicada' : 'Rascunho'}
-        </span>
         {/* Seleção de arranjo */}
         {availableArrangements.length > 1 && (
           <div className="flex rounded-lg overflow-hidden border border-slate-300 bg-white/80">
@@ -56,4 +50,3 @@ const ListHeader: React.FC<ListHeaderProps> = ({
   );
 };
 
-export default ListHeader;

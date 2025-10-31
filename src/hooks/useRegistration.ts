@@ -8,6 +8,8 @@ export interface PasswordValidation {
   hasLetters: boolean;
   hasNumbers: boolean;
   hasUppercase: boolean;
+  hasLowercase: boolean;
+  hasSpecialChar: boolean;
 }
 
 export function useRegistration() {
@@ -24,16 +26,34 @@ export function useRegistration() {
   useEffect(() => {
     const urlToken = searchParams.get('token');
     if (urlToken) {
-      setToken(urlToken);
+      setTimeout(() => setToken(urlToken), 0);
     }
   }, [searchParams]);
 
+  // Countdown após registro bem-sucedido
+  useEffect(() => {
+    if (!isRegistrationFinished) return;
+
+    if (countdown <= 0) {
+      router.push('/login');
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setCountdown(prev => prev - 1);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [isRegistrationFinished, countdown, router]);
+
   const validatePassword = (password: string): PasswordValidation => {
     return {
-      minLength: password.length >= 8,
+      minLength: password.length >= 12,
       hasLetters: /[a-zA-Z]/.test(password),
       hasNumbers: /[0-9]/.test(password),
-      hasUppercase: /[A-Z]/.test(password)
+      hasUppercase: /[A-Z]/.test(password),
+      hasLowercase: /[a-z]/.test(password),
+      hasSpecialChar: /[!@#$%^&*(),.?":{}|<>]/.test(password)
     };
   };
 
@@ -59,7 +79,7 @@ export function useRegistration() {
     
     const isPasswordValid = validatePassword(formData.password);
     if (!isPasswordValid.minLength) {
-      return "Senha deve ter pelo menos 8 caracteres";
+      return "Senha deve ter pelo menos 12 caracteres";
     }
     if (!isPasswordValid.hasLetters) {
       return "Senha deve conter letras";
@@ -69,6 +89,12 @@ export function useRegistration() {
     }
     if (!isPasswordValid.hasUppercase) {
       return "Senha deve conter pelo menos 1 letra maiúscula";
+    }
+    if (!isPasswordValid.hasLowercase) {
+      return "Senha deve conter pelo menos 1 letra minúscula";
+    }
+    if (!isPasswordValid.hasSpecialChar) {
+      return "Senha deve conter pelo menos 1 caractere especial";
     }
     
     if (formData.password !== formData.confirmPassword) {
@@ -95,17 +121,7 @@ export function useRegistration() {
     }
     
     setIsRegistrationFinished(true);
-    
-    const countdownInterval = setInterval(() => {
-      setCountdown(prev => {
-        if (prev <= 1) {
-          clearInterval(countdownInterval);
-          router.push('/login');
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+    setCountdown(5); // Reset countdown
   };
 
   const getRoleTitle = () => {

@@ -12,7 +12,8 @@ export function useLogin() {
     setLoading(true);
     
     try {
-      const { user, accessToken, refreshToken } = await authApi.login(email, password);
+      const result = await authApi.login(email, password);
+      const { user, accessToken, refreshToken } = result.data;
       
       authApi.setTokens(accessToken, refreshToken);
       localStorage.setItem('user', JSON.stringify(user));

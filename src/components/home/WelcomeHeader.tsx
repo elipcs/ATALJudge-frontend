@@ -2,8 +2,16 @@
 
 import React from "react";
 
-import { WelcomeHeaderProps } from "../../types";
+import { User } from "@/types";
 import { translateUserRole } from "../../utils/roleTranslations";
+
+interface WelcomeHeaderProps {
+  currentUser: User;
+  title?: string;
+  subtitle?: string;
+  extraInfo?: React.ReactNode;
+  children?: React.ReactNode;
+}
 
 export default function WelcomeHeader({
   currentUser,

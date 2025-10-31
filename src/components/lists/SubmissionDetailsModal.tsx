@@ -15,11 +15,11 @@ interface SubmissionDetailsModalProps {
   onClose: () => void;
 }
 
-const SubmissionDetailsModal: React.FC<SubmissionDetailsModalProps> = ({
+export default function SubmissionDetailsModal({
   isOpen,
   submission,
   onClose
-}) => {
+}: SubmissionDetailsModalProps) {
   if (!isOpen || !submission) return null;
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
@@ -54,4 +54,3 @@ const SubmissionDetailsModal: React.FC<SubmissionDetailsModalProps> = ({
   );
 };
 
-export default SubmissionDetailsModal;

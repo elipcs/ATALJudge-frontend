@@ -1,102 +1,121 @@
-import { Class, Student } from '../types';
-import { authenticatedFetch } from '../config/api';
+import { API } from '../config/api';
+import { logger } from '../utils/logger';
+import { ClassResponseDTO } from '@/types/dtos';
+import { Class, Professor } from '@/types';
+
+function mapClassDTO(dto: ClassResponseDTO): Class {
+  const professor: Professor | null = dto.professor
+    ? {
+        id: dto.professor.id,
+        name: dto.professor.name,
+        email: dto.professor.email,
+        role: dto.professor.role,
+      }
+    : null;
+
+  const students = Array.isArray(dto.students)
+    ? dto.students.map((s) => ({
+        id: s.id,
+        name: s.name,
+        email: s.email,
+        studentRegistration: s.studentRegistration || '',
+        role: s.role,
+        classId: dto.id,
+        grades: [],
+        createdAt: typeof s.createdAt === 'string' ? s.createdAt : new Date(s.createdAt).toISOString(),
+      }))
+    : [];
+
+  return {
+    id: dto.id,
+    name: dto.name,
+    professor,
+    students,
+    studentCount: typeof dto.studentCount === 'number' ? dto.studentCount : students.length,
+    createdAt: typeof dto.createdAt === 'string' ? dto.createdAt : new Date(dto.createdAt).toISOString(),
+    updatedAt: typeof dto.updatedAt === 'string' ? dto.updatedAt : new Date(dto.updatedAt).toISOString(),
+  };
+}
 
 export const classesApi = {
   async getAll(): Promise<Class[]> {
     try {
-      const response = await authenticatedFetch<Class[]>('/api/classes');
-      return Array.isArray(response.data) ? response.data : [];
+      const { data } = await API.classes.list();
+      const array = Array.isArray(data) ? data : [];
+      return array.map(mapClassDTO);
     } catch (error) {
-      console.error('❌ [classesApi.getAll] Erro ao buscar turmas:', error);
+      logger.error('Erro ao buscar turmas', { error });
       throw error;
     }
   },
 
   async getById(id: string): Promise<Class | null> {
     try {
-      const response = await authenticatedFetch<{ class: Class }>(`/api/classes/${id}`);
-      return response.data.class || null;
+      const { data } = await API.classes.get(id);
+      return data ? mapClassDTO(data) : null;
     } catch (error) {
-      console.error('Erro ao buscar turma:', error);
+      logger.error('Erro ao buscar turma', { error });
       return null;
     }
   },
 
   async getUserClasses(userId: string, userRole: string): Promise<Class[]> {
     try {
-      const allClasses = await this.getAll();
+      const allClasses = await API.classes.list();
+      const array = Array.isArray(allClasses.data) ? allClasses.data : [];
+      const mapped = array.map(mapClassDTO);
       if (userRole === 'student') {
-        const studentClasses = allClasses.filter((cls: Class) => 
-          cls.students && cls.students.some(student => student.id === userId)
+        return mapped.filter((cls) => 
+          Array.isArray(cls.students) && cls.students.some(student => student.id === userId)
         );
-        return studentClasses;
-      } else {
-        return allClasses;
       }
+      return mapped;
     } catch (error) {
-      console.error('Erro ao buscar turmas do usuário:', error);
+      logger.error('Erro ao buscar turmas do usuário', { error });
       throw error;
     }
   },
 
-  async create(data: {
-    name: string;
-    professorId: string;
-    professorName: string;
-  }): Promise<Class> {
+  async create(data: { name: string; professorId: string; professorName?: string }): Promise<Class> {
     try {
-      const response = await authenticatedFetch<{ class: Class }>('/api/classes', {
-        method: 'POST',
-        body: JSON.stringify({
-          nome: data.name,
-          professor_id: data.professorId
-        }),
+      const { data: created } = await API.classes.create({
+        name: data.name,
+        professorId: data.professorId
       });
-
-      return response.data.class;
+      return mapClassDTO(created);
     } catch (error) {
-      console.error('Erro ao criar turma:', error);
+      logger.error('Erro ao criar turma', { error });
       throw error;
     }
   },
 
   async update(id: string, data: { name: string }): Promise<Class> {
     try {
-      const response = await authenticatedFetch<{ class: Class }>(`/api/classes/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify({
-          name: data.name
-        }),
-      });
-
-      return response.data.class;
+      const { data: updated } = await API.classes.update(id, { name: data.name });
+      return mapClassDTO(updated);
     } catch (error) {
-      console.error('Erro ao atualizar turma:', error);
+      logger.error('Erro ao atualizar turma', { error });
       throw error;
     }
   },
 
   async delete(id: string): Promise<boolean> {
     try {
-      await authenticatedFetch(`/api/classes/${id}`, {
-        method: 'DELETE',
-      });
-
+      await API.classes.delete(id);
       return true;
     } catch (error) {
-      console.error('Erro ao excluir turma:', error);
+      logger.error('Erro ao excluir turma', { error });
       throw error;
     }
   },
 
-  async getClassStudents(classId: string): Promise<Student[]> {
+  async getClassStudents(classId: string): Promise<Array<{ id: string; name: string; email: string; role: string; studentRegistration?: string; createdAt: string }>> {
     try {
-      const response = await authenticatedFetch<{ students: { students: Student[] } }>(`/api/classes/${classId}/students`);
-      return response.data.students?.students || [];
+      const { data } = await API.classes.students(classId);
+      return data.students || [];
     } catch (error) {
-      console.error('Erro ao buscar alunos da turma:', error);
+      logger.error('Erro ao buscar alunos da turma', { error });
       throw error;
     }
   },
-
 };

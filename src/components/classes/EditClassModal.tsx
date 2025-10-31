@@ -28,8 +28,11 @@ export default function EditClassModal({
 
   useEffect(() => {
     if (isOpen && classData) {
-      setName(classData.name || "");
-      setLocalError("");
+      const id = setTimeout(() => {
+        setName(classData.name || "");
+        setLocalError("");
+      }, 0);
+      return () => clearTimeout(id);
     }
   }, [isOpen, classData]);
 

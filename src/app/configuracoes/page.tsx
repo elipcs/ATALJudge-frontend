@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import PageHeader from "../../components/PageHeader";
 import { useUserRole } from "../../hooks/useUserRole";
 import PageLoading from "../../components/PageLoading";
 import { Checkbox } from "../../components/ui/checkbox";
 import { Button } from "../../components/ui/button";
+import { API } from "../../config/api";
 
 interface SystemReset {
   resetSubmissions: boolean;
@@ -64,33 +65,14 @@ export default function ConfiguracoesPage() {
   const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
 
-
-  useEffect(() => {
-    loadData();
-  }, [activeTab]);
-
-  if (!isLoading && userRole !== 'professor') {
-    window.location.href = '/nao-autorizado';
-    return null;
-  }
-
-  const loadData = async () => {
-    if (activeTab === 'ips') {
-      await loadAllowedIPs();
-    } else if (activeTab === 'students') {
-      await loadStudents();
-    }
-  };
-
   const loadAllowedIPs = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/config/allowed-ips');
-      if (response.ok) {
-        const data = await response.json();
-        setAllowedIPs(data.allowedIPs || []);
-      }
-    } catch (error) {
+      const response = await API.config.getAllowedIps();
+      const payload = response.data as { allowedIPs?: AllowedIP[] } | AllowedIP[];
+      const list = Array.isArray(payload) ? payload : (payload.allowedIPs ?? []);
+      setAllowedIPs(list);
+    } catch (_error) {
       setError('Erro ao carregar IPs permitidos');
     } finally {
       setLoading(false);
@@ -100,17 +82,33 @@ export default function ConfiguracoesPage() {
   const loadStudents = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/config/students');
-      if (response.ok) {
-        const data = await response.json();
-        setStudents(data.students || []);
-      }
-    } catch (error) {
+      const response = await API.config.getStudents();
+      const payload = response.data as { students?: Student[] } | Student[];
+      const list = Array.isArray(payload) ? payload : (payload.students ?? []);
+      setStudents(list);
+    } catch (_error) {
       setError('Erro ao carregar estudantes');
     } finally {
       setLoading(false);
     }
   };
+
+  const loadData = useCallback(async () => {
+    if (activeTab === 'ips') {
+      await loadAllowedIPs();
+    } else if (activeTab === 'students') {
+      await loadStudents();
+    }
+  }, [activeTab]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  if (!isLoading && userRole !== 'professor') {
+    window.location.href = '/nao-autorizado';
+    return null;
+  }
 
   const performSystemReset = async () => {
     if (systemReset.confirmationText !== 'RESETAR') {
@@ -122,40 +120,24 @@ export default function ConfiguracoesPage() {
       setSaving(true);
       setButtonSuccess(false);
       
-      const response = await fetch('/api/config/system-reset', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          resetSubmissions: systemReset.resetSubmissions,
-          resetStudents: systemReset.resetStudents,
-          resetClasses: systemReset.resetClasses,
-            resetLists: systemReset.resetLists,
-            resetMonitors: systemReset.resetMonitors,
-            resetProfessors: systemReset.resetProfessors,
-            resetInvites: systemReset.resetInvites
-        })
-      });
+      await API.config.systemReset();
 
-      if (response.ok) {
-        setButtonSuccess(true);
-        setSuccess('Reset do sistema realizado com sucesso!');
-        setSystemReset({
-          resetSubmissions: false,
-          resetStudents: false,
-          resetClasses: false,
-          resetLists: false,
-         resetMonitors: false,
-         resetProfessors: false,
-         resetInvites: false,
-         confirmationText: ''
-        });
-        
-        setTimeout(() => setButtonSuccess(false), 3000);
-      } else {
-        throw new Error('Erro ao realizar reset do sistema');
-      }
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'Erro ao realizar reset');
+      setButtonSuccess(true);
+      setSuccess('Reset do sistema realizado com sucesso!');
+      setSystemReset({
+        resetSubmissions: false,
+        resetStudents: false,
+        resetClasses: false,
+        resetLists: false,
+       resetMonitors: false,
+       resetProfessors: false,
+       resetInvites: false,
+       confirmationText: ''
+      });
+      
+      setTimeout(() => setButtonSuccess(false), 3000);
+    } catch (_error) {
+      setError(_error instanceof Error ? _error.message : 'Erro ao realizar reset');
     } finally {
       setSaving(false);
     }
@@ -175,21 +157,12 @@ export default function ConfiguracoesPage() {
 
     try {
       setSaving(true);
-      const response = await fetch('/api/config/allowed-ips', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newIP)
-      });
-
-      if (response.ok) {
-        setSuccess('IP adicionado com sucesso!');
-        setNewIP({ ip: '', description: '' });
-        await loadAllowedIPs();
-      } else {
-        throw new Error('Erro ao adicionar IP');
-      }
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'Erro ao adicionar IP');
+      await API.config.createAllowedIp(newIP);
+      setSuccess('IP adicionado com sucesso!');
+      setNewIP({ ip: '', description: '' });
+      await loadAllowedIPs();
+    } catch (_error) {
+      setError(_error instanceof Error ? _error.message : 'Erro ao adicionar IP');
     } finally {
       setSaving(false);
     }
@@ -197,34 +170,20 @@ export default function ConfiguracoesPage() {
 
   const toggleIP = async (id: string) => {
     try {
-      const response = await fetch(`/api/config/allowed-ips/${id}/toggle`, {
-        method: 'PUT'
-      });
-
-      if (response.ok) {
-        await loadAllowedIPs();
-      } else {
-        throw new Error('Erro ao alterar status do IP');
-      }
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'Erro ao alterar status');
+      await API.config.toggleAllowedIp(id);
+      await loadAllowedIPs();
+    } catch (_error) {
+      setError(_error instanceof Error ? _error.message : 'Erro ao alterar status');
     }
   };
 
   const removeIP = async (id: string) => {
     try {
-      const response = await fetch(`/api/config/allowed-ips/${id}`, {
-        method: 'DELETE'
-      });
-
-      if (response.ok) {
-        setSuccess('IP removido com sucesso!');
-        await loadAllowedIPs();
-      } else {
-        throw new Error('Erro ao remover IP');
-      }
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'Erro ao remover IP');
+      await API.config.deleteAllowedIp(id);
+      setSuccess('IP removido com sucesso!');
+      await loadAllowedIPs();
+    } catch (_error) {
+      setError(_error instanceof Error ? _error.message : 'Erro ao remover IP');
     }
   };
 
@@ -238,24 +197,16 @@ export default function ConfiguracoesPage() {
       setSaving(true);
       setButtonSuccess(false);
       
-      const response = await fetch('/api/config/remove-students', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ studentIds: selectedStudents })
-      });
+      await API.config.removeStudents(selectedStudents);
 
-      if (response.ok) {
-        setButtonSuccess(true);
-        setSuccess(`${selectedStudents.length} estudante(s) removido(s) com sucesso!`);
-        setSelectedStudents([]);
-        await loadStudents();
-        
-        setTimeout(() => setButtonSuccess(false), 3000);
-      } else {
-        throw new Error('Erro ao remover estudantes');
-      }
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'Erro ao remover estudantes');
+      setButtonSuccess(true);
+      setSuccess(`${selectedStudents.length} estudante(s) removido(s) com sucesso!`);
+      setSelectedStudents([]);
+      await loadStudents();
+      
+      setTimeout(() => setButtonSuccess(false), 3000);
+    } catch (_error) {
+      setError(_error instanceof Error ? _error.message : 'Erro ao remover estudantes');
     } finally {
       setSaving(false);
     }
@@ -420,7 +371,7 @@ export default function ConfiguracoesPage() {
 
           <div className="mb-6">
             <label className="block text-sm font-semibold text-slate-900 mb-3">
-              Confirmação: Digite "RESETAR" para confirmar
+              Confirmação: Digite &quot;RESETAR&quot; para confirmar
             </label>
             <input
               type="text"

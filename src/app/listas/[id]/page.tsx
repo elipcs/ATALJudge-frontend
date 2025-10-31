@@ -12,10 +12,11 @@ import { useListPage } from "@/hooks/useListPage";
 import { useQuestionActions } from "@/hooks/useQuestionActions";
 import ListTabs from "@/components/lists/ListTabs";
 import QuestionModal from "@/components/lists/QuestionModal";
-import ScoreSummary from "@/components/lists/ScoreSummary";
 import ScoreSystemConfigModal from "@/components/lists/ScoreSystemConfigModal";
 import { SubmissionScore } from "@/utils/scoringUtils";
 import { listsApi } from "@/services/lists";
+import { useToast } from "@/hooks/use-toast";
+import { logger } from '@/utils/logger';
 
 export default function ListPage() {
   const params = useParams();
@@ -28,11 +29,11 @@ export default function ListPage() {
     error,
     userRole,
     submissions,
-    backendScore,
     getQuestionSubmission,
     getStatusColor,
     formatDateTime,
     isListStarted,
+    isListEnded,
     hasQuestions
   } = useListPage();
 
@@ -41,6 +42,8 @@ export default function ListPage() {
     updateQuestion,
   } = useQuestionActions(id);
 
+  const { toast } = useToast();
+
   const [showAddQuestionModal, setShowAddQuestionModal] = useState(false);
   const [showEditQuestionModal, setShowEditQuestionModal] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
@@ -48,56 +51,54 @@ export default function ListPage() {
 
   const handleSaveScoreConfig = async (config: any) => {
     try {
-      console.log('💾 [handleSaveScoreConfig] Configuração recebida do modal:', config);
+      logger.debug('Configuração recebida do modal', { config });
       
-      // Converte os campos de camelCase para snake_case para o backend
       const backendConfig: any = {
         title: list!.title,
         description: list!.description,
-        start_time: list!.startDate,
-        end_time: list!.endDate,
-        class_ids: list!.classIds,
-        status: list!.status,
-        scoring_mode: config.scoringMode,
-        max_score: config.maxScore,
+        startDate: list!.startDate,
+        endDate: list!.endDate,
+        classIds: list!.classIds,
+        scoringMode: config.scoringMode,
+        maxScore: config.maxScore,
       };
 
-      // Adiciona campos específicos do modo simples
       if (config.scoringMode === 'simple') {
-        backendConfig.min_questions_for_max_score = config.minQuestionsForMaxScore;
+        backendConfig.minQuestionsForMaxScore = config.minQuestionsForMaxScore;
       }
 
-      // Adiciona grupos se modo for 'groups'
       if (config.scoringMode === 'groups' && config.questionGroups) {
-        backendConfig.question_groups = config.questionGroups.map((group: any) => ({
+          backendConfig.questionGroups = config.questionGroups.map((group: any) => ({
           id: group.id,
           name: group.name,
-          question_ids: group.questionIds,
+          questionIds: group.questionIds,
           percentage: group.percentage
         }));
       }
 
-      console.log('📤 [handleSaveScoreConfig] Dados convertidos para backend:', backendConfig);
+      logger.debug('Dados convertidos para backend', { backendConfig });
       
       await listsApi.update(id, backendConfig);
       
-      console.log('✅ [handleSaveScoreConfig] Configuração salva com sucesso!');
+      logger.info('Configuração salva com sucesso');
       setShowScoreConfigModal(false);
       window.location.reload();
     } catch (error) {
-      console.error('❌ [handleSaveScoreConfig] Erro ao salvar configuração de pontuação:', error);
-      alert('Erro ao salvar configuração. Por favor, tente novamente.');
+      logger.error('Erro ao salvar configuração de pontuação', { error });
+      toast({
+        title: "Erro",
+        description: "Erro ao salvar configuração. Por favor, tente novamente.",
+        variant: "destructive",
+      });
     }
   };
 
-  // Converte submissões para o formato esperado pelo ScoreSummary
-  const submissionScores: SubmissionScore[] = submissions.map(sub => ({
-    questionId: sub.questionId,
-    score: sub.score,
-    attempt: sub.attempt
-  }));
+  // const submissionScores: SubmissionScore[] = submissions.map(sub => ({
+  //   questionId: sub.questionId,
+  //   score: sub.score,
+  //   attempt: sub.attempt
+  // }));
 
-  // Reordena as questões por grupos se o modo for 'groups'
   const getOrderedQuestions = () => {
     if (!list || list.scoringMode !== 'groups' || !list.questionGroups || list.questionGroups.length === 0) {
       return list?.questions || [];
@@ -106,7 +107,6 @@ export default function ListPage() {
     const orderedQuestions: Question[] = [];
     const questionMap = new Map(list.questions.map(q => [q.id, q]));
 
-    // Adiciona questões na ordem dos grupos
     for (const group of list.questionGroups) {
       if (!group || !group.questionIds) continue;
       const questionIds = Array.isArray(group.questionIds) ? group.questionIds : [];
@@ -119,7 +119,6 @@ export default function ListPage() {
       }
     }
 
-    // Adiciona questões que não estão em nenhum grupo no final
     for (const question of list.questions) {
       if (!orderedQuestions.find(q => q.id === question.id)) {
         orderedQuestions.push(question);
@@ -135,7 +134,7 @@ export default function ListPage() {
     return <PageLoading message="Carregando lista..." description="Preparando as informações" />;
   }
 
-  if (error) {
+  if (error && error !== 'ipRestricted') {
     return (
       <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white flex items-center justify-center p-4">
         <div className="w-full max-w-2xl mx-auto">
@@ -220,6 +219,25 @@ export default function ListPage() {
   <ListTabs id={id} activeTab="lista" hasQuestions={!!hasQuestions()} userRole={userRole || 'student'} />
       </div>
 
+      {/* Aviso de IP restrito (para estudantes) */}
+      {error === 'ipRestricted' && (
+        <Card className="bg-gradient-to-r from-red-50 to-pink-50 border-red-200 rounded-2xl shadow-lg p-6 mb-6">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-red-100 rounded-xl">
+              <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-red-800">Acesso Restrito por IP</h3>
+              <p className="text-red-700">
+                Esta lista possui restrição de acesso por IP. Seu endereço IP atual não está autorizado para visualizar o conteúdo desta lista. Entre em contato com seu professor para mais informações.
+              </p>
+            </div>
+          </div>
+        </Card>
+      )}
+
       {/* Verificar se a lista já começou (para estudantes) */}
       {!isListStarted() && (
         <Card className="bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-200 rounded-2xl shadow-lg p-6 mb-6">
@@ -232,7 +250,7 @@ export default function ListPage() {
             <div>
               <h3 className="text-lg font-semibold text-yellow-800">Lista ainda não iniciada</h3>
               <p className="text-yellow-700">
-                Esta lista será disponibilizada em {formatDateTime(list.startDate)}.
+                Esta lista será disponibilizada em {list.startDate ? formatDateTime(list.startDate) : 'data não definida'}.
               </p>
             </div>
           </div>
@@ -243,25 +261,27 @@ export default function ListPage() {
       <Card className="bg-white border-slate-200 rounded-3xl shadow-lg p-6 mb-6">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-xl font-bold text-slate-900">Informações da Lista</h3>
+          {list.isRestricted && (
+            <span className="px-3 py-1 bg-red-100 text-red-700 text-sm font-semibold rounded-full border border-red-200 flex items-center gap-2">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+              Acesso Restrito por IP
+            </span>
+          )}
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
           <div className="bg-gradient-to-r from-slate-50 to-slate-100 rounded-2xl p-4">
             <span className="text-sm font-semibold text-slate-600">Início</span>
-            <p className="text-slate-900 font-bold text-lg">{formatDateTime(list.startDate)}</p>
+            <p className="text-slate-900 font-bold text-lg">{list.startDate ? formatDateTime(list.startDate) : 'Não definido'}</p>
           </div>
           <div className="bg-gradient-to-r from-slate-50 to-slate-100 rounded-2xl p-4">
             <span className="text-sm font-semibold text-slate-600">Fim</span>
-            <p className="text-slate-900 font-bold text-lg">{formatDateTime(list.endDate)}</p>
+            <p className="text-slate-900 font-bold text-lg">{list.endDate ? formatDateTime(list.endDate) : 'Não definido'}</p>
           </div>
           <div className="bg-gradient-to-r from-slate-50 to-slate-100 rounded-2xl p-4">
             <span className="text-sm font-semibold text-slate-600">Questões</span>
             <p className="text-slate-900 font-bold text-lg">{list.questions.length}</p>
-          </div>
-          <div className="bg-gradient-to-r from-slate-50 to-slate-100 rounded-2xl p-4">
-            <span className="text-sm font-semibold text-slate-600">Status</span>
-            <p className="text-slate-900 font-bold text-lg">
-              {list.status === 'published' ? 'Publicada' : 'Rascunho'}
-            </p>
           </div>
         </div>
 
@@ -329,14 +349,11 @@ export default function ListPage() {
         </div>
       </Card>
 
-      {/* Sistema de Pontuação - Exibido para Estudantes */}
-      {userRole === 'student' && isListStarted() && (
-        <ScoreSummary list={list} submissions={submissionScores} backendScore={backendScore} />
-      )}
-
       {/* Resumo das Questões */}
-      {hasQuestions() && (
-        <Card className="bg-white border-slate-200 rounded-3xl shadow-lg p-6">
+      {hasQuestions() && error !== 'ipRestricted' && (
+        <Card className={`bg-white border-slate-200 rounded-3xl shadow-lg p-6 transition-all ${
+          userRole === 'student' && !isListStarted() ? 'blur-sm opacity-60 pointer-events-none' : ''
+        }`}>
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-slate-900">Resumo das Questões</h2>
             {/* Botões para professor/assistant */}
@@ -359,7 +376,6 @@ export default function ListPage() {
             {orderedQuestions.slice(0, 3).map((question, index) => {
               const submission = getQuestionSubmission(question.id);
               
-              // Verifica se deve mostrar cabeçalho de grupo
               let groupHeader = null;
               if (list.scoringMode === 'groups' && list.questionGroups) {
                 const currentGroup = list.questionGroups.find(g => {
@@ -376,7 +392,6 @@ export default function ListPage() {
                     })
                   : null;
                 
-                // Mostra cabeçalho se é o primeiro da lista ou se mudou de grupo
                 if (currentGroup && (!previousGroup || previousGroup.id !== currentGroup.id)) {
                   groupHeader = (
                     <div key={`group-header-${currentGroup.id}`} className="flex items-center gap-3 mb-3 mt-2">
@@ -471,6 +486,44 @@ export default function ListPage() {
         </Card>
       )}
 
+      {/* Aviso quando lista não começou */}
+      {userRole === 'student' && !isListStarted() && error !== 'ipRestricted' && (
+        <Card className="bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200 rounded-3xl shadow-lg p-6 mt-6">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-amber-100 rounded-xl">
+              <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-amber-900">Lista ainda não começou</h3>
+              <p className="text-amber-800 mt-1">
+                Esta lista começará em {list.startDate ? formatDateTime(list.startDate) : 'data não definida'}. O conteúdo será desbloqueado automaticamente na data de início.
+              </p>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* Aviso quando lista já terminou */}
+      {userRole === 'student' && isListEnded() && error !== 'ipRestricted' && (
+        <Card className="bg-gradient-to-r from-red-50 to-pink-50 border-red-200 rounded-3xl shadow-lg p-6 mt-6">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-red-100 rounded-xl">
+              <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-red-900">Lista finalizada</h3>
+              <p className="text-red-800 mt-1">
+                Esta lista terminou em {list.endDate ? formatDateTime(list.endDate) : 'data não definida'}. Não é mais possível submeter novas soluções.
+              </p>
+            </div>
+          </div>
+        </Card>
+      )}
+
       {/* Verificar se há questões */}
       {!hasQuestions() && (
         <Card className="bg-gradient-to-r from-slate-50 to-slate-100 border-slate-200 rounded-2xl shadow-lg p-8 text-center">
@@ -513,8 +566,12 @@ export default function ListPage() {
               setShowAddQuestionModal(false);
               window.location.reload();
             } catch (error) {
-              console.error('Erro ao criar questão:', error);
-              alert('Erro ao criar questão. Por favor, tente novamente.');
+              logger.error('Erro ao criar questão', { error });
+              toast({
+                title: "Erro",
+                description: "Erro ao criar questão. Por favor, tente novamente.",
+                variant: "destructive",
+              });
             }
           }}
           title="Criar Nova Questão"
@@ -536,8 +593,12 @@ export default function ListPage() {
               setEditingQuestion(null);
               window.location.reload();
             } catch (error) {
-              console.error('Erro ao editar questão:', error);
-              alert('Erro ao editar questão. Por favor, tente novamente.');
+              logger.error('Erro ao editar questão', { error });
+              toast({
+                title: "Erro",
+                description: "Erro ao editar questão. Por favor, tente novamente.",
+                variant: "destructive",
+              });
             }
           }}
           question={editingQuestion}

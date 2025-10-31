@@ -2,6 +2,8 @@
 import type { Metadata } from "next";
 
 import AppWrapper from "@/components/AppWrapper";
+import DevTools from "@/components/DevTools";
+import { Toaster } from "@/components/ui/toaster";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -27,9 +29,11 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <body className="antialiased">
+        <DevTools />
         <AppWrapper>
           {children}
         </AppWrapper>
+        <Toaster />
       </body>
     </html>
   );

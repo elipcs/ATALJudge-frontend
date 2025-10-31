@@ -118,7 +118,7 @@ export function useProfile() {
 
     const isPasswordValid = validatePassword(changePasswordData.newPassword);
     if (!isPasswordValid.minLength) {
-      setError("Senha deve ter pelo menos 8 caracteres");
+      setError("Senha deve ter pelo menos 12 caracteres");
       return;
     }
     if (!isPasswordValid.hasLetters) {
@@ -131,6 +131,14 @@ export function useProfile() {
     }
     if (!isPasswordValid.hasUppercase) {
       setError("Senha deve conter pelo menos 1 letra maiúscula");
+      return;
+    }
+    if (!isPasswordValid.hasLowercase) {
+      setError("Senha deve conter pelo menos 1 letra minúscula");
+      return;
+    }
+    if (!isPasswordValid.hasSpecialChar) {
+      setError("Senha deve conter pelo menos 1 caractere especial");
       return;
     }
 
@@ -167,10 +175,12 @@ export function useProfile() {
 
   function validatePassword(password: string) {
     return {
-      minLength: password.length >= 8,
+      minLength: password.length >= 12,
       hasLetters: /[a-zA-Z]/.test(password),
       hasNumbers: /[0-9]/.test(password),
-      hasUppercase: /[A-Z]/.test(password)
+      hasUppercase: /[A-Z]/.test(password),
+      hasLowercase: /[a-z]/.test(password),
+      hasSpecialChar: /[!@#$%^&*(),.?":{}|<>]/.test(password)
     };
   }
 

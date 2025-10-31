@@ -14,8 +14,6 @@ interface UseListsDataReturn {
   updateList: (id: string, updates: CreateListRequest) => Promise<QuestionList>;
   deleteList: (id: string) => Promise<void>;
   duplicateList: (id: string, newTitle?: string) => Promise<QuestionList>;
-  publishList: (id: string) => Promise<QuestionList>;
-  unpublishList: (id: string) => Promise<QuestionList>;
   addQuestionToList: (listId: string, questionId: string) => Promise<void>;
   removeQuestionFromList: (listId: string, questionId: string) => Promise<void>;
   filters: ListFilters;
@@ -139,38 +137,6 @@ export function useListsData(userRole?: string, currentUser?: any): UseListsData
     }
   }, []);
 
-  const publishList = useCallback(async (id: string): Promise<QuestionList> => {
-    try {
-      setError(null);
-      const publishedList = await listsApi.publishList(id);
-      
-      setLists(prev => prev.map(list => list.id === id ? publishedList : list));
-      
-    
-      return publishedList;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao publicar lista';
-      setError(errorMessage);
-      throw new Error(errorMessage);
-    }
-  }, []);
-
-  const unpublishList = useCallback(async (id: string): Promise<QuestionList> => {
-    try {
-      setError(null);
-      const unpublishedList = await listsApi.unpublishList(id);
-      
-      setLists(prev => prev.map(list => list.id === id ? unpublishedList : list));
-      
-      
-      return unpublishedList;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao despublicar lista';
-      setError(errorMessage);
-      throw new Error(errorMessage);
-    }
-  }, []);
-
   const addQuestionToList = useCallback(async (listId: string, questionId: string): Promise<void> => {
     try {
       setError(null);
@@ -213,8 +179,6 @@ export function useListsData(userRole?: string, currentUser?: any): UseListsData
     updateList,
     deleteList,
     duplicateList,
-    publishList,
-    unpublishList,
     addQuestionToList,
     removeQuestionFromList,
     filters,

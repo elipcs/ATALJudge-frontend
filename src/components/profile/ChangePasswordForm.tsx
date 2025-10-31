@@ -27,10 +27,12 @@ export default function ChangePasswordForm({
 
   function validatePassword(password: string) {
     return {
-      minLength: password.length >= 8,
+      minLength: password.length >= 12,
       hasLetters: /[a-zA-Z]/.test(password),
       hasNumbers: /[0-9]/.test(password),
-      hasUppercase: /[A-Z]/.test(password)
+      hasUppercase: /[A-Z]/.test(password),
+      hasLowercase: /[a-z]/.test(password),
+      hasSpecialChar: /[!@#$%^&*(),.?":{}|<>]/.test(password)
     };
   }
 
@@ -58,6 +60,12 @@ export default function ChangePasswordForm({
       return;
     }
     if (!isPasswordValid.hasUppercase) {
+      return;
+    }
+    if (!isPasswordValid.hasLowercase) {
+      return;
+    }
+    if (!isPasswordValid.hasSpecialChar) {
       return;
     }
 
@@ -91,7 +99,8 @@ export default function ChangePasswordForm({
 
     const isPasswordValid = validatePassword(formData.newPassword);
     return isPasswordValid.minLength && isPasswordValid.hasLetters && 
-           isPasswordValid.hasNumbers && isPasswordValid.hasUppercase;
+           isPasswordValid.hasNumbers && isPasswordValid.hasUppercase &&
+           isPasswordValid.hasLowercase && isPasswordValid.hasSpecialChar;
   };
 
   return (
@@ -134,7 +143,7 @@ export default function ChangePasswordForm({
               placeholder="Digite sua nova senha"
               className="h-12 bg-white border-slate-200 focus:border-blue-400 focus:ring-blue-400/20 text-slate-900 placeholder:text-slate-500 rounded-xl"
             />
-            <p className="text-xs text-slate-500 mt-2">Mínimo de 8 caracteres, com letras, números e pelo menos 1 maiúscula</p>
+            <p className="text-xs text-slate-500 mt-2">Mínimo de 12 caracteres, com letras maiúsculas e minúsculas, números e caractere especial</p>
           </div>
           
           <div className="bg-gradient-to-r from-slate-50 to-slate-100 rounded-2xl p-6">

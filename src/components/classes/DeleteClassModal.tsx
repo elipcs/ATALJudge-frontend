@@ -40,7 +40,7 @@ export default function DeleteClassModal({
 
   if (!isOpen || !classData) return null;
 
-  const hasStudents = (classData.student_count || 0) > 0;
+  const hasStudents = (classData.studentCount || 0) > 0;
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 p-4 overflow-y-auto">

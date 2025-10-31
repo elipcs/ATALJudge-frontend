@@ -10,22 +10,19 @@ interface EditListModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (listData: CreateListRequest) => Promise<void>;
-  onUnpublish?: (listId: string) => Promise<void>;
-  onPublish?: (listData: any) => Promise<void>;
   onRefresh?: () => Promise<void>;
   classes: Array<{ id: string; name: string }>;
   listData?: {
     id: string;
     title: string;
     description: string;
-    startDate: string;
-    endDate: string;
+    startDate?: string;
+    endDate?: string;
     classIds: string[];
-    status: string;
   };
 }
 
-export default function EditListModal({ isOpen, onClose, onSubmit, onUnpublish, onPublish, onRefresh, classes, listData }: EditListModalProps) {
+export default function EditListModal({ isOpen, onClose, onSubmit, onRefresh, classes, listData }: EditListModalProps) {
   const [form, setForm] = useState({
     title: '',
     description: '',
@@ -34,8 +31,6 @@ export default function EditListModal({ isOpen, onClose, onSubmit, onUnpublish, 
     classIds: [] as string[]
   });
   const [loading, setLoading] = useState(false);
-  const [unpublishLoading, setUnpublishLoading] = useState(false);
-  const [publishLoading, setPublishLoading] = useState(false);
   const [classSearch, setClassSearch] = useState('');
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -88,13 +83,11 @@ export default function EditListModal({ isOpen, onClose, onSubmit, onUnpublish, 
       dateRange: ''
     };
 
-    const isFinalized = listData?.status === 'finalized' || listData?.status === 'finished';
-    
-    if (!isFinalized && !hasStarted && form.startDate && !validateNotPastDate(fromBrazilianDateTimeLocal(form.startDate))) {
+    if (!hasStarted && form.startDate && !validateNotPastDate(fromBrazilianDateTimeLocal(form.startDate))) {
       newErrors.startDate = 'A data de início não pode ser no passado';
     }
 
-    if (!isFinalized && form.endDate && !validateNotPastDate(fromBrazilianDateTimeLocal(form.endDate))) {
+    if (form.endDate && !validateNotPastDate(fromBrazilianDateTimeLocal(form.endDate))) {
       newErrors.endDate = 'A data de fim não pode ser no passado';
     }
 
@@ -129,13 +122,11 @@ export default function EditListModal({ isOpen, onClose, onSubmit, onUnpublish, 
       dateRange: ''
     };
 
-    const isFinalized = listData?.status === 'finalized' || listData?.status === 'finished';
-
-    if (!isFinalized && !hasStarted && form.startDate && !validateNotPastDate(fromBrazilianDateTimeLocal(form.startDate))) {
+    if (!hasStarted && form.startDate && !validateNotPastDate(fromBrazilianDateTimeLocal(form.startDate))) {
       newErrors.startDate = 'A data de início não pode ser no passado';
     }
 
-    if (!isFinalized && !hasStarted && form.endDate && !validateNotPastDate(fromBrazilianDateTimeLocal(form.endDate))) {
+    if (!hasStarted && form.endDate && !validateNotPastDate(fromBrazilianDateTimeLocal(form.endDate))) {
       newErrors.endDate = 'A data de fim não pode ser no passado';
     }
 
@@ -159,8 +150,7 @@ export default function EditListModal({ isOpen, onClose, onSubmit, onUnpublish, 
 
   const isFormValid = () => {
     if (!form.title.trim()) return false;
-    const isFinalized = listData?.status === 'finalized' || listData?.status === 'finished';
-    if (hasStarted || isFinalized) {
+    if (hasStarted) {
       if (!form.endDate) return false;
       const endDateISO = fromBrazilianDateTimeLocal(form.endDate);
       if (!validateNotPastDate(endDateISO)) return false;
@@ -197,20 +187,20 @@ export default function EditListModal({ isOpen, onClose, onSubmit, onUnpublish, 
       const now = new Date();
       const defaultEndDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
       
-      const start_time = hasStarted
+      const startTime = hasStarted
         ? (listData?.startDate || now.toISOString())
         : (form.startDate ? fromBrazilianDateTimeLocal(form.startDate) : now.toISOString());
 
-      const class_ids = hasStarted
+      const classIds = hasStarted
         ? (listData?.classIds || form.classIds)
         : (form.classIds.length > 0 ? form.classIds : [classes[0]?.id || '']);
 
       const payload: CreateListRequest = {
         title: form.title,
         description: form.description,
-        start_time,
-        end_time: form.endDate ? fromBrazilianDateTimeLocal(form.endDate) : defaultEndDate.toISOString(),
-        class_ids
+        startTime,
+        endTime: form.endDate ? fromBrazilianDateTimeLocal(form.endDate) : defaultEndDate.toISOString(),
+        classIds
       };
 
       await onSubmit(payload);
@@ -240,58 +230,8 @@ export default function EditListModal({ isOpen, onClose, onSubmit, onUnpublish, 
     }
   };
 
-  const handleUnpublish = async () => {
-    if (!listData || !onUnpublish) return;
-    
-    try {
-      setUnpublishLoading(true);
-      setErrorMessage('');
-      
-      const now = new Date();
-      const startTime = createBrazilianDate(listData.startDate);
-      
-      if (startTime && now >= startTime) {
-        setErrorMessage('Não é possível despublicar uma lista que já começou.');
-        return;
-      }
-      
-      await onUnpublish(listData.id);
-      setShowSuccessMessage(true);
-      setTimeout(async () => {
-        if (onRefresh) await onRefresh();
-        onClose();
-      }, 1000);
-    } catch (error) {
-      console.error('Erro ao despublicar lista:', error);
-      setErrorMessage(error instanceof Error ? error.message : 'Erro ao despublicar lista');
-    } finally {
-      setUnpublishLoading(false);
-    }
-  };
-
-  const handlePublish = async () => {
-    if (!listData || !onPublish) return;
-    
-    try {
-      setPublishLoading(true);
-      setErrorMessage('');
-      
-      await onPublish(listData);
-      setShowSuccessMessage(true);
-      setTimeout(async () => {
-        if (onRefresh) await onRefresh();
-        onClose();
-      }, 1000);
-    } catch (error) {
-      console.error('Erro ao publicar lista:', error);
-      setErrorMessage(error instanceof Error ? error.message : 'Erro ao publicar lista');
-    } finally {
-      setPublishLoading(false);
-    }
-  };
-
   const handleClose = () => {
-    if (!loading && !unpublishLoading && !publishLoading) {
+    if (!loading) {
       setForm({
         title: '',
         description: '',
@@ -570,79 +510,20 @@ export default function EditListModal({ isOpen, onClose, onSubmit, onUnpublish, 
           </div>
         </form>
 
-        {/* Seção de Status */}
-        {listData && (
-          <div className="mt-6 p-4 bg-slate-50 rounded-xl border border-slate-200">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-slate-100 rounded-lg">
-                <svg className="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold text-slate-900">Status da Lista</h3>
-                <p className="text-sm text-slate-600">
-                  {listData.status === 'published' ? 'Publicada' : 'Rascunho'}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-        
         <div className="flex gap-3 mt-8 pt-6 border-t border-slate-200">
           <Button 
             variant="outline" 
             onClick={handleClose} 
-            className="flex-1 h-12 border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold rounded-xl transition-all duration-200 order-1"
-            disabled={loading || unpublishLoading || publishLoading || showSuccessMessage}
+            className="flex-1 h-12 border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold rounded-xl transition-all duration-200"
+            disabled={loading || showSuccessMessage}
           >
             Cancelar
           </Button>
           
-          {/* Botão Despublicar - só aparece se for publicada e onUnpublish estiver disponível */}
-          {listData?.status === 'published' && onUnpublish && (
-            <Button 
-              onClick={handleUnpublish} 
-              className="flex-1 h-12 bg-gradient-to-r from-slate-400 to-slate-500 hover:from-slate-500 hover:to-slate-600 text-white font-semibold rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed order-2"
-              disabled={loading || unpublishLoading || publishLoading || showSuccessMessage || hasStarted}
-            >
-              {unpublishLoading ? (
-                <div className="flex items-center gap-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  Despublicando...
-                </div>
-              ) : (
-                <>
-                  {hasStarted ? 'Não pode despublicar' : 'Despublicar'}
-                </>
-              )}
-            </Button>
-          )}
-
-          {/* Botão Publicar - só aparece se for rascunho e onPublish estiver disponível */}
-          {listData?.status === 'draft' && onPublish && (
-            <Button 
-              onClick={handlePublish} 
-              className="flex-1 h-12 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed order-2"
-              disabled={loading || unpublishLoading || publishLoading || !isFormValid() || showSuccessMessage}
-            >
-              {publishLoading ? (
-                <div className="flex items-center gap-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  Publicando...
-                </div>
-              ) : (
-                <>
-                  Publicar Lista
-                </>
-              )}
-            </Button>
-          )}
-          
           <Button 
             onClick={handleSubmit} 
-            className="flex-1 h-12 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed order-3"
-            disabled={loading || unpublishLoading || publishLoading || !isFormValid() || showSuccessMessage}
+            className="flex-1 h-12 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={loading || !isFormValid() || showSuccessMessage}
           >
             {loading ? (
               <div className="flex items-center gap-2">

@@ -1,11 +1,58 @@
-import { Submission } from '../types';
-import { authenticatedFetch } from '../config/api';
+import { API } from '../config/api';
+import { logger } from '../utils/logger';
+import { SubmissionResponseDTO, SubmissionDetailDTO } from '@/types/dtos';
 
-export interface CreateSubmissionRequest {
+export type SubmissionStatus = 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED';
+
+export interface Judge0Submission {
+  id: string;
   questionId: string;
-  listId: string;
+  listId?: string;
+  userId: string;
+  language: string;
   code: string;
-  language: 'python' | 'java';
+  status: SubmissionStatus;
+  totalScore?: number;      
+  createdAt: string;
+  updatedAt: string;
+  judge0BatchToken?: string;
+}
+
+export interface SubmissionResult {
+  id: string;
+  submissionId: string;
+  testCaseId: string;
+  testCaseName?: string;
+  isPublic: boolean;
+  passed: boolean;
+  pointsAwarded: number;
+  expectedOutputSnapshot: string;
+  actualOutput?: string;
+  stdout?: string;
+  stderr?: string;
+  statusId?: number;
+  statusDescription?: string;
+  executionTimeMs?: number;
+  memoryKb?: number;
+  compileOutput?: string;
+}
+
+export interface SubmissionResultsResponse {
+  submission: Judge0Submission;
+  results: SubmissionResult[];
+  summary: {
+    passedCount: number;
+    totalCases: number;
+    totalPoints: number;
+    earnedPoints: number;
+  };
+}
+
+export interface SubmitCodeData {
+  questionId: string;
+  listId?: string;
+  language: string;
+  code: string;
 }
 
 export interface SubmissionFilters {
@@ -16,74 +63,64 @@ export interface SubmissionFilters {
   limit?: number;
 }
 
+/**
+ * API de submissões de código
+ * 
+ * Gerencia todas as operações relacionadas a submissões de código, incluindo:
+ * - Buscar submissões (com filtros)
+ * - Buscar detalhes de uma submissão específica
+ * - Obter resultados de testes de uma submissão
+ * 
+ * @example
+ * ```typescript
+ * // Buscar submissões de uma questão
+ * const submissions = await submissionsApi.getSubmissions({
+ *   questionId: "question-id",
+ *   listId: "list-id"
+ * });
+ * 
+ * // Buscar detalhes de uma submissão
+ * const submission = await submissionsApi.getSubmissionById("submission-id");
+ * 
+ * // Buscar resultados dos testes
+ * const results = await submissionsApi.getSubmissionResults("submission-id");
+ * ```
+ */
 export const submissionsApi = {
-  async getSubmissions(filters?: SubmissionFilters): Promise<Submission[]> {
+  async getSubmissions(filters?: SubmissionFilters): Promise<SubmissionResponseDTO[]> {
     try {
-      const queryParams = new URLSearchParams();
-      
-      if (filters) {
-        if (filters.questionId) queryParams.append('questionId', filters.questionId);
-        if (filters.listId) queryParams.append('listId', filters.listId);
-        if (filters.userId) queryParams.append('userId', filters.userId);
-        if (filters.status) queryParams.append('status', filters.status);
-        if (filters.limit) queryParams.append('limit', filters.limit.toString());
-      }
-      
-      const queryString = queryParams.toString();
-      const endpoint = `/api/submissions${queryString ? `?${queryString}` : ''}`;
-      
-  const response = await authenticatedFetch<{submissions: Submission[]}>(endpoint);
-  const submissions = response.data.submissions || [];
-      
-      return Array.isArray(submissions) ? submissions : [];
+      const queryParams: Record<string, string> = {};
+      if (filters?.questionId) queryParams.questionId = filters.questionId;
+      if (filters?.listId) queryParams.listId = filters.listId;
+      if (filters?.userId) queryParams.userId = filters.userId;
+      if (filters?.status) queryParams.status = filters.status;
+      if (filters?.limit) queryParams.limit = String(filters.limit);
+
+      const { data } = await API.submissions.list(queryParams);
+      return data.submissions || [];
     } catch (error) {
-      console.error('Erro ao buscar submissões:', error);
+      logger.error('Erro ao buscar submissões', { error });
       return [];
     }
   },
 
-  async getById(id: string): Promise<Submission | null> {
+  async getSubmission(id: string): Promise<SubmissionResponseDTO | null> {
     try {
-      const response = await authenticatedFetch<{submission: Submission}>(`/api/submissions/${id}`);
-      
-      const submission = response.data.submission;
-      if (!submission) return null;
-      
-      return submission;
+      const { data } = await API.submissions.get(id);
+      return data || null;
     } catch (error) {
-      console.error('❌ [submissionsApi.getById] Erro ao buscar submissão:', error);
+      logger.error('Erro ao buscar submissão', { error });
       return null;
     }
   },
 
-  async create(submissionData: CreateSubmissionRequest): Promise<Submission> {
+  async submitCode(data: SubmitCodeData): Promise<SubmissionDetailDTO> {
     try {
-      const response = await authenticatedFetch<{submission: Submission}>('/api/submissions', {
-        method: 'POST',
-        body: JSON.stringify(submissionData),
-      });
-      return response.data.submission;
+      const { data: result } = await API.submissions.submit(data);
+      return result;
     } catch (error) {
-      console.error('Erro ao criar submissão:', error);
+      logger.error('Erro ao submeter código', { error });
       throw error;
     }
   },
-
-  async getQuestionSubmissions(questionId: string, listId: string): Promise<Submission[]> {
-    try {
-      return await this.getSubmissions({ questionId, listId });
-    } catch (error) {
-      console.error('Erro ao buscar submissões da questão:', error);
-      return [];
-    }
-  },
-
-  async getUserSubmissions(userId: string, limit: number = 10): Promise<Submission[]> {
-    try {
-      return await this.getSubmissions({ userId, limit });
-    } catch (error) {
-      console.error('Erro ao buscar submissões do usuário:', error);
-      return [];
-    }
-  }
 };

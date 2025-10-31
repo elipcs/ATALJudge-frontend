@@ -90,10 +90,7 @@ export function getCurrentDateFormatted(): string {
   });
 }
 
-/**
- * Cria uma data considerando o fuso horário do Brasil (-3)
- * O backend envia datas já no fuso -3, então precisamos ajustar para comparações corretas
- */
+
 export function createBrazilianDate(dateString: string | null | undefined): Date | null {
   if (!dateString) {
     return null;
@@ -112,9 +109,7 @@ export function createBrazilianDate(dateString: string | null | undefined): Date
   return date;
 }
 
-/**
- * Verifica se uma data já passou, considerando o fuso horário do Brasil
- */
+
 export function isDatePassed(dateString: string | null | undefined): boolean {
   const date = createBrazilianDate(dateString);
   if (!date) return false;
@@ -123,9 +118,7 @@ export function isDatePassed(dateString: string | null | undefined): boolean {
   return now >= date;
 }
 
-/**
- * Verifica se uma data ainda não chegou, considerando o fuso horário do Brasil
- */
+
 export function isDateFuture(dateString: string | null | undefined): boolean {
   const date = createBrazilianDate(dateString);
   if (!date) return false;

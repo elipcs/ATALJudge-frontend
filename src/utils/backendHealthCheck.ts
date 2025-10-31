@@ -16,7 +16,9 @@ interface HealthCheckResult {
 }
 
 export async function checkBackendHealth(): Promise<HealthCheckResult> {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+  // Remove /api suffix to get server base URL
+  const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api';
+  const apiUrl = apiBaseUrl.replace(/\/api$/, '');
   
   try {
     const response = await fetch(`${apiUrl}/health`, {

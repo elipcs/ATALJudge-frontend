@@ -80,7 +80,7 @@ const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
         <input
           type="checkbox"
           ref={(node) => {
-            ;(internalRef as any).current = node
+            internalRef.current = node
             if (typeof ref === "function") ref(node)
             else if (ref) (ref as React.MutableRefObject<HTMLInputElement | null>).current = node
           }}

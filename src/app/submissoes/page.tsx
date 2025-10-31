@@ -7,11 +7,13 @@ import { Card } from "../../components/ui/card";
 import { Input } from "../../components/ui/input";
 import { useUserRoleContext } from "../../contexts/UserRoleContext";
 import { submissionsApi, SubmissionFilters } from "../../services/submissions";
+import { listsApi, isCurrentIpAllowedForList } from "../../services/lists";
 import { Submission } from "../../types";
 import PageHeader from "../../components/PageHeader";
 import PageLoading from "../../components/PageLoading";
-import { getSubmissionStatusColor, getVerdictColor, normalizeStatus } from "../../utils/statusUtils";
-import { SUBMISSION_STATUS_OPTIONS, MESSAGES } from "../../constants";
+import { getSubmissionStatusColor, normalizeStatus } from "../../utils/statusUtils";
+import { SUBMISSION_STATUS_OPTIONS } from "../../constants";
+import { logger } from '@/utils/logger';
 
 interface SubmissionsPageState {
   submissions: Submission[];
@@ -22,6 +24,7 @@ interface SubmissionsPageState {
   currentPage: number;
   itemsPerPage: number;
   totalPages: number;
+  restrictedListIds: Set<string>;
 }
 
 export default function SubmissoesPage() {
@@ -36,6 +39,7 @@ export default function SubmissoesPage() {
     currentPage: 1,
     itemsPerPage: 10,
     totalPages: 1,
+    restrictedListIds: new Set(),
   });
 
   const loadSubmissions = useCallback(async () => {
@@ -48,15 +52,52 @@ export default function SubmissoesPage() {
       
       const submissions = await submissionsApi.getSubmissions(filters);
       
+      // Se for estudante, verificar IPs restritos
+      const restrictedListIds = new Set<string>();
+      if (userRole === 'student') {
+        // Identificar listas únicas nas submissões
+        const uniqueListIds = Array.from(new Set(submissions.map(s => s.questionList.id)));
+        
+        // Para cada lista, verificar se é restrita e se o IP está autorizado (em paralelo)
+        const restrictionChecks = await Promise.allSettled(
+          uniqueListIds.map(async (listId) => {
+            try {
+              const list = await listsApi.getById(listId);
+              if (list?.isRestricted) {
+                const isAllowed = await isCurrentIpAllowedForList(listId);
+                return { listId, isRestricted: !isAllowed };
+              }
+              return { listId, isRestricted: false };
+            } catch (err) {
+              logger.error('Erro ao verificar restrição da lista', { listId, error: err });
+              return { listId, isRestricted: false };
+            }
+          })
+        );
+        
+        // Coletar IDs de listas restritas
+        restrictionChecks.forEach(result => {
+          if (result.status === 'fulfilled' && result.value.isRestricted) {
+            restrictedListIds.add(result.value.listId);
+          }
+        });
+      }
+      
+      // Filtrar submissões de listas restritas
+      const accessibleSubmissions = userRole === 'student' 
+        ? submissions.filter(s => !restrictedListIds.has(s.questionList.id))
+        : submissions;
+      
       setState(prev => ({
         ...prev,
-        submissions,
-        filteredSubmissions: submissions,
+        submissions: accessibleSubmissions,
+        filteredSubmissions: accessibleSubmissions,
         loading: false,
-        totalPages: Math.ceil(submissions.length / prev.itemsPerPage)
+        restrictedListIds,
+        totalPages: Math.ceil(accessibleSubmissions.length / prev.itemsPerPage)
       }));
     } catch (error) {
-      console.error('Erro ao carregar submissões:', error);
+      logger.error('Erro ao carregar submissões', { error });
       setState(prev => ({ 
         ...prev, 
         loading: false,
@@ -64,10 +105,11 @@ export default function SubmissoesPage() {
         filteredSubmissions: []
       }));
     }
-  }, []);
+  }, [userRole]);
 
   useEffect(() => {
-    loadSubmissions();
+    const id = setTimeout(() => { loadSubmissions(); }, 0);
+    return () => clearTimeout(id);
   }, [loadSubmissions]);
 
   const applyFilters = useCallback(() => {
@@ -97,7 +139,8 @@ export default function SubmissoesPage() {
   }, [state.submissions, state.searchTerm, state.selectedStatus]);
 
   useEffect(() => {
-    applyFilters();
+    const id = setTimeout(() => { applyFilters(); }, 0);
+    return () => clearTimeout(id);
   }, [applyFilters]);
 
   const paginatedSubmissions = state.filteredSubmissions.slice(
@@ -131,6 +174,26 @@ export default function SubmissoesPage() {
         title="Minhas Submissões"
         description="Acompanhe suas submissões e resultados"
       />
+      
+      {/* Aviso de submissões restritas por IP */}
+      {userRole === 'student' && state.restrictedListIds.size > 0 && (
+        <Card className="bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-200 rounded-2xl shadow-lg p-6">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-yellow-100 rounded-xl">
+              <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-yellow-800">Submissões Restritas por IP</h3>
+              <p className="text-yellow-700">
+                Algumas submissões não estão sendo exibidas porque pertencem a listas com restrição de IP. 
+                Seu endereço IP atual não está autorizado para visualizar essas submissões.
+              </p>
+            </div>
+          </div>
+        </Card>
+      )}
       
       {/* Filtros */}
       <Card className="p-6">

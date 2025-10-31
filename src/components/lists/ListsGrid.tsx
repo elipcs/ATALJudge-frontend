@@ -1,9 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { QuestionList } from "@/types";
+import { QuestionList, Class } from "@/types";
 import ListCard from "./ListCard";
-
-import { Class } from "@/types";
 
 interface ListsGridProps {
   lists: QuestionList[];

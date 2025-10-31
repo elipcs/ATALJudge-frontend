@@ -6,18 +6,3 @@ export { default as SystemNotices } from './SystemNotices';
 export { default as UserActions } from './UserActions';
 export { default as StudentHome } from './StudentHome';
 export { default as StaffHome } from './StaffHome';
-export type { 
-  User, 
-  UserRole, 
-  Student, 
-  Class, 
-  QuickAction, 
-  SystemNotice,
-  WelcomeHeaderProps,
-  QuickActionsProps,
-  UserActionsProps,
-  StudentHomeProps,
-  ProfessorHomeProps,
-  MonitorHomeProps,
-  SubmissionsTableProps
-} from '../../types';

@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Question } from '@/types';
 import { questionsApi, CreateQuestionRequest } from '@/services/questions';
+import { listsApi } from '@/services/lists';
+import { logger } from '@/utils/logger';
 
 export function useQuestionActions(listId: string) {
   const [loading, setLoading] = useState(false);
@@ -16,11 +17,11 @@ export function useQuestionActions(listId: string) {
         listId: listId
       };
       
-      console.log('🔍 [useQuestionActions] Criando questão com dados:', questionDataWithListId);
+      logger.debug('Criando questão com dados', { questionData: questionDataWithListId });
       
       const newQuestion = await questionsApi.create(questionDataWithListId as CreateQuestionRequest);
       
-      console.log('📦 [useQuestionActions] Questão criada e adicionada à lista:', newQuestion);
+      logger.info('Questão criada e adicionada à lista', { questionId: newQuestion.id });
       
       if (!newQuestion || !newQuestion.id) {
         throw new Error('Questão criada mas sem ID válido');
@@ -58,26 +59,9 @@ export function useQuestionActions(listId: string) {
       setLoading(true);
       setError(null);
       
-      await questionsApi.removeFromList(listId, questionId);
+      await listsApi.removeQuestionFromList(listId, questionId);
       
       return true;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
-      setError(errorMessage);
-      throw new Error(errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const generateTestCasesForQuestion = async (questionId: string, referenceCode: string, language: string) => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const testCases = await questionsApi.generateTestCases(questionId, referenceCode, language);
-      
-      return testCases;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
       setError(errorMessage);
@@ -93,6 +77,5 @@ export function useQuestionActions(listId: string) {
     createQuestion,
     updateQuestion,
     deleteQuestion,
-    generateTestCases: generateTestCasesForQuestion
   };
 }

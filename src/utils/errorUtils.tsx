@@ -87,10 +87,3 @@ export function handleApiError(error: unknown): string {
   return 'Ocorreu um erro inesperado';
 }
 
-export function showErrorToast(message: string) {
-  alert(message);
-}
-
-export function showSuccessToast(message: string) {
-  alert(message);
-}

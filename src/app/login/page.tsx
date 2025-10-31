@@ -9,7 +9,7 @@ import { useAuthCheck } from "../../hooks/useAuthCheck";
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { handleLogin, loading, error, setError } = useLogin();
+  const { handleLogin, loading, error, setError: _setError } = useLogin();
   const { checkingAuth } = useAuthCheck();
 
   async function handleSubmit(e: React.FormEvent) {

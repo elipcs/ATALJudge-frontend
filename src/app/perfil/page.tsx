@@ -24,7 +24,7 @@ export default function ProfilePage() {
     saving,
     changingPassword,
     error,
-    success,
+    success: _success,
     buttonSuccess,
     isLoadingRole,
     loadData,

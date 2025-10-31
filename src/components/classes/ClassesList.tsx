@@ -31,16 +31,16 @@ export default function ClassesList({
   return (
     <div className="space-y-6">
       {classes.length === 0 ? (
-        <Card className="p-8 text-center">
-          <div className="text-gray-400 mb-4">
-            <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-4m-5 0H3m2 0h2M7 7h10m-10 4h10m-10 4h7" />
+        <Card className="p-12 text-center bg-white border-slate-200 rounded-3xl shadow-lg">
+          <div className="p-4 bg-gradient-to-r from-indigo-50 to-indigo-100 text-indigo-600 rounded-xl shadow-lg border border-indigo-200 mx-auto mb-6 w-fit">
+            <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
             </svg>
           </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
+          <h3 className="text-2xl font-bold text-slate-900 mb-4">
             {userRole === 'student' ? 'Nenhuma turma encontrada' : 'Nenhuma turma criada'}
           </h3>
-          <p className="text-gray-600 mb-4">
+          <p className="text-slate-600 text-lg leading-relaxed max-w-lg mx-auto">
             {userRole === 'student' 
               ? 'Você ainda não está matriculado em nenhuma turma.'
               : 'Comece criando sua primeira turma para organizar seus alunos.'
@@ -68,13 +68,13 @@ export default function ClassesList({
               <div className="space-y-3">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-gray-600">Alunos:</span>
-                  <span className="font-medium text-gray-900">{cls.student_count || 0}</span>
+                  <span className="font-medium text-gray-900">{cls.studentCount || 0}</span>
                 </div>
                 
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-gray-600">Criada em:</span>
                   <span className="text-gray-900">
-                    {new Date(cls.created_at).toLocaleDateString('pt-BR')}
+                    {new Date(cls.createdAt).toLocaleDateString('pt-BR')}
                   </span>
                 </div>
               </div>

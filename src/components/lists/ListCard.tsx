@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { QuestionList } from "@/types";
-import { formatDateTime, getListStatusColor, getListStatusText, createBrazilianDate } from "@/utils";
+import { formatDateTime, createBrazilianDate } from "@/utils";
 
 interface ListCardProps {
   list: QuestionList;
@@ -33,7 +33,6 @@ export default function ListCard({
   const hasStarted = startTime && now >= startTime;
   const notEnded = endTime ? now < endTime : true;
   const isOngoing = hasStarted && notEnded;
-  const canChangeStatus = !startTime || now < startTime;
 
   const handleActionClick = (e: React.MouseEvent, action: () => void) => {
     e.preventDefault();
@@ -88,15 +87,6 @@ export default function ListCard({
           </div>
           
           <div className="flex flex-col items-end gap-3">
-            {/* Indicador de status - apenas para professores e assistentes */}
-            {userRole !== 'student' && (
-              <span className={`px-4 py-2 rounded-xl text-sm font-semibold ${getListStatusColor(list.status)}`}>
-                {getListStatusText(list.status)}
-              </span>
-            )}
-            
-            {/* Indicador de "Em andamento" removido daqui, agora ao lado do título */}
-            
             {/* Botões de ação */}
             <div className="flex gap-2">
               {userRole === 'student' ? (

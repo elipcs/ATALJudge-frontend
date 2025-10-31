@@ -27,7 +27,24 @@ export function useInvites() {
       }
       
       const queryString = params.toString();
-      const invites = await invitesApi.getAll(queryString);
+      const invitesDTO = await invitesApi.getAll(queryString);
+
+      // Converter InviteResponseDTO para Invite
+      const invites: Invite[] = invitesDTO.map(dto => ({
+        id: dto.id,
+        role: dto.role,
+        token: dto.token,
+        link: dto.link,
+        createdAt: typeof dto.createdAt === 'string' ? dto.createdAt : new Date(dto.createdAt).toISOString(),
+        expiresAt: typeof dto.expiresAt === 'string' ? dto.expiresAt : new Date(dto.expiresAt).toISOString(),
+        used: dto.isUsed,
+        maxUses: dto.maxUses,
+        currentUses: dto.currentUses,
+        classId: dto.classId,
+        className: dto.className,
+        createdBy: dto.createdById || '',
+        creatorName: dto.creatorName || ''
+      }));
 
       const now = new Date();
       const filtered = invites.filter((inv) => {

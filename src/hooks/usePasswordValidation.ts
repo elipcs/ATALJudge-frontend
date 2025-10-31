@@ -5,6 +5,8 @@ export interface PasswordValidation {
   hasLetters: boolean;
   hasNumbers: boolean;
   hasUppercase: boolean;
+  hasLowercase: boolean;
+  hasSpecialChar: boolean;
 }
 
 export function usePasswordValidation() {
@@ -12,10 +14,12 @@ export function usePasswordValidation() {
   const [confirmPassword, setConfirmPassword] = useState("");
 
   const validation = useMemo((): PasswordValidation => ({
-    minLength: password.length >= 8,
+    minLength: password.length >= 12,
     hasLetters: /[a-zA-Z]/.test(password),
     hasNumbers: /[0-9]/.test(password),
     hasUppercase: /[A-Z]/.test(password),
+    hasLowercase: /[a-z]/.test(password),
+    hasSpecialChar: /[!@#$%^&*(),.?":{}|<>]/.test(password),
   }), [password]);
 
   const isValid = useMemo(() => {
@@ -23,12 +27,14 @@ export function usePasswordValidation() {
            validation.hasLetters && 
            validation.hasNumbers && 
            validation.hasUppercase &&
+           validation.hasLowercase &&
+           validation.hasSpecialChar &&
            password === confirmPassword;
   }, [validation, password, confirmPassword]);
 
   const getValidationError = (): string | null => {
     if (!validation.minLength) {
-      return "Senha deve ter pelo menos 8 caracteres";
+      return "Senha deve ter pelo menos 12 caracteres";
     }
     if (!validation.hasLetters) {
       return "Senha deve conter letras";
@@ -38,6 +44,12 @@ export function usePasswordValidation() {
     }
     if (!validation.hasUppercase) {
       return "Senha deve conter pelo menos 1 letra maiúscula";
+    }
+    if (!validation.hasLowercase) {
+      return "Senha deve conter pelo menos 1 letra minúscula";
+    }
+    if (!validation.hasSpecialChar) {
+      return "Senha deve conter pelo menos 1 caractere especial";
     }
     if (password !== confirmPassword) {
       return "As senhas não coincidem";

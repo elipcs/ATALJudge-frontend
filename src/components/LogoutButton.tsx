@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { authApi } from "@/services/auth";
+import { logger } from "@/utils/logger";
 
 interface LogoutButtonProps {
   isCollapsed?: boolean;
@@ -23,11 +24,11 @@ export default function LogoutButton({ isCollapsed = false }: LogoutButtonProps)
       if (success) {
         router.push("/");
       } else {
-        console.warn('Logout com problemas, mas redirecionando para página inicial');
+        logger.warn('Logout com problemas, mas redirecionando para página inicial');
         router.push("/");
       }
     } catch (error) {
-      console.error('Erro durante logout:', error);
+      logger.error('Erro durante logout', { error });
       router.push("/");
     } finally {
       setIsLoggingOut(false);

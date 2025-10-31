@@ -8,6 +8,8 @@ export interface User {
 
 export type UserRole = 'student' | 'assistant' | 'professor';
 
+export type JudgeType = 'local' | 'codeforces';
+
 export interface Student {
   id: string;
   name: string;
@@ -16,7 +18,7 @@ export interface Student {
   role: string;
   classId: string;
   grades: { questionListId: string; score: number }[];
-  created_at: string;
+  createdAt: string;
 }
 
 export interface Class {
@@ -24,9 +26,9 @@ export interface Class {
   name: string;
   professor: Professor | null;
   students: Student[];
-  student_count: number;
-  created_at: string;
-  updated_at: string;
+  studentCount: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Professor {
@@ -39,10 +41,11 @@ export interface Professor {
 export interface Question {
   id: string;
   title: string;
+  points?: number;
   description?: string;
   statement: string;
-  input_format?: string;
-  output_format?: string;
+  inputFormat?: string;
+  outputFormat?: string;
   constraints?: string;
   notes?: string;
   examples: Array<{
@@ -59,6 +62,11 @@ export interface Question {
     expectedOutput: string;
     isPublic: boolean;
   }>;
+  judgeType?: JudgeType;
+  codeforcesContestId?: string;
+  codeforcesProblemIndex?: string;
+  codeforcesLink?: string;
+  group?: string;
 }
 
 export interface Submission {
@@ -96,12 +104,11 @@ export interface QuestionList {
   description?: string;
   classIds: string[];
   questions: Question[];
-  startDate: string;
-  endDate: string;
-  status: 'published' | 'draft';
+  startDate?: string;
+  endDate?: string;
   createdAt?: string;
   updatedAt?: string;
-  calculatedStatus?: 'next' | 'open' | 'closed';
+  calculatedStatus?: 'scheduled' | 'open' | 'closed';
   scoringMode?: 'simple' | 'groups';
   minQuestionsForMaxScore?: number;
   maxScore?: number;
@@ -112,6 +119,7 @@ export interface QuestionList {
     weight: number;
     percentage?: number;
   }>;
+  isRestricted?: boolean;
 }
 
 export interface QuickAction {
@@ -131,42 +139,41 @@ export interface SystemNotice {
   date: string;
 }
 
-export interface WelcomeHeaderProps {
-  currentUser: User;
-  title?: string;
-  subtitle?: string;
-  extraInfo?: React.ReactNode;
-  children?: React.ReactNode;
+// =============================================================================
+// Question Arrangements & Groups
+// =============================================================================
+
+export interface QuestionGroup {
+  id: string;
+  name: string;
+  questions: string[];
+  minRequired: number;
+  pointsPerQuestion: number;
+  color: string;
 }
 
-export interface QuickActionsProps {
-  actions: QuickAction[];
+export interface QuestionArrangement {
+  id: string;
+  name: string;
+  description: string;
+  groups: QuestionGroup[];
+  requireAllGroups: boolean;
+  maxScore: number;
+  passingScore: number;
 }
 
-export interface UserActionsProps {
-  userRole: string;
+export interface GroupResult {
+  questionsSolved: string[];
+  points: number;
+  completed: boolean;
+  progress: string;
+  groupInfo: QuestionGroup;
 }
 
-export interface StudentHomeProps {
-  currentUser: User;
+export interface ArrangementResult {
+  completed: boolean;
+  groups: { [groupId: string]: GroupResult };
+  totalScore: number;
+  finalGrade: number;
+  requirementsMet: boolean;
 }
-
-export interface ProfessorHomeProps {
-  currentUser: User;
-}
-
-export interface MonitorHomeProps {
-  currentUser: User;
-}
-
-export interface StaffHomeProps {
-  currentUser: User;
-  userRole: 'professor' | 'assistant';
-}
-
-export interface SubmissionsTableProps {
-  submissions: Submission[];
-  showActions?: boolean;
-}
-
-export * from './arrangement';

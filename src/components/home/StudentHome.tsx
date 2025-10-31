@@ -6,11 +6,15 @@ import Link from "next/link";
 import { Button } from "../ui/button";
 import { Card } from "../ui/card";
 import { useStudentHomeData } from "../../hooks/useHomeData";
-import { Student, StudentHomeProps } from "../../types";
+import { Student, User } from "@/types";
 import { formatDateTime } from "../../utils/dateUtils";
 import { createBrazilianDate } from "../../utils";
 
 import WelcomeHeader from "./WelcomeHeader";
+
+interface StudentHomeProps {
+  currentUser: User;
+}
 
 export default function StudentHome({ currentUser }: StudentHomeProps) {
   const { data } = useStudentHomeData();
@@ -91,14 +95,14 @@ export default function StudentHome({ currentUser }: StudentHomeProps) {
 
   useEffect(() => {
     if (!highlightList || !highlightCategory) {
-      setCountdownText("");
+      if (countdownText !== "") setTimeout(() => setCountdownText(""), 0);
       return;
     }
 
     const targetDateStr = highlightCategory === 'open' ? highlightList.endDate : highlightList.startDate;
     const target = createBrazilianDate(targetDateStr);
     if (!target) {
-      setCountdownText("");
+      setTimeout(() => setCountdownText(""), 0);
       return;
     }
 
@@ -127,10 +131,10 @@ export default function StudentHome({ currentUser }: StudentHomeProps) {
       }
     };
 
-    updateCountdown();
+    setTimeout(updateCountdown, 0);
     const id = setInterval(updateCountdown, 60000);
     return () => clearInterval(id);
-  }, [highlightList, highlightCategory]);
+  }, [highlightList, highlightCategory, countdownText]);
   
   const currentClass = data?.currentClass || { id: '', name: 'Carregando...', professorId: '', professorName: 'Carregando...' };
   const classParticipants = data?.classParticipants || [];

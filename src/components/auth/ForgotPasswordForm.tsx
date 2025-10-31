@@ -35,8 +35,10 @@ export function ForgotPasswordForm() {
         />
       </AuthForm>
 
-      <AlertMessage type="success" message={message} />
-      <AlertMessage type="error" message={error} />
+      <div className="mt-4">
+        <AlertMessage type="success" message={message} />
+        <AlertMessage type="error" message={error} />
+      </div>
 
       <AuthFooter 
         links={[

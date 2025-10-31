@@ -5,7 +5,7 @@ import React, { useMemo, memo } from "react";
 import { Card } from "../ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../ui/tabs";
 import { useStaffHomeData } from "../../hooks/useHomeData";
-import { StaffHomeProps } from "../../types";
+import { User } from "@/types";
 import { getCurrentDateFormatted } from "../../utils";
 
 import SubmissionsTable from "./SubmissionsTable";
@@ -13,6 +13,11 @@ import ListsComponent from "./ListsComponent";
 import SystemNotices from "./SystemNotices";
 
 import { WelcomeHeader, UserActions } from "./index";
+
+interface StaffHomeProps {
+  currentUser: User;
+  userRole: 'professor' | 'assistant';
+}
 
 
 const StaffHome = memo(({ currentUser, userRole }: StaffHomeProps) => {

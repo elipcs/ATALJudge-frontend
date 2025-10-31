@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 export default function TurmasPage() {
   const {
     userRole,
-    currentUser,
+    currentUser: _currentUser,
     classes,
     classDetails,    
     error,
@@ -39,8 +39,8 @@ export default function TurmasPage() {
     setCreateClassModal,
     setEditClassModal,
     setDeleteClassModal,
-    setError,
-    setSuccess
+    setError: _setError,
+    setSuccess: _setSuccess
   } = useClassPage();
 
   if (isLoading || isStudentLoading) {

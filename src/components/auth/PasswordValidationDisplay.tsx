@@ -12,13 +12,18 @@ export function PasswordValidationDisplay({
   const validationItems = [
     {
       key: 'minLength',
-      label: 'Pelo menos 8 caracteres',
+      label: 'Pelo menos 12 caracteres',
       isValid: validation.minLength
     },
     {
-      key: 'hasLetters',
-      label: 'Contém letras',
-      isValid: validation.hasLetters
+      key: 'hasUppercase',
+      label: 'Contém letra maiúscula',
+      isValid: validation.hasUppercase
+    },
+    {
+      key: 'hasLowercase',
+      label: 'Contém letra minúscula',
+      isValid: validation.hasLowercase
     },
     {
       key: 'hasNumbers',
@@ -26,9 +31,9 @@ export function PasswordValidationDisplay({
       isValid: validation.hasNumbers
     },
     {
-      key: 'hasUppercase',
-      label: 'Contém letra maiúscula',
-      isValid: validation.hasUppercase
+      key: 'hasSpecialChar',
+      label: 'Contém caractere especial',
+      isValid: validation.hasSpecialChar
     }
   ];
 

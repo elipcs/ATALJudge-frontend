@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CreateListRequest } from "@/services/lists";
-import { createBrazilianDate, toBrazilianDateTimeLocal, fromBrazilianDateTimeLocal, validateNotPastDate, validateEndDateAfterStartDate } from "@/utils";
+import { fromBrazilianDateTimeLocal, validateNotPastDate, validateEndDateAfterStartDate } from "@/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 
 interface CreateListModalProps {
@@ -139,7 +139,7 @@ export default function CreateListModal({ isOpen, onClose, onSubmit, classes }: 
     return !tempErrors.startDate && !tempErrors.endDate && !tempErrors.dateRange;
   };
 
-  const handleSubmit = async (e: React.FormEvent, status: 'draft' | 'published' = 'published') => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!form.title.trim()) {
@@ -159,10 +159,9 @@ export default function CreateListModal({ isOpen, onClose, onSubmit, classes }: 
       const listData: CreateListRequest = {
         title: form.title,
         description: form.description,
-        start_time: form.startDate ? fromBrazilianDateTimeLocal(form.startDate) : now.toISOString(),
-        end_time: form.endDate ? fromBrazilianDateTimeLocal(form.endDate) : defaultEndDate.toISOString(),
-        class_ids: form.classIds.length > 0 ? form.classIds : [classes[0]?.id || ''],
-        status: status
+        startTime: form.startDate ? fromBrazilianDateTimeLocal(form.startDate) : now.toISOString(),
+        endTime: form.endDate ? fromBrazilianDateTimeLocal(form.endDate) : defaultEndDate.toISOString(),
+        classIds: form.classIds.length > 0 ? form.classIds : [classes[0]?.id || '']
       };
 
       await onSubmit(listData);
@@ -398,28 +397,14 @@ export default function CreateListModal({ isOpen, onClose, onSubmit, classes }: 
           <Button 
             variant="outline" 
             onClick={handleClose} 
-            className="flex-1 h-12 border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold rounded-xl transition-all duration-200 order-1"
+            className="flex-1 h-12 border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold rounded-xl transition-all duration-200"
             disabled={loading}
           >
             Cancelar
           </Button>
           <Button 
-            onClick={(e) => handleSubmit(e, 'draft')} 
-            className="flex-1 h-12 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-semibold rounded-xl transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none order-2"
-            disabled={loading || !isFormValid()}
-          >
-            {loading ? (
-              <div className="flex items-center gap-2">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                Criando...
-              </div>
-            ) : (
-              'Criar Rascunho'
-            )}
-          </Button>
-          <Button 
-            onClick={(e) => handleSubmit(e, 'published')} 
-            className="flex-1 h-12 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold rounded-xl transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none order-3"
+            onClick={handleSubmit} 
+            className="flex-1 h-12 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold rounded-xl transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             disabled={loading || !isFormValid()}
           >
             {loading ? (

@@ -3,13 +3,11 @@
 interface PageLoadingProps {
   message?: string;
   description?: string;
-  icon?: React.ReactNode;
 }
 
 export default function PageLoading({ 
   message = "Carregando...", 
-  description,
-  icon
+  description
 }: PageLoadingProps) {
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white flex items-center justify-center p-4">

@@ -1,4 +1,3 @@
-import React from 'react';
 
 const STATUS_TRANSLATIONS: Record<string, string> = {
   'Accepted': 'Aceito',
@@ -12,10 +11,7 @@ const STATUS_TRANSLATIONS: Record<string, string> = {
   'Running': 'Executando',
   'Queue': 'Na Fila',
   'submitted': 'Aceita',
-  'failed': 'Rejeitada',
-  'draft': 'Rascunho',
-  'published': 'Publicada',
-  'closed': 'Encerrada',
+  'failed': 'Rejeitada'
 };
 
 
@@ -43,34 +39,6 @@ export function getSubmissionStatusColor(status: string): string {
 }
 
 
-export function getListStatusColor(status: string): string {
-  switch (status) {
-    case 'draft':
-      return 'bg-gradient-to-r from-slate-50 to-slate-100 text-slate-700 border border-slate-200';
-    case 'published':
-      return 'bg-gradient-to-r from-green-50 to-emerald-50 text-green-700 border border-green-200';
-    case 'closed':
-      return 'bg-gradient-to-r from-red-50 to-pink-50 text-red-700 border border-red-200';
-    default:
-      return 'bg-gradient-to-r from-slate-50 to-slate-100 text-slate-700 border border-slate-200';
-  }
-}
-
-
-export function getListStatusText(status: string): string {
-  switch (status) {
-    case 'draft':
-      return 'Rascunho';
-    case 'published':
-      return 'Publicada';
-    case 'closed':
-      return 'Encerrada';
-    default:
-      return 'Desconhecido';
-  }
-}
-
-
 export function getVerdictColor(verdict: string): string {
   if (verdict === 'Accepted') return 'text-green-600';
   if (verdict.includes('Wrong Answer')) return 'text-red-600';
@@ -79,4 +47,51 @@ export function getVerdictColor(verdict: string): string {
   return 'text-gray-600';
 }
 
+/**
+ * Retorna a cor adequada para o status da lista
+ */
+export function getListStatusColor(status?: 'scheduled' | 'open' | 'closed'): string {
+  switch (status) {
+    case 'open':
+      return 'text-green-700';
+    case 'scheduled':
+      return 'text-blue-700';
+    case 'closed':
+      return 'text-red-700';
+    default:
+      return 'text-gray-700';
+  }
+}
+
+/**
+ * Retorna o texto traduzido para o status da lista
+ */
+export function getListStatusText(status?: 'scheduled' | 'open' | 'closed'): string {
+  switch (status) {
+    case 'open':
+      return 'Aberta';
+    case 'scheduled':
+      return 'Agendada';
+    case 'closed':
+      return 'Encerrada';
+    default:
+      return 'Indefinido';
+  }
+}
+
+/**
+ * Retorna a classe de badge (fundo e texto) para o status da lista
+ */
+export function getListStatusBadgeClass(status?: 'scheduled' | 'open' | 'closed'): string {
+  switch (status) {
+    case 'open':
+      return 'bg-green-100 text-green-800';
+    case 'scheduled':
+      return 'bg-blue-100 text-blue-800';
+    case 'closed':
+      return 'bg-red-100 text-red-800';
+    default:
+      return 'bg-gray-100 text-gray-800';
+  }
+}
 

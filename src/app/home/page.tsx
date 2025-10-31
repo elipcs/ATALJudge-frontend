@@ -30,13 +30,15 @@ export default function HomePage() {
 
   useEffect(() => {
     if (currentUser) {
-      setHasShownError(false);
+      const id = setTimeout(() => setHasShownError(false), 0);
+      return () => clearTimeout(id);
     }
   }, [currentUser]);
 
   useEffect(() => {
     if (showContent && !isLoading && (currentUser || (userError && !currentUser))) {
-      setIsReady(true);
+      const id = setTimeout(() => setIsReady(true), 0);
+      return () => clearTimeout(id);
     }
   }, [showContent, isLoading, currentUser, userError]);
 
@@ -48,10 +50,13 @@ export default function HomePage() {
 
   const hasToken = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
   
-  if (!hasToken) {
-    if (typeof window !== 'undefined') {
+  useEffect(() => {
+    if (!hasToken && typeof window !== 'undefined') {
       window.location.href = '/login';
     }
+  }, [hasToken]);
+
+  if (!hasToken) {
     return null;
   }
 

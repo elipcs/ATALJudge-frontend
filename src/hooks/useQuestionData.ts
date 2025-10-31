@@ -33,19 +33,10 @@ export const useQuestionData = () => {
     }
   }, []);
 
-  const loadQuestion = useCallback(async (questionId: string): Promise<Question | null> => {
-    try {
-      const response = await questionsApi.getById(questionId);
-      return response;
-    } catch (error) {
-      console.error('Error loading question:', error);
-      return null;
-    }
-  }, []);
 
   const loadSubmissions = useCallback(async (questionId: string, listId: string): Promise<Submission[]> => {
     try {
-      const response = await submissionsApi.getQuestionSubmissions(questionId, listId);
+      const response = await submissionsApi.getSubmissions({ questionId, listId });
       return response;
     } catch (error) {
       console.error('Error loading submissions:', error);
@@ -95,7 +86,7 @@ export const useQuestionData = () => {
 
     setSubmitting(true);
     try {
-      const response = await submissionsApi.create({
+      const response = await submissionsApi.submitCode({
         questionId: question.id,
         listId: listId,
         code,

@@ -1,5 +1,5 @@
 import { Card } from "@/components/ui/card";
-import { Question } from "@/types/question";
+import { Question } from "@/types";
 
 import SubmitButton from "./SubmitButton";
 
@@ -10,7 +10,6 @@ interface QuestionNavigationProps {
   onSubmit: () => void;
   submitting?: boolean;
   userRole: 'student' | 'professor' | 'assistant';
-  listStatus: 'draft' | 'published' | 'closed';
 }
 
 export default function QuestionNavigation({ 
@@ -19,8 +18,7 @@ export default function QuestionNavigation({
   onQuestionChange, 
   onSubmit, 
   submitting = false,
-  userRole,
-  listStatus
+  userRole
 }: QuestionNavigationProps) {
   
   const getQuestionLetter = (index: number): string => {
@@ -49,7 +47,7 @@ export default function QuestionNavigation({
       </Card>
 
       {/* Submit Button */}
-      {userRole === 'student' && listStatus === 'published' && (
+      {userRole === 'student' && (
         <Card className="p-4">
           <SubmitButton 
             onSubmit={onSubmit}

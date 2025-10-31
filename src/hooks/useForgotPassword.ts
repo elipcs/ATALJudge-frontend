@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { authApi } from "../services/auth";
+import { API } from "../config/api";
 
 export function useForgotPassword() {
   const [email, setEmail] = useState("");
@@ -26,16 +27,7 @@ export function useForgotPassword() {
     setLoading(true);
     
     try {
-      const res = await fetch("/api/auth/forgot-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-      
-      if (!res.ok) {
-        throw new Error("Erro ao solicitar recuperação");
-      }
-      
+      await API.password.forgotPassword(email);
       setMessage("Se o e-mail existir, você receberá instruções para redefinir a senha.");
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : "Erro ao solicitar recuperação";

@@ -14,10 +14,12 @@ interface ValidationRule {
 export function PasswordValidation({ password, className = "" }: PasswordValidationProps) {
   const validatePassword = (password: string) => {
     return {
-      minLength: password.length >= 8,
+      minLength: password.length >= 12,
       hasLetters: /[a-zA-Z]/.test(password),
       hasNumbers: /[0-9]/.test(password),
-      hasUppercase: /[A-Z]/.test(password)
+      hasUppercase: /[A-Z]/.test(password),
+      hasLowercase: /[a-z]/.test(password),
+      hasSpecialChar: /[!@#$%^&*(),.?":{}|<>]/.test(password)
     };
   };
 
@@ -26,23 +28,28 @@ export function PasswordValidation({ password, className = "" }: PasswordValidat
   const rules: ValidationRule[] = [
     {
       key: 'minLength',
-      label: 'Mínimo 8 caracteres',
+      label: 'Mínimo 12 caracteres',
       isValid: validation.minLength
-    },
-    {
-      key: 'hasLetters',
-      label: 'Deve conter letras',
-      isValid: validation.hasLetters
-    },
-    {
-      key: 'hasNumbers',
-      label: 'Deve conter números',
-      isValid: validation.hasNumbers
     },
     {
       key: 'hasUppercase',
       label: 'Pelo menos 1 letra maiúscula',
       isValid: validation.hasUppercase
+    },
+    {
+      key: 'hasLowercase',
+      label: 'Pelo menos 1 letra minúscula',
+      isValid: validation.hasLowercase
+    },
+    {
+      key: 'hasNumbers',
+      label: 'Pelo menos 1 número',
+      isValid: validation.hasNumbers
+    },
+    {
+      key: 'hasSpecialChar',
+      label: 'Pelo menos 1 caractere especial',
+      isValid: validation.hasSpecialChar
     }
   ];
 

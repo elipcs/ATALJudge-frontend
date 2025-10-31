@@ -3,12 +3,33 @@ import { usePathname } from 'next/navigation';
 
 import { UserRole } from '../types';
 import { authApi } from '../services/auth';
+import { logger } from '../utils/logger';
 
 interface UseUserRoleReturn {
   userRole: UserRole;
   isLoading: boolean;
 }
 
+/**
+ * Hook para detectar e gerenciar o papel/role do usuário atual
+ * 
+ * Prioridades de detecção:
+ * 1. Token JWT (se válido)
+ * 2. Token JWT renovado (se expirado)
+ * 3. localStorage
+ * 4. Path da URL
+ * 5. Fallback: 'professor'
+ * 
+ * @returns Objeto com userRole e isLoading
+ * 
+ * @example
+ * ```tsx
+ * const { userRole, isLoading } = useUserRole();
+ * 
+ * if (isLoading) return <Loading />;
+ * if (userRole === 'professor') return <ProfessorDashboard />;
+ * ```
+ */
 export function useUserRole(): UseUserRoleReturn {
   const pathname = usePathname();
   const [userRole, setUserRoleState] = useState<UserRole>('professor');
@@ -39,7 +60,7 @@ export function useUserRole(): UseUserRoleReturn {
           }
         }
       } catch (error) {
-        console.error('Erro ao decodificar token:', error);
+        logger.error('Erro ao decodificar token', { error });
       }
     }
 
@@ -70,7 +91,7 @@ export function useUserRole(): UseUserRoleReturn {
 
         localStorage.setItem('userRole', detectedUserRole);
       } catch (error) {
-        console.error('Erro ao detectar role do usuário:', error);
+        logger.error('Erro ao detectar role do usuário', { error });
         setUserRoleState('professor');
         setIsLoading(false);
       }

@@ -8,12 +8,12 @@ interface DeleteConfirmModalProps {
   questionTitle: string;
 }
 
-const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
+export default function DeleteConfirmModal({
   isOpen,
   onConfirm,
   onCancel,
   questionTitle
-}) => {
+}: DeleteConfirmModalProps) {
   if (!isOpen) return null;
   return (
     <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 p-4 overflow-y-auto">
@@ -59,4 +59,3 @@ const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
   );
 };
 
-export default DeleteConfirmModal;

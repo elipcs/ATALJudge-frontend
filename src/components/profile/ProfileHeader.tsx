@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { ProfileData } from "../../services/profile";
 import { translateUserRole, getRoleColor } from "../../utils/roleTranslations";
 
@@ -48,14 +47,14 @@ export default function ProfileHeader({ user }: ProfileHeaderProps) {
         <div className="bg-gradient-to-r from-slate-50 to-slate-100 rounded-2xl p-6 text-sm text-slate-600">
           <div className="mb-3">
             <strong className="text-slate-900">Cadastrado em:</strong><br />
-            {new Date(user.created_at).toLocaleDateString('pt-BR', {
+            {new Date(user.createdAt).toLocaleDateString('pt-BR', {
               timeZone: 'America/Sao_Paulo'
             })}
           </div>
-          {user.last_login && (
+          {user.lastLogin && (
             <div>
               <strong className="text-slate-900">Último login:</strong><br />
-              {new Date(user.last_login).toLocaleString('pt-BR', {
+              {new Date(user.lastLogin).toLocaleString('pt-BR', {
                 timeZone: 'America/Sao_Paulo'
               })}
             </div>

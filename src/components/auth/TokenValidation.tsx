@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 
 import { Button } from "../ui/button";
 import { MESSAGES } from "../../constants";
+import { API } from "../../config/api";
 
 import { AuthLayout } from "./index";
 
@@ -33,17 +34,10 @@ export function TokenValidation({ token, onTokenValidated, children }: TokenVali
     setError("");
     
     try {
-      const response = await fetch('/api/invites/verify', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ token: tokenValue }),
-      });
+      const response = await API.invites.verify(tokenValue);
+      const result = response.data as any;
 
-      const result = await response.json();
-
-      if (!response.ok || !result.valid) {
+      if (!response.success || !result.valid) {
         setTokenInfo({
           role: 'student',
           valid: false,
@@ -54,13 +48,14 @@ export function TokenValidation({ token, onTokenValidated, children }: TokenVali
         return;
       }
       
+      const data = result.data || result;
       const validatedTokenInfo = {
-        role: result.data.role,
-        classId: result.data.class_id,
-        className: result.data.class_name,
-        professor: result.data.created_by,
+        role: data.role,
+        classId: data.classId,
+        className: data.className,
+        professor: data.createdBy,
         valid: true,
-        expires: new Date(result.data.expires_at).toLocaleDateString('pt-BR')
+        expires: new Date(data.expiresAt).toLocaleDateString('pt-BR')
       };
       
       setTokenInfo(validatedTokenInfo);

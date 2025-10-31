@@ -1,8 +1,13 @@
+"use client";
+
 import { useState } from "react";
 import { Button } from "../ui/button";
 import { Card } from "../ui/card";
 import { useInviteForm } from "../../hooks/useInviteForm";
 import { invitesApi } from "../../services/invites";
+import { profileApi } from "../../services/profile";
+import { useToast } from "@/hooks/use-toast";
+import { logger } from "@/utils/logger";
 
 interface InviteFormProps {
   onInviteCreated: () => void;
@@ -25,17 +30,23 @@ export function InviteForm({ onInviteCreated }: InviteFormProps) {
     setIsExpirationDropdownOpen,
     loadClasses,
   } = useInviteForm();
+  const { toast } = useToast();
 
   const createInvite = async () => {
     const validationError = validateForm();
     if (validationError) {
-      alert(validationError);
+      toast({
+        title: "Erro de validação",
+        description: validationError,
+        variant: "destructive",
+      });
       return;
     }
 
     setLoading(true);
     try {
-      const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+      // Obter dados do usuário atual via API
+      const userProfile = await profileApi.getProfile();
       const selectedClass = availableClasses.find(c => c.id === formData.classId);
       
       const inviteData = {
@@ -44,16 +55,24 @@ export function InviteForm({ onInviteCreated }: InviteFormProps) {
         expirationDays: formData.expirationDays,
         classId: formData.role === 'student' ? formData.classId : undefined,
         className: formData.role === 'student' ? selectedClass?.name : undefined,
-        createdBy: currentUser.id || 'unknown',
-        creatorName: currentUser.name || 'Usuário'
+        createdBy: userProfile.id,
+        creatorName: userProfile.name
       };
       
       await invitesApi.create(inviteData);
+      toast({
+        description: "Convite criado com sucesso!",
+        variant: "success",
+      });
       onInviteCreated();
       resetForm();
     } catch (error) {
-      console.error('Erro ao gerar convite:', error);
-      alert('Erro ao gerar convite: ' + (error instanceof Error ? error.message : 'Erro desconhecido'));
+      logger.error('Erro ao gerar convite', { error });
+      toast({
+        title: "Erro",
+        description: 'Erro ao gerar convite: ' + (error instanceof Error ? error.message : 'Erro desconhecido'),
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }

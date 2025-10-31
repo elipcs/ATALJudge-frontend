@@ -23,15 +23,18 @@ interface NavigationLink {
 
 export default function NavigationBar({ currentPage }: NavigationBarProps) {
   const pathname = usePathname();
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem('sidebar-collapsed') === 'true';
+  });
   const { userRole, isLoading } = useUserRole();
 
   useEffect(() => {
-    const savedState = localStorage.getItem('sidebar-collapsed');
-    if (savedState === 'true') {
-      setIsCollapsed(true);
-    }
-  }, []);
+    document.documentElement.style.setProperty(
+      '--sidebar-width',
+      isCollapsed ? '4rem' : '16rem'
+    );
+  }, [isCollapsed]);
   
 
   const toggleCollapse = () => {
@@ -160,11 +163,13 @@ export default function NavigationBar({ currentPage }: NavigationBarProps) {
 
   return (
     <>
+      {/* eslint-disable react/no-unknown-property */}
       <style jsx global>{`
         :root {
           --sidebar-width: ${isCollapsed ? '4rem' : '16rem'};
         }
       `}</style>
+      {/* eslint-enable react/no-unknown-property */}
       <nav className={`h-full bg-gradient-to-b from-slate-50 to-white border-r border-slate-200 shadow-lg transition-all duration-300 ease-in-out overflow-hidden ${
         isCollapsed ? 'w-16' : 'w-64'
       }`}>

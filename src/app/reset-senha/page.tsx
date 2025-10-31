@@ -9,9 +9,9 @@ import { useResetPassword } from "../../hooks/useResetPassword";
 function ResetPasswordContent() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
-  const { success } = useResetPassword(token);
+  const resetPasswordHook = useResetPassword(token);
 
-  if (success) {
+  if (resetPasswordHook.success) {
     return <ResetPasswordSuccess />;
   }
 
@@ -20,7 +20,7 @@ function ResetPasswordContent() {
       title="Redefinir senha"
       subtitle="Digite e confirme sua nova senha para acessar a plataforma"
     >
-      <ResetPasswordForm token={token} />
+      <ResetPasswordForm token={token} resetPasswordHook={resetPasswordHook} />
     </AuthLayout>
   );
 }

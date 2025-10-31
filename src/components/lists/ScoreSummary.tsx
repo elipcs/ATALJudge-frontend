@@ -14,11 +14,10 @@ import {
 interface ScoreSummaryProps {
   list: QuestionList;
   submissions: SubmissionScore[];
-  backendScore?: FinalScore; // Dados do backend quando disponíveis
+  backendScore?: FinalScore;
 }
 
 export default function ScoreSummary({ list, submissions, backendScore }: ScoreSummaryProps) {
-  // Se houver dados do backend, use-os; caso contrário, calcule localmente
   const scoreResult = backendScore || calculateListScore(list, submissions);
   const { mode, totalScore, maxPossibleScore, percentage, groups, questionScores } = scoreResult;
 
@@ -48,7 +47,7 @@ export default function ScoreSummary({ list, submissions, backendScore }: ScoreS
       {/* Modo Simples */}
       {mode === 'simple' && questionScores && questionScores.length > 0 && (
         <div className="space-y-2">
-          {questionScores.slice(0, list.minQuestionsForMaxScore || list.questions.length).map((score, index) => {
+          {questionScores.slice(0, list.minQuestionsForMaxScore || list.questions.length).map((score) => {
             const question = list.questions.find(q => q.id === score.questionId);
             const questionIndex = list.questions.findIndex(q => q.id === score.questionId);
             const questionLabel = questionIndex !== -1 ? String.fromCharCode(65 + questionIndex) : '?';

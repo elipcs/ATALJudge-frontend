@@ -1,12 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { diagnoseBackendConnection } from "@/config/api";
 
 interface DiagnosticResult {
   endpoint: string;
   status: 'success' | 'error' | 'loading';
-  response?: any;
+  response?: unknown;
   error?: string;
 }
 
@@ -14,14 +13,14 @@ export default function ListsDiagnostic() {
   const [diagnostics, setDiagnostics] = useState<DiagnosticResult[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const endpoints = [
+  const endpoints = useMemo(() => ([
     { name: 'Health Check', url: '/health' },
     { name: 'Classes API', url: '/api/classes' },
     { name: 'Lists API', url: '/api/lists' },
     { name: 'User Profile', url: '/api/users/profile' },
-  ];
+  ]), []);
 
-  const runDiagnostics = async () => {
+  const runDiagnostics = useCallback(async () => {
     setLoading(true);
     setDiagnostics([]);
 
@@ -47,7 +46,7 @@ export default function ListsDiagnostic() {
           results[results.length - 1] = {
             endpoint: endpoint.name,
             status: 'success',
-            response: data
+            response: data as unknown
           };
         } else {
           results[results.length - 1] = {
@@ -68,11 +67,13 @@ export default function ListsDiagnostic() {
     }
 
     setLoading(false);
-  };
+  }, [endpoints]);
 
   useEffect(() => {
-    runDiagnostics();
-  }, []);
+    setTimeout(() => {
+      runDiagnostics();
+    }, 0);
+  }, [runDiagnostics]);
 
   return (
     <Card className="bg-white border-slate-200 rounded-3xl shadow-lg p-6">
@@ -136,9 +137,9 @@ export default function ListsDiagnostic() {
       <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-xl">
         <h4 className="text-sm font-semibold text-blue-800 mb-2">Informações do Sistema:</h4>
         <div className="text-sm text-blue-700 space-y-1">
-          <div>• URL Base: {process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}</div>
+          <div>• URL Base: {((typeof process !== 'undefined' && process.env.NEXT_PUBLIC_API_BASE_URL) || 'http://localhost:5000/api').replace(/\/api$/, '')}</div>
           <div>• Token: {localStorage.getItem('token') ? 'Presente' : 'Ausente'}</div>
-          <div>• Ambiente: {process.env.NODE_ENV}</div>
+          <div>• Ambiente: {(typeof process !== 'undefined' && process.env.NODE_ENV) || 'development'}</div>
         </div>
       </div>
     </Card>

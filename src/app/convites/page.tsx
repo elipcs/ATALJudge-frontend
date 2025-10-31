@@ -6,6 +6,8 @@ import { InviteForm, InviteList, InviteGuide } from "../../components/invites";
 import { useUserRole } from "../../hooks/useUserRole";
 import { useInvites } from "../../hooks/useInvites";
 import { useInviteFilters } from "../../hooks/useInviteFilters";
+import { useToast } from "@/hooks/use-toast";
+import { logger } from '@/utils/logger';
 
 
 export default function InvitesPage() {
@@ -21,14 +23,20 @@ export default function InvitesPage() {
     deleteInvite, 
     revokeInvite 
   } = useInvites();
+  const { toast } = useToast();
 
 
   useEffect(() => {
     loadInvites(filterRole, filterStatus);
   }, [loadInvites, filterRole, filterStatus]);
 
+  useEffect(() => {
+    if (!isLoading && userRole !== 'professor') {
+      window.location.href = '/nao-autorizado';
+    }
+  }, [isLoading, userRole]);
+
   if (!isLoading && userRole !== 'professor') {
-    window.location.href = '/nao-autorizado';
     return null;
   }
 
@@ -73,18 +81,33 @@ export default function InvitesPage() {
           try {
             await deleteInvite(invite.id);
             await loadInvites(filterRole, filterStatus);
+            toast({
+              description: "Convite excluído com sucesso!",
+            });
           } catch (e) {
-            console.error('Erro ao excluir convite:', e);
-            alert('Erro ao excluir convite');
+            logger.error('Erro ao excluir convite', { error: e });
+            toast({
+              title: "Erro",
+              description: "Erro ao excluir convite",
+              variant: "destructive",
+            });
           }
         }}
         onRevoke={async (invite) => {
           try {
             await revokeInvite(invite.id);
-            await loadInvites(filterRole, filterStatus);
+            toast({
+              description: "Convite revogado com sucesso!",
+            });
+            // Não recarrega a lista para manter o convite revogado visível
+            // A atualização local já é feita no hook useInvites
           } catch (e) {
-            console.error('Erro ao revogar convite:', e);
-            alert('Erro ao revogar convite');
+            logger.error('Erro ao revogar convite', { error: e });
+            toast({
+              title: "Erro",
+              description: "Erro ao revogar convite",
+              variant: "destructive",
+            });
           }
         }}
         onReload={() => loadInvites(filterRole, filterStatus)}

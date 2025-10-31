@@ -3,7 +3,11 @@
 import React from "react";
 
 import QuickActions from "./QuickActions";
-import { QuickAction, UserActionsProps } from "../../types";
+import { QuickAction } from "@/types";
+
+interface UserActionsProps {
+  userRole: string;
+}
 
 export default function UserActions({ userRole }: UserActionsProps) {
   const getActionsForRole = (role: string): QuickAction[] => {

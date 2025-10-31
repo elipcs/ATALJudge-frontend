@@ -21,7 +21,6 @@ import PageLoading from "@/components/PageLoading";
 
 export default function ListsPage() {
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'draft' | 'published'>('all');
   
   const { userRole } = useUserRole();
   const { data: currentUser } = useCurrentUser();
@@ -35,8 +34,6 @@ export default function ListsPage() {
     updateList, 
     deleteList, 
     duplicateList,
-    publishList,
-    unpublishList,
     setFilters,
     clearFilters
   } = useListsData(userRole, currentUser);
@@ -50,9 +47,6 @@ export default function ListsPage() {
     handleCreateList: baseHandleCreateList,
     handleEditList: baseHandleEditList,
     handleDeleteList: baseHandleDeleteList,
-    handlePublishList: baseHandlePublishList,
-    handleUnpublishList: baseHandleUnpublishList,
-    handleUnpublishListById,
     handleDuplicateList: baseHandleDuplicateList,
     handleEditClick,
     handleDeleteClick,
@@ -64,9 +58,7 @@ export default function ListsPage() {
     createList,
     updateList,
     deleteList,
-    duplicateList,
-    publishList,
-    unpublishList
+    duplicateList
   });
 
   const handleCreateList = async (listData: any) => {
@@ -84,16 +76,6 @@ export default function ListsPage() {
     await refreshLists();
   };
 
-  const handlePublishList = async (list: any) => {
-    await baseHandlePublishList(list);
-    await refreshLists();
-  };
-
-  const handleUnpublishList = async (list: any) => {
-    await baseHandleUnpublishList(list);
-    await refreshLists();
-  };
-
   const handleDuplicateList = async (list: any) => {
     await baseHandleDuplicateList(list);
     await refreshLists();
@@ -102,11 +84,10 @@ export default function ListsPage() {
 
   useMemo(() => {
     const filters = {
-      search: search || undefined,
-      status: statusFilter !== 'all' ? statusFilter : undefined
+      search: search || undefined
     };
     setFilters(filters);
-  }, [search, statusFilter, setFilters]);
+  }, [search, setFilters]);
 
   const filteredLists = useMemo(() => {
     return lists.filter(list => {
@@ -118,11 +99,9 @@ export default function ListsPage() {
         list.title.toLowerCase().includes(search.toLowerCase()) ||
         list.description?.toLowerCase().includes(search.toLowerCase());
       
-      const matchStatus = statusFilter === 'all' || list.status === statusFilter;
-      
-      return matchSearch && matchStatus;
+      return matchSearch;
     });
-  }, [lists, search, statusFilter]);
+  }, [lists, search]);
 
 
   if (loading && lists.length === 0) {
@@ -141,9 +120,6 @@ export default function ListsPage() {
 
   const handleClearFilters = () => {
     setSearch('');
-    if (userRole !== 'student') {
-      setStatusFilter('all');
-    }
     clearFilters();
   };
 
@@ -178,10 +154,8 @@ export default function ListsPage() {
       {/* Filtros */}
       <ListsFilters
         search={search}
-        statusFilter={statusFilter}
         userRole={userRole}
         onSearchChange={setSearch}
-        onStatusFilterChange={setStatusFilter}
         onClearFilters={handleClearFilters}
       />
 
@@ -208,8 +182,6 @@ export default function ListsPage() {
         isOpen={showEditModal}
         onClose={closeEditModal}
         onSubmit={handleEditList}
-        onUnpublish={handleUnpublishListById}
-        onPublish={handlePublishList}
         onRefresh={refreshLists}
         classes={classes.map(cls => ({ id: cls.id, name: cls.name }))}
         listData={editingList ? {
@@ -218,8 +190,7 @@ export default function ListsPage() {
           description: editingList.description || '',
           startDate: editingList.startDate,
           endDate: editingList.endDate,
-          classIds: editingList.classIds || [],
-          status: editingList.status || 'draft'
+          classIds: editingList.classIds || []
         } : undefined}
       />
 

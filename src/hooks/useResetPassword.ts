@@ -1,12 +1,11 @@
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { usePasswordValidation } from "./usePasswordValidation";
+import { API } from "../config/api";
 
 export function useResetPassword(token: string | null) {
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
   
   const {
     password,
@@ -20,7 +19,7 @@ export function useResetPassword(token: string | null) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    setSuccess("");
+    setSuccess(false);
 
     const validationError = getValidationError();
     if (validationError) {
@@ -28,23 +27,36 @@ export function useResetPassword(token: string | null) {
       return;
     }
 
+    if (!token) {
+      setError("Token inválido");
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const res = await fetch("/api/auth/reset-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, password }),
-      });
+      await API.password.resetPassword(token, password);
+      setSuccess(true);
+    } catch (err: unknown) {
+      let errorMessage = "Erro ao redefinir senha";
       
-      if (!res.ok) {
-        throw new Error("Erro ao redefinir senha");
+      if (err instanceof Error) {
+        // Se for um ApiError, usar a mensagem original
+        if ('statusCode' in err && err.statusCode) {
+          const apiError = err as any;
+          // Se o código de status indica erro do servidor, mostrar a mensagem específica
+          if (apiError.statusCode !== 408 || !err.message.includes('Timeout')) {
+            errorMessage = err.message;
+          } else {
+            // Para timeout, tentar uma mensagem mais útil
+            errorMessage = "A requisição demorou muito. O token pode estar inválido ou já ter sido usado.";
+          }
+        } else {
+          errorMessage = err.message;
+        }
       }
       
-      setSuccess("Senha redefinida com sucesso!");
-      setTimeout(() => router.push("/login"), 3000);
-    } catch (err: unknown) {
-      setError((err as Error).message || "Erro ao redefinir senha");
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

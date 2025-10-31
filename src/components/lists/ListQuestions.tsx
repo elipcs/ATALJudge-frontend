@@ -11,14 +11,14 @@ interface ListQuestionsProps {
   userRole: string;
 }
 
-const ListQuestions: React.FC<ListQuestionsProps> = ({
+export default function ListQuestions({
   list,
   onEdit,
   onDelete,
   onSelect,
   getQuestionSubmission,
   userRole
-}) => {
+}: ListQuestionsProps) {
   if (!list || !list.questions) return null;
   return (
     <div className="bg-white/70 backdrop-blur-sm border-slate-200 shadow-lg rounded-lg p-6">
@@ -66,4 +66,3 @@ const ListQuestions: React.FC<ListQuestionsProps> = ({
   );
 };
 
-export default ListQuestions;

@@ -1,268 +1,464 @@
-import { ApiResponse } from '../utils/apiUtils';
+import { ApiResult, ApiEnvelope } from '@/types/api';
+import { UserRole } from '@/types';
+import { 
+  UserResponseDTO,
+  ClassResponseDTO,
+  QuestionResponseDTO,
+  QuestionListResponseDTO,
+  TestCaseResponseDTO,
+  SubmissionResponseDTO,
+  SubmissionDetailDTO,
+  InviteResponseDTO
+} from '@/types/dtos';
 
-export const API_ENDPOINTS = {
-  BASE_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000',
-  ENDPOINTS: {
-    AUTH: {
-      LOGIN: '/api/auth/login',
-      LOGOUT: '/api/auth/logout',
-      REGISTER: '/api/auth/register',
-      REFRESH: '/api/auth/refresh',
-      CHANGE_PASSWORD: '/api/auth/change-password',
-      FORGOT_PASSWORD: '/api/auth/forgot-password',
-      RESET_PASSWORD: '/api/auth/reset-password',
-      VERIFY_RESET_TOKEN: '/api/auth/verify',
-    },
-    INVITES: {
-      BASE: '/api/invites',
-      BY_ID: (id: string) => `/api/invites/${id}`,
-      VERIFY: '/api/invites/verify',
-      CREATE: '/api/invites/create',
-      REVOKE: (id: string) => `/api/invites/revoke/${id}`,
-      DELETE: (id: string) => `/api/invites/${id}`,
-      CLEANUP: '/api/invites/cleanup',
-    },
-    CLASSES: {
-      BASE: '/api/classes',
-      BY_ID: (id: string) => `/api/classes/${id}`,
-      STUDENTS: (id: string) => `/api/classes/${id}/students`,
-      CREATE: '/api/classes/create',
-      ADD_STUDENT: (id: string) => `/api/classes/${id}/add-student`,
-      REMOVE_STUDENT: (id: string) => `/api/classes/${id}/remove-student`,
-      UPDATE: (id: string) => `/api/classes/${id}`,
-      DELETE: (id: string) => `/api/classes/${id}`,
-    },
-    USERS: {
-      PROFILE: '/api/users/profile',
-      STUDENTS: '/api/users/students',
-      ADD_STUDENTS: '/api/config/add-students',
-      REMOVE_STUDENTS: '/api/config/remove-students',
-    },
-    CONFIG: {
-      ALLOWED_IPS: '/api/config/allowed-ips',
-      ALLOWED_IPS_BY_ID: (id: string) => `/api/config/allowed-ips/${id}`,
-      ALLOWED_IPS_TOGGLE: (id: string) => `/api/config/allowed-ips/${id}/toggle`,
-      SYSTEM_RESET: '/api/config/system-reset',
-    },
-    
-  }
-};
+/**
+ * Cliente HTTP para comunicação direta com o backend
+ * 
+ * Características:
+ * - Chamadas diretas ao backend Flask (sem API routes do Next.js)
+ * - Backend retorna dados em camelCase (sem transformações necessárias)
+ * - Autenticação automática via JWT
+ * - Tratamento de erros padronizado
+ * - Timeout configurável
+ */
 
-export async function frontendFetch<T = unknown>(
-  endpoint: string, 
-  options: RequestInit = {}
-): Promise<ApiResponse<T>> {
-  try {
+// =============================================================================
+// Tipos e Interfaces
+// =============================================================================
 
-    const url = endpoint.startsWith('http') || endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-    
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || errorData.message || errorData.msg || `HTTP ${response.status}: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    
-    return {
-      data,
-      success: true,
-      message: data.message,
-    };
-  } catch (error) {
-    throw error;
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public statusCode: number,
+    public code?: string
+  ) {
+    super(message);
+    this.name = 'ApiError';
   }
 }
 
-export async function authenticatedFetch<T = unknown>(
-  endpoint: string, 
-  options: RequestInit = {}
-): Promise<ApiResponse<T>> {
-  try {
-    const getCookie = (name: string) => {
-      if (typeof document === 'undefined') return null;
-      const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
-      return match ? decodeURIComponent(match[2]) : null;
-    };
+interface RequestConfig extends RequestInit {
+  skipAuth?: boolean;
+  timeout?: number;
+}
 
-    const token = (typeof window !== 'undefined')
-      ? (localStorage.getItem('token') || getCookie('token') || null)
-      : null;
-    
-    const url = endpoint.startsWith('/api/') 
-      ? endpoint 
-      : endpoint.startsWith('http') 
-        ? endpoint 
-        : `${API_ENDPOINTS.BASE_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
-    
-    const defaultHeaders: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
+// =============================================================================
+// Configuração
+// =============================================================================
 
-    let passedHeaders: Record<string, string> = {};
-    if (options.headers instanceof Headers) {
-      options.headers.forEach((value, key) => { passedHeaders[key.toLowerCase()] = value; });
-    } else if (Array.isArray(options.headers)) {
-      (options.headers as Array<[string, string]>).forEach(([k, v]) => { passedHeaders[k.toLowerCase()] = v; });
-    } else if (options.headers && typeof options.headers === 'object') {
-      passedHeaders = Object.entries(options.headers as Record<string, string>)
-        .reduce((acc, [k, v]) => { acc[k.toLowerCase()] = v as string; return acc; }, {} as Record<string, string>);
+export const API_BASE_URL = (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_API_BASE_URL) || 'http://localhost:5000/api';
+
+// =============================================================================
+// Cliente HTTP
+// =============================================================================
+
+async function apiClient<T>(
+  endpoint: string,
+  config: RequestConfig = {}
+): Promise<ApiResult<T>> {
+  const {
+    skipAuth = false,
+    timeout = 30000,
+    headers = {},
+    ...restConfig
+  } = config;
+
+  const defaultHeaders: HeadersInit = {
+    'Content-Type': 'application/json; charset=utf-8',
+    'User-Agent': 'AtalJudge-Frontend/1.0',
+  };
+
+  if (!skipAuth && typeof window !== 'undefined') {
+    const token = localStorage.getItem('token');
+    if (token) {
+      (defaultHeaders as Record<string, string>)['Authorization'] = `Bearer ${token}`;
     }
+  }
 
-    const headers = {
+  const url = endpoint.startsWith('http') 
+    ? endpoint 
+    : `${API_BASE_URL}${endpoint}`;
+
+  const requestConfig: RequestInit = {
+    ...restConfig,
+    headers: {
       ...defaultHeaders,
-      ...passedHeaders,
-      ...(token ? { authorization: `Bearer ${token}` } : {}),
-    } as Record<string, string>;
-
-    const response = await fetch(url, {
-      ...options,
-      headers,
-    });
-
-    console.log('📡 [authenticatedFetch] Resposta recebida - Status:', response.status, response.statusText);
-
-    if (!response.ok) {
-      console.error('❌ [authenticatedFetch] Erro na requisição');
-      console.error('❌ [authenticatedFetch] URL:', url);
-      console.error('❌ [authenticatedFetch] Método:', options.method || 'GET');
-      console.error('❌ [authenticatedFetch] Status:', response.status, response.statusText);
-      console.error('❌ [authenticatedFetch] Body enviado:', options.body);
-      
-      const errorData = await response.json().catch(() => ({}));
-      console.error('❌ [authenticatedFetch] Resposta de erro do servidor:', errorData);
-      
-      throw new Error(errorData.error || errorData.message || errorData.msg || `HTTP ${response.status}: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    console.log('✅ [authenticatedFetch] Dados recebidos com sucesso');
-    
-    return {
-      data,
-      success: true,
-      message: data.message,
-    };
-  } catch (error) {
-    throw error;
-  }
-}
-
-export async function backendFetch(endpoint: string, options: RequestInit = {}) {
-  const url = `${API_ENDPOINTS.BASE_URL}${endpoint}`;
-  
-  const defaultHeaders = {
-    'Content-Type': 'application/json',
+      ...headers,
+    },
   };
 
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+
     const response = await fetch(url, {
-      ...options,
-      headers: {
-        ...defaultHeaders,
-        ...options.headers,
-      },
+      ...requestConfig,
+      signal: controller.signal,
     });
 
-    if (!response) {
-      throw new Error('Nenhuma resposta recebida do servidor');
-    }
+    clearTimeout(timeoutId);
 
     const contentType = response.headers.get('content-type');
-    if (contentType && !contentType.includes('application/json')) {
-      console.error('Backend retornou resposta não-JSON:', {
-        status: response.status,
-        contentType,
-        url,
-        text: await response.text()
-      });
-      throw new Error(`Backend retornou ${contentType} em vez de JSON. Verifique se o servidor está rodando em ${API_ENDPOINTS.BASE_URL}`);
-    }
-
-    return response;
-  } catch (error) {
-    if (error instanceof TypeError && error.message === 'Failed to fetch') {
-      throw new Error(`Não foi possível conectar ao backend em ${API_ENDPOINTS.BASE_URL}. Verifique se o servidor está rodando.`);
-    }
-    throw error;
-  }
-}
-
-export async function diagnoseBackendConnection(): Promise<{
-  isConnected: boolean;
-  error?: string;
-  suggestions: string[];
-}> {
-  const suggestions: string[] = [];
-  
-  try { 
-    const response = await fetch(`${API_ENDPOINTS.BASE_URL}/api/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: 'test', password: 'test' }),
-      signal: AbortSignal.timeout(5000)
-    });
+    const isJson = contentType?.includes('application/json');
+    const envelope = (isJson ? await response.json() : await response.text()) as ApiEnvelope<T> | string;
 
     if (!response.ok) {
-      suggestions.push(`Backend retornou status ${response.status}`);
-      suggestions.push('Verifique se o servidor backend está rodando corretamente');
-      return {
-        isConnected: false,
-        error: `HTTP ${response.status}: ${response.statusText}`,
-        suggestions
-      };
+      let errMessage = `HTTP ${response.status}`;
+      
+      if (typeof envelope === 'string') {
+        errMessage = envelope;
+      } else if (typeof envelope === 'object' && envelope !== null) {
+        // Tentar extrair mensagem de erro de diferentes formatos
+        const errorObj = envelope as any;
+        errMessage = errorObj.message || 
+                    errorObj.error || 
+                    errorObj.detail || 
+                    errorObj.msg || 
+                    (errorObj.data?.message || errorObj.data?.error || errorObj.data?.detail);
+        
+        // Se ainda não encontrou, tentar usar o primeiro valor não-undefined
+        if (!errMessage || errMessage === `HTTP ${response.status}`) {
+          const values = Object.values(errorObj);
+          const firstString = values.find(v => typeof v === 'string' && v.length > 0);
+          if (firstString) errMessage = firstString as string;
+        }
+      }
+
+      // Tentativa de auto-refresh em 401 (token expirado) quando não for rota pública
+      const isUnauthorized = response.status === 401 || (typeof errMessage === 'string' && errMessage.toLowerCase().includes('token expirado'));
+      const canRefresh = !skipAuth && typeof window !== 'undefined';
+      if (isUnauthorized && canRefresh) {
+        try {
+          const storedRefresh = localStorage.getItem('refreshToken');
+          if (storedRefresh) {
+            const refreshResp = await fetch(`${API_BASE_URL}/auth/refresh`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json; charset=utf-8',
+                'User-Agent': 'AtalJudge-Frontend/1.0',
+              },
+              body: JSON.stringify({ refreshToken: storedRefresh }),
+            });
+
+            const refreshIsJson = refreshResp.headers.get('content-type')?.includes('application/json');
+            const refreshEnvelope = (refreshIsJson ? await refreshResp.json() : await refreshResp.text()) as any;
+
+            if (refreshResp.ok) {
+              // Extrair tokens (snake_case ou camelCase)
+              const refreshData = (typeof refreshEnvelope === 'object' && 'data' in refreshEnvelope) ? refreshEnvelope.data : refreshEnvelope;
+              const newAccessToken = refreshData.accessToken || refreshData.access_token;
+              const newRefreshToken = refreshData.refreshToken || refreshData.refresh_token;
+
+              if (newAccessToken && newRefreshToken) {
+                localStorage.setItem('token', newAccessToken);
+                localStorage.setItem('refreshToken', newRefreshToken);
+
+                // Refazer requisição original com novo token
+                const retriedHeaders: HeadersInit = {
+                  ...((requestConfig.headers as HeadersInit) || {}),
+                  'Content-Type': 'application/json; charset=utf-8',
+                };
+                (retriedHeaders as Record<string, string>)['Authorization'] = `Bearer ${newAccessToken}`;
+
+                const retryResp = await fetch(url, {
+                  ...requestConfig,
+                  headers: retriedHeaders,
+                  signal: controller.signal,
+                });
+
+                const retryContentType = retryResp.headers.get('content-type');
+                const retryIsJson = retryContentType?.includes('application/json');
+                const retryEnvelope = (retryIsJson ? await retryResp.json() : await retryResp.text()) as ApiEnvelope<T> | string;
+
+                if (!retryResp.ok) {
+                  const retryErrMessage = typeof retryEnvelope === 'string' ? retryEnvelope : (retryEnvelope as any)?.message || `HTTP ${retryResp.status}`;
+                  throw new ApiError(retryErrMessage, retryResp.status);
+                }
+
+                const successRetryEnvelope = retryEnvelope as ApiEnvelope<T>;
+                const retryData = (typeof successRetryEnvelope === 'object' && 'data' in successRetryEnvelope)
+                  ? (successRetryEnvelope as any).data as T
+                  : (retryEnvelope as unknown as T);
+
+                // Transformar tokens (se aplicável) como abaixo
+                let finalRetryData: T = retryData;
+                if (finalRetryData && typeof finalRetryData === 'object') {
+                  const dataObj = finalRetryData as any;
+                  if (dataObj.access_token || dataObj.refresh_token) {
+                    finalRetryData = {
+                      ...dataObj,
+                      accessToken: dataObj.accessToken || dataObj.access_token,
+                      refreshToken: dataObj.refreshToken || dataObj.refresh_token,
+                    } as T;
+                  }
+                }
+
+                return {
+                  data: finalRetryData,
+                  success: typeof successRetryEnvelope === 'object' ? (successRetryEnvelope as any).success !== false : true,
+                  message: typeof successRetryEnvelope === 'object' ? (successRetryEnvelope as any).message : undefined,
+                  status: retryResp.status,
+                };
+              }
+            }
+          }
+        } catch (_refreshErr) {
+          // Ignorar e prosseguir para limpeza e redirecionamento abaixo
+        }
+
+        // Refresh falhou: limpar e redirecionar para login
+        try {
+          localStorage.removeItem('token');
+          localStorage.removeItem('refreshToken');
+        } catch {}
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login';
+        }
+      }
+      
+      throw new ApiError(errMessage, response.status);
     }
 
-    const contentType = response.headers.get('content-type');
-    if (!contentType || !contentType.includes('application/json')) {
-      suggestions.push('Backend não está retornando JSON');
-      suggestions.push('Verifique se a rota /health está configurada corretamente');
-      return {
-        isConnected: false,
-        error: `Content-Type inválido: ${contentType}`,
-        suggestions
-      };
+    const successEnvelope = envelope as ApiEnvelope<T>;
+    let data = (typeof successEnvelope === 'object' && 'data' in successEnvelope)
+      ? (successEnvelope as any).data as T
+      : (envelope as unknown as T);
+
+    // Transformar tokens de snake_case para camelCase se necessário
+    if (data && typeof data === 'object') {
+      const dataObj = data as any;
+      // Verificar se tem access_token ou refresh_token (resposta do backend)
+      if (dataObj.access_token || dataObj.refresh_token) {
+        data = {
+          ...dataObj,
+          accessToken: dataObj.accessToken || dataObj.access_token,
+          refreshToken: dataObj.refreshToken || dataObj.refresh_token,
+        } as T;
+      }
     }
 
     return {
-      isConnected: true,
-      suggestions: ['Backend está funcionando corretamente']
+      data,
+      success: typeof successEnvelope === 'object' ? (successEnvelope as any).success !== false : true,
+      message: typeof successEnvelope === 'object' ? (successEnvelope as any).message : undefined,
+      status: response.status,
     };
-
   } catch (error) {
-    if (error instanceof TypeError && error.message === 'Failed to fetch') {
-      suggestions.push('Verifique se o backend está rodando');
-      suggestions.push(`Confirme se a URL ${API_ENDPOINTS.BASE_URL} está correta`);
-      suggestions.push('Verifique se não há problemas de firewall ou proxy');
-      return {
-        isConnected: false,
-        error: 'Não foi possível conectar ao backend',
-        suggestions
-      };
+    if (error instanceof ApiError) throw error;
+    if (error instanceof Error) {
+      if (error.name === 'AbortError') throw new ApiError('Timeout da requisição', 408, 'TIMEOUT');
+      throw new ApiError(error.message, 0, 'NETWORK_ERROR');
     }
-
-    if (error instanceof Error && error.name === 'TimeoutError') {
-      suggestions.push('Backend está demorando muito para responder');
-      suggestions.push('Verifique se o servidor não está sobrecarregado');
-      return {
-        isConnected: false,
-        error: 'Timeout na conexão',
-        suggestions
-      };
-    }
-
-    suggestions.push('Erro inesperado na conexão');
-    return {
-      isConnected: false,
-      error: error instanceof Error ? error.message : 'Erro desconhecido',
-      suggestions
-    };
+    throw new ApiError('Erro desconhecido', 0, 'UNKNOWN_ERROR');
   }
 }
+
+// =============================================================================
+// Helpers HTTP
+// =============================================================================
+
+export async function get<T>(endpoint: string, config?: RequestConfig): Promise<ApiResult<T>> {
+  return apiClient<T>(endpoint, { ...config, method: 'GET' });
+}
+
+export async function post<T>(
+  endpoint: string,
+  body?: unknown,
+  config?: RequestConfig
+): Promise<ApiResult<T>> {
+  return apiClient<T>(endpoint, {
+    ...config,
+    method: 'POST',
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+}
+
+export async function put<T>(
+  endpoint: string,
+  body?: unknown,
+  config?: RequestConfig
+): Promise<ApiResult<T>> {
+  return apiClient<T>(endpoint, {
+    ...config,
+    method: 'PUT',
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+}
+
+export async function del<T>(endpoint: string, config?: RequestConfig): Promise<ApiResult<T>> {
+  return apiClient<T>(endpoint, { ...config, method: 'DELETE' });
+}
+
+// =============================================================================
+// Objeto API com Endpoints Organizados
+// =============================================================================
+
+export const API = {
+  // Auth
+  auth: {
+    login: (email: string, password: string) => 
+      post<{ user: UserResponseDTO; accessToken: string; refreshToken: string }>(
+        '/auth/login', { email, password }, { skipAuth: true }
+      ),
+    register: (data: { name: string; email: string; password: string; studentRegistration?: string; classId?: string }) => 
+      post<{ user: UserResponseDTO; accessToken: string; refreshToken: string }>(
+        '/auth/register', data, { skipAuth: true }
+      ),
+    logout: (refreshToken: string) => 
+      post<null>('/auth/logout', { refresh_token: refreshToken }),
+    refresh: (refreshToken: string) => 
+      post<{ accessToken: string; refreshToken: string }>(
+        '/auth/refresh', { refreshToken }, { skipAuth: true }
+      ),
+  },
+
+  // Users
+  users: {
+    me: () => get<{ userId: string; email: string; role: UserRole }>('/users/me'),
+    profile: () => get<UserResponseDTO>('/users/profile'),
+    updateProfile: (data: Partial<UserResponseDTO>) => put<UserResponseDTO>('/users/profile', data),
+    changePassword: (data: { currentPassword: string; newPassword: string }) => post<null>('/users/change-password', data),
+  },
+
+  // Classes
+  classes: {
+    list: () => get<ClassResponseDTO[]>('/classes'),
+    get: (id: string) => get<ClassResponseDTO>(`/classes/${id}`),
+    create: (data: { name: string; professorId: string; professorName?: string }) => post<ClassResponseDTO>('/classes', data),
+    update: (id: string, data: Partial<ClassResponseDTO>) => put<ClassResponseDTO>(`/classes/${id}`, data),
+    delete: (id: string) => del<null>(`/classes/${id}`),
+    students: (id: string) => get<{ students: Array<{ id: string; name: string; email: string; role: string; studentRegistration?: string; createdAt: string }> }>(`/classes/${id}/students`),
+  },
+
+  // Lists
+  lists: {
+    list: (params?: Record<string, string>) => {
+      const query = params ? `?${new URLSearchParams(params).toString()}` : '';
+      return get<{ lists: QuestionListResponseDTO[]; count: number }>(`/lists${query}`);
+    },
+    get: (id: string) => get<QuestionListResponseDTO>(`/lists/${id}`),
+    create: (data: Partial<QuestionListResponseDTO>) => post<QuestionListResponseDTO>('/lists', data),
+    update: (id: string, data: Partial<QuestionListResponseDTO>) => put<QuestionListResponseDTO>(`/lists/${id}`, data),
+    delete: (id: string) => del<null>(`/lists/${id}`),
+    publish: (id: string) => post<QuestionListResponseDTO>(`/lists/${id}/publish`),
+    unpublish: (id: string) => post<QuestionListResponseDTO>(`/lists/${id}/unpublish`),
+    addQuestion: (listId: string, questionId: string) => post<null>(`/lists/${listId}/questions`, { questionId }),
+    removeQuestion: (listId: string, questionId: string) => del<null>(`/lists/${listId}/questions/${questionId}`),
+  },
+
+  // Questions
+  questions: {
+    list: () => get<{ questions: QuestionResponseDTO[] }>('/questions'),
+    get: (id: string) => get<QuestionResponseDTO>(`/questions/${id}`),
+    create: (data: Partial<QuestionResponseDTO>) => post<QuestionResponseDTO>('/questions', data),
+    update: (id: string, data: Partial<QuestionResponseDTO>) => put<QuestionResponseDTO>(`/questions/${id}`, data),
+    delete: (id: string) => del<null>(`/questions/${id}`),
+  },
+
+  // Invites
+  invites: {
+    list: () => get<InviteResponseDTO[]>('/invites'),
+    get: (id: string) => get<InviteResponseDTO>(`/invites/${id}`),
+    create: (data: { role: UserRole; maxUses: number; expirationDays: number; classId?: string; className?: string; createdBy: string; creatorName: string }) => post<{ invite: InviteResponseDTO }>(
+      '/invites/create', data
+    ),
+    delete: (id: string) => del<null>(`/invites/${id}`),
+    revoke: (id: string) => post<null>(`/invites/${id}/revoke`),
+    verify: (token: string) => post<{ id: string; role: UserRole; token: string; expiresAt: string; currentUses: number; maxUses: number; classId?: string; className?: string; createdBy: string; creatorName: string }>(
+      '/invites/verify', { token }, { skipAuth: true }
+    ),
+  },
+
+  // Submissions
+  submissions: {
+    list: (params?: Record<string, string>) => {
+      const query = params ? `?${new URLSearchParams(params).toString()}` : '';
+      return get<{ submissions: SubmissionResponseDTO[] }>(`/submissions${query}`);
+    },
+    get: (id: string) => get<SubmissionResponseDTO>(`/submissions/${id}`),
+    submit: (data: { questionId: string; code: string; language: string }) => post<SubmissionDetailDTO>(
+      '/submissions/submit', data
+    ),
+  },
+
+  // Test Cases
+  testCases: {
+    list: (questionId: string) => get<TestCaseResponseDTO[]>(`/questions/${questionId}/testcases`),
+    create: (questionId: string, data: Omit<TestCaseResponseDTO, 'id' | 'createdAt'>) => post<TestCaseResponseDTO>(`/questions/${questionId}/testcases`, data),
+    update: (questionId: string, testCaseId: string, data: Partial<TestCaseResponseDTO>) => 
+      put<TestCaseResponseDTO>(`/questions/${questionId}/testcases/${testCaseId}`, data),
+    delete: (questionId: string, testCaseId: string) => 
+      del<null>(`/questions/${questionId}/testcases/${testCaseId}`),
+    reorder: (questionId: string, testCaseIds: string[]) => 
+      post<null>(`/questions/${questionId}/testcases/reorder`, { testCaseIds }),
+  },
+
+  // Password Reset
+  password: {
+    forgotPassword: (email: string) => 
+      post<{ message: string }>('/auth/forgot-password', { email }, { skipAuth: true }),
+    resetPassword: (token: string, password: string) => 
+      post<{ message: string }>('/auth/reset-password', { token, newPassword: password }, { skipAuth: true, timeout: 10000 }),
+    verifyResetToken: (token: string) => 
+      post<{ valid: boolean; message?: string }>('/auth/verify-reset-token', { token }, { skipAuth: true }),
+  },
+
+  // Configuration
+  config: {
+    getAllowedIps: () => get<{ allowedIPs: Array<{ id: string; ip: string; description: string; active: boolean; createdAt: string }> }>(
+      '/config/allowed-ips'
+    ),
+    checkAllowedIp: (listId?: string) => {
+      const query = listId ? `?listId=${listId}` : '';
+      return get<{ allowed: boolean }>(`/config/allowed-ips/check${query}`);
+    },
+    toggleAllowedIp: (id: string) => post<null>(`/config/allowed-ips/${id}/toggle`),
+    deleteAllowedIp: (id: string) => del<null>(`/config/allowed-ips/${id}`),
+    createAllowedIp: (data: { ip: string; description: string }) => post<null>('/config/allowed-ips', data),
+    getStudents: () => get<{ students: Array<{ id: string; name: string; email: string; studentRegistration: string; classId: string; className: string; submissionsCount: number; createdAt: string }> }>(
+      '/config/students'
+    ),
+    removeStudents: (studentIds: string[]) => 
+      post<null>('/config/remove-students', { studentIds }),
+    systemReset: () => post<null>('/config/system-reset'),
+  },
+
+  // Execution (Judge0)
+  execution: {
+    getLanguages: () => get<string[]>('/execution/languages'),
+    getStatus: () => get<{ healthy: boolean; judge0Url?: string }>("/execution/status"),
+  },
+};
+
+// =============================================================================
+// Utilitários
+// =============================================================================
+
+export async function diagnoseBackendConnection(): Promise<{
+  backend: boolean;
+  message?: string;
+}> {
+  const result = {
+    backend: false,
+    message: undefined as string | undefined,
+  };
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/health`, { 
+      method: 'GET',
+      cache: 'no-store',
+    });
+    result.backend = response.ok;
+    if (!response.ok) {
+      result.message = `Backend retornou status ${response.status}`;
+    }
+  } catch (error) {
+    result.backend = false;
+    result.message = error instanceof Error ? error.message : 'Backend não está respondendo';
+  }
+
+  return result;
+}
+
+export const diagnoseConnection = diagnoseBackendConnection;
+export { apiClient };

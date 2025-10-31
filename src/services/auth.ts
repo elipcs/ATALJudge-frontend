@@ -1,4 +1,7 @@
-import { authenticatedFetch, frontendFetch } from '../config/api';
+import { API } from '../config/api';
+import { logger } from '../utils/logger';
+import { UserResponseDTO } from '@/types/dtos';
+import { ApiResult } from '@/types/api';
 
 export interface RegistrationFormData {
   name: string;
@@ -17,6 +20,28 @@ export interface TokenInfo {
   expires: string;
 }
 
+/**
+ * API de autenticação
+ * 
+ * Gerencia todas as operações de autenticação, incluindo:
+ * - Login/Logout
+ * - Registro de usuários
+ * - Gerenciamento de tokens (JWT + Refresh Token)
+ * - Validação de tokens
+ * - Recuperação de senha
+ * 
+ * @example
+ * ```typescript
+ * // Login
+ * await authApi.login('usuario@email.com', 'senha123');
+ * 
+ * // Logout
+ * await authApi.logout();
+ * 
+ * // Verificar se token está expirado
+ * const isExpired = authApi.isTokenExpired(token);
+ * ```
+ */
 export const authApi = {
   getToken() {
     if (typeof window === "undefined") return null;
@@ -42,22 +67,6 @@ export const authApi = {
     if (typeof window === "undefined") return;
     localStorage.setItem("token", token);
     localStorage.setItem("refreshToken", refreshToken);
-  },
-
-  removeToken() {
-    if (typeof window === "undefined") return;
-    localStorage.removeItem("token");
-  },
-
-  removeRefreshToken() {
-    if (typeof window === "undefined") return;
-    localStorage.removeItem("refreshToken");
-  },
-
-  removeTokens() {
-    if (typeof window === "undefined") return;
-    localStorage.removeItem("token");
-    localStorage.removeItem("refreshToken");
   },
 
   isTokenExpired(token: string): boolean {
@@ -87,6 +96,7 @@ export const authApi = {
         const newToken = await this.refreshAccessToken();
         return !!newToken;
       } catch (error) {
+        logger.error('[Auth] Erro ao fazer refresh', { error });
         return false;
       }
     }
@@ -96,27 +106,18 @@ export const authApi = {
 
   async refreshAccessToken(): Promise<string | null> {
     const refreshToken = this.getRefreshToken();
-    if (!refreshToken) {
-      return null;
-    }
+    if (!refreshToken) return null;
 
     try {
-      const response = await authenticatedFetch<{ accessToken: string }>('/api/auth/refresh', {
-        method: "POST",
-        body: JSON.stringify({
-          refreshToken: refreshToken
-        }),
-      });
-
-      const accessToken = response.data.accessToken;
-
-      if (accessToken) {
-        this.setToken(accessToken);
+      const { data } = await API.auth.refresh(refreshToken);
+      const { accessToken, refreshToken: newRefreshToken } = data;
+      if (accessToken && newRefreshToken) {
+        this.setTokens(accessToken, newRefreshToken);
         return accessToken;
       }
       return null;
     } catch (error) {
-      console.error("Erro ao renovar token:", error);
+      logger.error('[Auth] Erro ao renovar token', { error });
       this.removeTokens();
       return null;
     }
@@ -124,7 +125,6 @@ export const authApi = {
 
   async logout(): Promise<boolean> {
     const token = this.getToken();
-    
     if (!token) {
       this.removeTokens();
       return true;
@@ -132,16 +132,10 @@ export const authApi = {
 
     try {
       const refreshToken = this.getRefreshToken();
-      
-      await authenticatedFetch('/api/auth/logout', {
-        method: 'POST',
-        body: JSON.stringify({
-          refreshToken: refreshToken
-        }),
-      });
-
+      if (refreshToken) {
+        await API.auth.logout(refreshToken);
+      }
       this.removeTokens();
-      
       if (typeof window !== "undefined") {
         localStorage.removeItem('userRole');
         localStorage.removeItem('user');
@@ -149,11 +143,9 @@ export const authApi = {
         localStorage.removeItem('userName');
         localStorage.removeItem('userEmail');
       }
-
       return true;
     } catch (error) {
-      console.error('Erro ao fazer logout:', error);
-      
+      logger.error('Erro ao fazer logout', { error });
       this.removeTokens();
       if (typeof window !== "undefined") {
         localStorage.removeItem('userRole');
@@ -162,42 +154,16 @@ export const authApi = {
         localStorage.removeItem('userName');
         localStorage.removeItem('userEmail');
       }
-      
       return true;
     }
   },
 
-  async login(email: string, password: string): Promise<{
-    user: any;
-    accessToken: string;
-    refreshToken: string;
-  }> {
-    const requestBody = { email, password };
-    
-    const response = await frontendFetch<{
-      user: any;
-      accessToken: string;
-      refreshToken: string;
-    }>('/api/auth/login', {
-      method: "POST",
-      body: JSON.stringify(requestBody),
-    });
-    
-    const data = response.data;
-    
-    if (!data.accessToken) {
-      throw new Error("Token de acesso não recebido do servidor");
-    }
-    
-    if (!data.refreshToken) {
-      throw new Error("Token de refresh não recebido do servidor");
-    }
-    
-    return data;
+  async login(email: string, password: string): Promise<ApiResult<{ user: UserResponseDTO; accessToken: string; refreshToken: string }>> {
+    return API.auth.login(email, password);
   },
 
   async registerUser(
-    formData: RegistrationFormData, 
+    formData: RegistrationFormData,
     tokenInfo: TokenInfo | null
   ): Promise<{ success: boolean; message?: string; error?: string }> {
     try {
@@ -206,26 +172,37 @@ export const authApi = {
         email: formData.email,
         password: formData.password,
         role: tokenInfo?.role,
-        student_registration: formData.studentRegistration,
-        class_id: tokenInfo?.classId,
-        class_name: tokenInfo?.className
+        studentRegistration: formData.studentRegistration,
+        classId: tokenInfo?.classId,
+        className: tokenInfo?.className
       };
 
-      const response = await frontendFetch('/api/auth/register', {
-        method: 'POST',
-        body: JSON.stringify(requestBody),
-      });
-
+      const result = await API.auth.register(requestBody);
       return {
-        success: true,
-        message: "Cadastro realizado com sucesso"
+        success: result.success,
+        message: result.message || 'Cadastro realizado com sucesso'
       };
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : "Erro ao realizar cadastro"
+        error: error instanceof Error ? error.message : 'Erro ao realizar cadastro'
       };
     }
   },
 
+  removeToken() {
+    if (typeof window === "undefined") return;
+    localStorage.removeItem("token");
+  },
+
+  removeRefreshToken() {
+    if (typeof window === "undefined") return;
+    localStorage.removeItem("refreshToken");
+  },
+
+  removeTokens() {
+    if (typeof window === "undefined") return;
+    localStorage.removeItem("token");
+    localStorage.removeItem("refreshToken");
+  },
 };
