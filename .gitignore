@@ -20,6 +20,12 @@
 # production
 /build
 
+#IDEs and editors
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
 # misc
 .DS_Store
 *.pem
