@@ -34,8 +34,6 @@ export default function ClassDetails({
     list.classIds && list.classIds.includes(cls.id)
   );
 
-
-
   const exportToCSV = () => {
     const headers = ['Nome', 'Email', 'Matrícula', 'Média Geral'];
     questionLists.forEach(list => {
@@ -86,7 +84,7 @@ export default function ClassDetails({
 
   return (
     <div className="space-y-6">
-      {/* Lista de alunos */}
+      {}
       <Card className="bg-white border-slate-200 rounded-3xl shadow-lg p-6">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-slate-900">
@@ -104,7 +102,6 @@ export default function ClassDetails({
             </Button>
           )}
         </div>
-
 
         {students.length === 0 ? (
           <div className="text-center py-12">
@@ -199,7 +196,7 @@ export default function ClassDetails({
         )}
       </Card>
 
-      {/* Rodapé com informações da turma */}
+      {}
       <div className="bg-white rounded-3xl shadow-lg border border-slate-200 p-6">
         <div className="flex flex-wrap items-center justify-between gap-4 text-sm text-slate-600">
           <div className="flex items-center gap-6">

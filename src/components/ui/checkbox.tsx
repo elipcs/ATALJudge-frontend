@@ -106,7 +106,7 @@ const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
             "peer-disabled:opacity-50 peer-disabled:cursor-not-allowed"
           )}
         >
-          {/* Check or indeterminate icon */}
+          {}
           {indeterminate ? (
             <svg className={cn(iconSize, "text-slate-500 peer-checked:text-white")} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
               <path strokeLinecap="round" d="M6 12h12" />

@@ -35,7 +35,6 @@ export default function NavigationBar({ currentPage }: NavigationBarProps) {
       isCollapsed ? '4rem' : '16rem'
     );
   }, [isCollapsed]);
-  
 
   const toggleCollapse = () => {
     const newState = !isCollapsed;
@@ -163,20 +162,20 @@ export default function NavigationBar({ currentPage }: NavigationBarProps) {
 
   return (
     <>
-      {/* eslint-disable react/no-unknown-property */}
+      {}
       <style jsx global>{`
         :root {
           --sidebar-width: ${isCollapsed ? '4rem' : '16rem'};
         }
       `}</style>
-      {/* eslint-enable react/no-unknown-property */}
+      {}
       <nav className={`h-full bg-gradient-to-b from-slate-50 to-white border-r border-slate-200 shadow-lg transition-all duration-300 ease-in-out overflow-hidden ${
         isCollapsed ? 'w-16' : 'w-64'
       }`}>
         <div className={`transition-all duration-300 ease-in-out ${isCollapsed ? 'p-2' : 'p-4'}`}>
-          {/* Header com logo e botão de toggle */}
+          {}
           <div className={`mb-6 transition-all duration-300 ease-in-out ${isCollapsed ? 'space-y-2' : 'flex items-center justify-between'}`}>
-            {/* Logo sempre visível */}
+            {}
             <div className={`flex items-center transition-all duration-300 ease-in-out ${isCollapsed ? 'justify-center' : 'justify-start'}`}>
               <Link href="/home" className="flex-shrink-0 hover:opacity-80 transition-opacity duration-200">
                 {isCollapsed ? (
@@ -245,7 +244,6 @@ export default function NavigationBar({ currentPage }: NavigationBarProps) {
             </div>
           </div>
 
-
           <div className="space-y-1">
             {links.map((link) => {
               const isActive = activeKey === link.key;
@@ -268,7 +266,7 @@ export default function NavigationBar({ currentPage }: NavigationBarProps) {
                     }`}>
                       {link.label}
                     </span>
-                    {/* Tooltip para modo colapsado */}
+                    {}
                     {isCollapsed && (
                       <div className="absolute left-full ml-2 px-2 py-1 bg-slate-900 text-white text-xs rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-50">
                         {link.label}

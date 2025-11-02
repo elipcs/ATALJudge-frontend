@@ -35,7 +35,6 @@ export default function SubmissionStatusModal({
   const [isPolling, setIsPolling] = useState(false);
   const [results, setResults] = useState<SubmissionResultsResponse | null>(null);
 
-  // Polling do status da submissão
   useEffect(() => {
     if (!isOpen || !submissionId) return;
 
@@ -55,28 +54,25 @@ export default function SubmissionStatusModal({
         const newStatus = submission.status.toLowerCase();
         setStatus(newStatus);
         setLanguage(submission.language);
-        setCreatedAt(submission.createdAt);
+        setCreatedAt(typeof submission.createdAt === 'string' ? submission.createdAt : submission.createdAt.toISOString());
 
-        // Se concluído, buscar resultados
         if (newStatus === "completed") {
           try {
-            // NOTA: Endpoint /submissions/{id}/results foi removido do backend
-            // Os resultados agora vêm diretamente na resposta da submissão
+
             logger.warn('Endpoint de resultados não disponível');
-            // setResults(resultsData);
+            
           } catch (error) {
             console.error("Erro ao buscar resultados:", error);
           }
         }
 
-        // Parar polling se não estiver mais em processamento
         if (newStatus !== "pending" && newStatus !== "running") {
           const id = setTimeout(() => setIsPolling(false), 0);
           clearInterval(pollInterval);
           return () => clearTimeout(id);
         }
       } catch (_error) {
-        // silencioso
+        
       }
     }, 2000);
 
@@ -129,7 +125,7 @@ export default function SubmissionStatusModal({
           dotColor: "bg-blue-500 animate-pulse",
           statusText: "Executando",
         };
-      default: // pending
+      default: 
         return {
           icon: (
             <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -159,7 +155,7 @@ export default function SubmissionStatusModal({
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          {/* Status e Informações Básicas */}
+          {}
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-slate-50 p-3 rounded-lg">
               <div className="flex items-center justify-between mb-1">
@@ -186,10 +182,10 @@ export default function SubmissionStatusModal({
             </div>
           </div>
 
-          {/* Resultados dos Testes */}
+          {}
           {results && status === "completed" && (
             <div className="space-y-3">
-              {/* Sumário */}
+              {}
               <div
                 className={`p-4 rounded-lg border-2 ${
                   results.summary.passedCount === results.summary.totalCases
@@ -227,7 +223,7 @@ export default function SubmissionStatusModal({
                 </div>
               </div>
 
-              {/* Lista de Resultados */}
+              {}
               <div className="space-y-2">
                 <h4 className="text-sm font-semibold text-slate-700">Detalhes dos Casos de Teste:</h4>
                 <div className="max-h-64 overflow-y-auto space-y-2">
@@ -303,7 +299,7 @@ export default function SubmissionStatusModal({
             </div>
           )}
 
-          {/* Informações Adicionais (colapsadas quando há resultados) */}
+          {}
           <details className="bg-slate-50 p-3 rounded-lg" open={!results}>
             <summary className="text-sm font-semibold text-slate-700 cursor-pointer">Informações da Submissão</summary>
             <div className="mt-3 space-y-3">

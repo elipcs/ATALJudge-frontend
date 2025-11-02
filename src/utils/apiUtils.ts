@@ -1,9 +1,4 @@
-/**
- * Utility functions for API operations
- * 
- * Note: HTTP request functions have been moved to src/config/api.ts
- * This file now contains only utility helpers for URL building and query strings.
- */
+
 
 export class ApiError extends Error {
   public status?: number;
@@ -16,7 +11,6 @@ export class ApiError extends Error {
     this.code = code;
   }
 }
-
 
 export function buildQueryString(params: Record<string, unknown>): string {
   const searchParams = new URLSearchParams();
@@ -33,7 +27,6 @@ export function buildQueryString(params: Record<string, unknown>): string {
 
   return searchParams.toString();
 }
-
 
 export function buildUrl(baseUrl: string, params?: Record<string, unknown>): string {
   if (!params || Object.keys(params).length === 0) {

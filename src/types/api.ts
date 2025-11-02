@@ -19,6 +19,3 @@ export interface ApiResult<T> {
   status: number;
 }
 
-
-
-

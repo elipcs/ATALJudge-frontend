@@ -49,8 +49,7 @@ export default function JudgeTypeModal({
 
   const handleSave = async () => {
     setError(null);
-    
-    // Validações
+
     if (judgeType === 'codeforces') {
       if (!contestId || !problemIndex) {
         setError('Contest ID e Problem Index são obrigatórios para Codeforces');
@@ -81,7 +80,7 @@ export default function JudgeTypeModal({
       }
       
       const updatedQuestion = await questionsApi.update(question.id, config);
-      onSuccess(updatedQuestion);
+      onSuccess(updatedQuestion as any);
       onClose();
     } catch (err: any) {
       console.error('Erro ao salvar tipo de judge:', err);
@@ -96,7 +95,7 @@ export default function JudgeTypeModal({
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        {/* Header */}
+        {}
         <div className="p-6 border-b border-slate-200">
           <div className="flex items-center justify-between">
             <div>
@@ -116,15 +115,15 @@ export default function JudgeTypeModal({
           </div>
         </div>
 
-        {/* Body */}
+        {}
         <div className="p-6 space-y-6">
-          {/* Questão Info */}
+          {}
           <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200">
             <h3 className="font-semibold text-slate-900 mb-1">{question.title}</h3>
             <p className="text-sm text-slate-600">ID: {question.id}</p>
           </div>
 
-          {/* Tipo de Judge */}
+          {}
           <div>
             <label className="block text-sm font-semibold text-slate-900 mb-3">
               Tipo de Avaliação
@@ -160,7 +159,7 @@ export default function JudgeTypeModal({
             </div>
           </div>
 
-          {/* Campos do Codeforces */}
+          {}
           {judgeType === 'codeforces' && (
             <div className="space-y-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-2xl p-5 border border-purple-200">
               <h3 className="font-semibold text-slate-900 flex items-center gap-2">
@@ -201,7 +200,7 @@ export default function JudgeTypeModal({
                 </div>
               </div>
 
-              {/* Preview do Link */}
+              {}
               {getPreviewLink() && (
                 <div className="bg-white rounded-xl p-4 border border-purple-200">
                   <p className="text-sm font-semibold text-slate-900 mb-2">Link do Problema:</p>
@@ -221,7 +220,7 @@ export default function JudgeTypeModal({
             </div>
           )}
 
-          {/* Nota sobre Judge Local */}
+          {}
           {judgeType === 'local' && (
             <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl p-4 border border-green-200">
               <div className="flex items-start gap-3">
@@ -239,7 +238,7 @@ export default function JudgeTypeModal({
             </div>
           )}
 
-          {/* Error Message */}
+          {}
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-xl p-4">
               <div className="flex items-center gap-2 text-red-800">
@@ -252,7 +251,7 @@ export default function JudgeTypeModal({
           )}
         </div>
 
-        {/* Footer */}
+        {}
         <div className="p-6 border-t border-slate-200 flex gap-3 justify-end">
           <Button
             onClick={onClose}

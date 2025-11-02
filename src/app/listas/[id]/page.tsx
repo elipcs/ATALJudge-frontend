@@ -93,12 +93,6 @@ export default function ListPage() {
     }
   };
 
-  // const submissionScores: SubmissionScore[] = submissions.map(sub => ({
-  //   questionId: sub.questionId,
-  //   score: sub.score,
-  //   attempt: sub.attempt
-  // }));
-
   const getOrderedQuestions = () => {
     if (!list || list.scoringMode !== 'groups' || !list.questionGroups || list.questionGroups.length === 0) {
       return list?.questions || [];
@@ -199,7 +193,7 @@ export default function ListPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white p-6">
-      {/* Cabeçalho */}
+      {}
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
           <Link href="/listas">
@@ -215,11 +209,11 @@ export default function ListPage() {
           </div>
         </div>
         
-        {/* Navegação entre páginas com estilo do perfil */}
+        {}
   <ListTabs id={id} activeTab="lista" hasQuestions={!!hasQuestions()} userRole={userRole || 'student'} />
       </div>
 
-      {/* Aviso de IP restrito (para estudantes) */}
+      {}
       {error === 'ipRestricted' && (
         <Card className="bg-gradient-to-r from-red-50 to-pink-50 border-red-200 rounded-2xl shadow-lg p-6 mb-6">
           <div className="flex items-center gap-4">
@@ -238,7 +232,7 @@ export default function ListPage() {
         </Card>
       )}
 
-      {/* Verificar se a lista já começou (para estudantes) */}
+      {}
       {!isListStarted() && (
         <Card className="bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-200 rounded-2xl shadow-lg p-6 mb-6">
           <div className="flex items-center gap-4">
@@ -257,7 +251,7 @@ export default function ListPage() {
         </Card>
       )}
 
-      {/* Informações da Lista */}
+      {}
       <Card className="bg-white border-slate-200 rounded-3xl shadow-lg p-6 mb-6">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-xl font-bold text-slate-900">Informações da Lista</h3>
@@ -285,7 +279,7 @@ export default function ListPage() {
           </div>
         </div>
 
-        {/* Descrição da Lista */}
+        {}
         {list.description && (
           <div className="border-t border-slate-200 pt-6">
             <h3 className="text-lg font-bold text-slate-900 mb-3">Descrição</h3>
@@ -293,7 +287,7 @@ export default function ListPage() {
           </div>
         )}
 
-        {/* Sistema de Pontuação Configurado */}
+        {}
         <div className={`${list.description ? 'border-t' : ''} border-slate-200 pt-6 mt-6`}>
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-lg font-bold text-slate-900">Sistema de Pontuação</h3>
@@ -349,14 +343,14 @@ export default function ListPage() {
         </div>
       </Card>
 
-      {/* Resumo das Questões */}
+      {}
       {hasQuestions() && error !== 'ipRestricted' && (
         <Card className={`bg-white border-slate-200 rounded-3xl shadow-lg p-6 transition-all ${
           userRole === 'student' && !isListStarted() ? 'blur-sm opacity-60 pointer-events-none' : ''
         }`}>
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-slate-900">Resumo das Questões</h2>
-            {/* Botões para professor/assistant */}
+            {}
             {(userRole === 'professor' || userRole === 'assistant') && (
               <Button 
                 variant="outline" 
@@ -421,7 +415,7 @@ export default function ListPage() {
                       </span>
                     </div>
                     <div className="flex items-center gap-3">
-                      {/* Status da submissão */}
+                      {}
                       {submission && (
                         <div className="flex items-center gap-2">
                           <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(submission.status)}`}>
@@ -435,7 +429,7 @@ export default function ListPage() {
                           </span>
                         </div>
                       )}
-                      {/* Botão para acessar/editar questão */}
+                      {}
                       {(userRole === 'professor' || userRole === 'assistant') ? (
                         <Button 
                           variant="outline" 
@@ -486,7 +480,7 @@ export default function ListPage() {
         </Card>
       )}
 
-      {/* Aviso quando lista não começou */}
+      {}
       {userRole === 'student' && !isListStarted() && error !== 'ipRestricted' && (
         <Card className="bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200 rounded-3xl shadow-lg p-6 mt-6">
           <div className="flex items-center gap-4">
@@ -505,7 +499,7 @@ export default function ListPage() {
         </Card>
       )}
 
-      {/* Aviso quando lista já terminou */}
+      {}
       {userRole === 'student' && isListEnded() && error !== 'ipRestricted' && (
         <Card className="bg-gradient-to-r from-red-50 to-pink-50 border-red-200 rounded-3xl shadow-lg p-6 mt-6">
           <div className="flex items-center gap-4">
@@ -524,7 +518,7 @@ export default function ListPage() {
         </Card>
       )}
 
-      {/* Verificar se há questões */}
+      {}
       {!hasQuestions() && (
         <Card className="bg-gradient-to-r from-slate-50 to-slate-100 border-slate-200 rounded-2xl shadow-lg p-8 text-center">
           <div className="p-4 bg-slate-100 rounded-xl mx-auto mb-6 w-fit">
@@ -537,7 +531,7 @@ export default function ListPage() {
             Esta lista ainda não possui questões cadastradas.
           </p>
           
-          {/* Botão para professor/assistant criarem questão */}
+          {}
           {(userRole === 'professor' || userRole === 'assistant') && (
             <Button 
               onClick={() => setShowAddQuestionModal(true)}
@@ -552,7 +546,7 @@ export default function ListPage() {
         </Card>
       )}
 
-      {/* Modal de Criação de Questão */}
+      {}
       {showAddQuestionModal && (
         <QuestionModal
           isOpen={showAddQuestionModal}
@@ -578,7 +572,7 @@ export default function ListPage() {
         />
       )}
 
-      {/* Modal de Edição de Questão */}
+      {}
       {showEditQuestionModal && editingQuestion && (
         <QuestionModal
           isOpen={showEditQuestionModal}
@@ -606,7 +600,7 @@ export default function ListPage() {
         />
       )}
 
-      {/* Modal de Configuração de Pontuação */}
+      {}
       {showScoreConfigModal && (
         <ScoreSystemConfigModal
           isOpen={showScoreConfigModal}

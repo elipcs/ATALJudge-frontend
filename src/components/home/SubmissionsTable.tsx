@@ -28,7 +28,6 @@ export default function SubmissionsTable({ submissions, showActions = false }: S
     setShowModal(false);
   };
 
-
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold text-gray-900">Últimas Submissões</h3>
@@ -107,7 +106,7 @@ export default function SubmissionsTable({ submissions, showActions = false }: S
         </div>
       )}
       
-      {/* Modal de detalhes da submissão */}
+      {}
       {showModal && selectedSubmission && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black opacity-40" onClick={closeModal}></div>

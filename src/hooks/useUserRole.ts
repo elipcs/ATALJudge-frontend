@@ -10,26 +10,6 @@ interface UseUserRoleReturn {
   isLoading: boolean;
 }
 
-/**
- * Hook para detectar e gerenciar o papel/role do usuário atual
- * 
- * Prioridades de detecção:
- * 1. Token JWT (se válido)
- * 2. Token JWT renovado (se expirado)
- * 3. localStorage
- * 4. Path da URL
- * 5. Fallback: 'professor'
- * 
- * @returns Objeto com userRole e isLoading
- * 
- * @example
- * ```tsx
- * const { userRole, isLoading } = useUserRole();
- * 
- * if (isLoading) return <Loading />;
- * if (userRole === 'professor') return <ProfessorDashboard />;
- * ```
- */
 export function useUserRole(): UseUserRoleReturn {
   const pathname = usePathname();
   const [userRole, setUserRoleState] = useState<UserRole>('professor');
@@ -80,7 +60,6 @@ export function useUserRole(): UseUserRoleReturn {
 
     return 'professor';
   }, [pathname]);
-
 
   useEffect(() => {
     const loadUserRole = async () => {

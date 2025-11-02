@@ -22,7 +22,6 @@ export function InviteForm({ onInviteCreated }: InviteFormProps) {
     classesError,
     isClassDropdownOpen,
     isExpirationDropdownOpen,
-    buttonSuccess,
     updateFormData,
     resetForm,
     validateForm,
@@ -45,7 +44,7 @@ export function InviteForm({ onInviteCreated }: InviteFormProps) {
 
     setLoading(true);
     try {
-      // Obter dados do usuário atual via API
+      
       const userProfile = await profileApi.getProfile();
       const selectedClass = availableClasses.find(c => c.id === formData.classId);
       
@@ -126,7 +125,7 @@ export function InviteForm({ onInviteCreated }: InviteFormProps) {
     <Card className="p-6 mb-8">
       <h2 className="text-xl font-semibold mb-6">Gerar Novo Convite</h2>
       
-      {/* Seleção de Tipo de Usuário */}
+      {}
       <div className="mb-6">
         <label className="block text-sm font-medium text-gray-700 mb-3">Tipo de Usuário</label>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -179,7 +178,7 @@ export function InviteForm({ onInviteCreated }: InviteFormProps) {
         </div>
       </div>
 
-      {/* Configurações do Convite */}
+      {}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
         {formData.role === 'student' && (
           <div className="md:col-span-2 lg:col-span-1">
@@ -188,13 +187,13 @@ export function InviteForm({ onInviteCreated }: InviteFormProps) {
               <button
                 type="button"
                 onClick={() => setIsClassDropdownOpen(!isClassDropdownOpen)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-left flex items-center justify-between"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-left flex items-center justify-between bg-white hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-700 cursor-pointer shadow-sm"
               >
                 <span className={formData.classId ? 'text-gray-900' : 'text-gray-500'}>
                   {formData.classId ? availableClasses.find(cls => cls.id === formData.classId)?.name : 'Selecione uma turma'}
                 </span>
                 <svg 
-                  className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${
+                  className={`w-5 h-5 text-gray-400 transition-transform duration-200 flex-shrink-0 ${
                     isClassDropdownOpen ? 'rotate-180' : ''
                   }`} 
                   fill="none" 
@@ -206,7 +205,7 @@ export function InviteForm({ onInviteCreated }: InviteFormProps) {
               </button>
               
               {isClassDropdownOpen && (
-                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto">
+                <div className="absolute z-10 w-full mt-2 bg-white border border-gray-300 rounded-lg shadow-lg max-h-64 overflow-y-auto">
                   {!formData.classId && (
                     <button
                       type="button"
@@ -214,7 +213,7 @@ export function InviteForm({ onInviteCreated }: InviteFormProps) {
                         updateFormData({ classId: '' });
                         setIsClassDropdownOpen(false);
                       }}
-                      className="w-full px-4 py-3 text-left text-gray-500 hover:bg-gray-50 border-b border-gray-100"
+                      className="w-full px-4 py-3 text-left text-gray-500 hover:bg-blue-50 transition-colors border-b border-gray-100"
                     >
                       Selecione uma turma
                     </button>
@@ -227,11 +226,20 @@ export function InviteForm({ onInviteCreated }: InviteFormProps) {
                         updateFormData({ classId: cls.id });
                         setIsClassDropdownOpen(false);
                       }}
-                      className={`w-full px-4 py-3 text-left hover:bg-gray-50 ${
-                        formData.classId === cls.id ? 'bg-blue-50 text-blue-700' : 'text-gray-900'
+                      className={`w-full px-4 py-3 text-left transition-colors ${
+                        formData.classId === cls.id 
+                          ? 'bg-blue-50 text-blue-700' 
+                          : 'text-gray-900 hover:bg-gray-50'
                       } ${index < availableClasses.length - 1 || !formData.classId ? 'border-b border-gray-100' : ''}`}
                     >
-                      {cls.name}
+                      <div className="flex items-center justify-between">
+                        <span>{cls.name}</span>
+                        {formData.classId === cls.id && (
+                          <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        )}
+                      </div>
                     </button>
                   ))}
                 </div>
@@ -298,13 +306,13 @@ export function InviteForm({ onInviteCreated }: InviteFormProps) {
             <button
               type="button"
               onClick={() => setIsExpirationDropdownOpen(!isExpirationDropdownOpen)}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-left flex items-center justify-between"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg text-left flex items-center justify-between bg-white hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-700 cursor-pointer shadow-sm"
             >
               <span className="text-gray-900">
                 {expirationOptions.find(opt => opt.value === formData.expirationDays)?.label || '7 dias'}
               </span>
               <svg 
-                className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${
+                className={`w-5 h-5 text-gray-400 transition-transform duration-200 flex-shrink-0 ${
                   isExpirationDropdownOpen ? 'rotate-180' : ''
                 }`} 
                 fill="none" 
@@ -316,7 +324,7 @@ export function InviteForm({ onInviteCreated }: InviteFormProps) {
             </button>
             
             {isExpirationDropdownOpen && (
-              <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg">
+              <div className="absolute z-10 w-full mt-2 bg-white border border-gray-300 rounded-lg shadow-lg overflow-y-auto max-h-64">
                 {expirationOptions.map((option, index) => (
                   <button
                     key={option.value}
@@ -325,11 +333,20 @@ export function InviteForm({ onInviteCreated }: InviteFormProps) {
                       updateFormData({ expirationDays: option.value });
                       setIsExpirationDropdownOpen(false);
                     }}
-                    className={`w-full px-4 py-3 text-left hover:bg-gray-50 ${
-                      formData.expirationDays === option.value ? 'bg-blue-50 text-blue-700' : 'text-gray-900'
+                    className={`w-full px-4 py-3 text-left transition-colors ${
+                      formData.expirationDays === option.value 
+                        ? 'bg-blue-50 text-blue-700' 
+                        : 'text-gray-900 hover:bg-gray-50'
                     } ${index < expirationOptions.length - 1 ? 'border-b border-gray-100' : ''}`}
                   >
-                    {option.label}
+                    <div className="flex items-center justify-between">
+                      <span>{option.label}</span>
+                      {formData.expirationDays === option.value && (
+                        <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                    </div>
                   </button>
                 ))}
               </div>
@@ -342,23 +359,12 @@ export function InviteForm({ onInviteCreated }: InviteFormProps) {
         <Button 
           onClick={createInvite}
           disabled={loading || (formData.role === 'student' && !formData.classId)}
-          className={`shadow-sm hover:shadow-md font-semibold transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none px-8 py-3 rounded-xl ${
-            buttonSuccess 
-              ? 'bg-gradient-to-r from-green-500 to-green-600 text-white border border-green-600' 
-              : 'bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 border border-blue-200'
-          } flex items-center`}
+          className={`shadow-sm hover:shadow-md font-semibold transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none px-8 py-3 rounded-xl bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 border border-blue-200 flex items-center`}
         >
           {loading ? (
             <>
               <div className="animate-spin rounded-full h-4 w-4 border-2 border-t-transparent mr-2 border-blue-600"></div>
               Gerando Convite...
-            </>
-          ) : buttonSuccess ? (
-            <>
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              Convite Criado!
             </>
           ) : (
             <>

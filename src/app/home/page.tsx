@@ -9,7 +9,6 @@ import {
   StaffHome
 } from "../../components/home";
 
-
 export default function HomePage() {
   const { isLoading: userRoleLoading } = useUserRole();
   const { data: currentUser, loading: userLoading, error: userError } = useCurrentUser();

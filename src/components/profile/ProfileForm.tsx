@@ -10,10 +10,9 @@ interface ProfileFormProps {
   user: ProfileData;
   onSave: (updateData: UpdateProfileData) => Promise<void>;
   saving: boolean;
-  buttonSuccess: boolean;
 }
 
-export default function ProfileForm({ user, onSave, saving, buttonSuccess }: ProfileFormProps) {
+export default function ProfileForm({ user, onSave, saving }: ProfileFormProps) {
   const [formData, setFormData] = useState({
     name: user.name || '',
     studentRegistration: user.studentRegistration || ''
@@ -135,11 +134,9 @@ export default function ProfileForm({ user, onSave, saving, buttonSuccess }: Pro
             onClick={handleSave}
             disabled={saving || !isFormValid()}
             className={`shadow-sm hover:shadow-md font-semibold transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none px-8 py-3 rounded-xl ${
-              buttonSuccess 
-                ? 'bg-gradient-to-r from-green-500 to-green-600 text-white border border-green-600' 
-                : user.role === 'professor' ? 'bg-gradient-to-r from-purple-50 to-purple-100 text-purple-700 border border-purple-200' :
-                  user.role === 'student' ? 'bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 border border-blue-200' :
-                  'bg-gradient-to-r from-green-50 to-green-100 text-green-700 border border-green-200'
+              user.role === 'professor' ? 'bg-gradient-to-r from-purple-50 to-purple-100 text-purple-700 border border-purple-200' :
+              user.role === 'student' ? 'bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 border border-blue-200' :
+              'bg-gradient-to-r from-green-50 to-green-100 text-green-700 border border-green-200'
             }`}
           >
             {saving ? (
@@ -150,13 +147,6 @@ export default function ProfileForm({ user, onSave, saving, buttonSuccess }: Pro
                   'border-green-600'
                 }`}></div>
                 Salvando...
-              </>
-            ) : buttonSuccess ? (
-              <>
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                Salvo com Sucesso!
               </>
             ) : (
               <>

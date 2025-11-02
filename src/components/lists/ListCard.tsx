@@ -26,7 +26,6 @@ export default function ListCard({
     return null;
   }
 
-
   const now = new Date();
   const startTime = createBrazilianDate(list.startDate);
   const endTime = createBrazilianDate(list.endDate);
@@ -87,10 +86,10 @@ export default function ListCard({
           </div>
           
           <div className="flex flex-col items-end gap-3">
-            {/* Botões de ação */}
+            {}
             <div className="flex gap-2">
               {userRole === 'student' ? (
-                /* Botão Acessar - apenas para estudantes */
+                
                 <Button 
                   variant="outline" 
                   size="sm"
@@ -105,7 +104,7 @@ export default function ListCard({
                   Acessar
                 </Button>
               ) : (
-                /* Botões de gerenciamento - apenas para professores e assistentes */
+                
                 <>
                   <Button 
                     variant="outline" 
@@ -130,8 +129,7 @@ export default function ListCard({
                     </svg>
                     Duplicar
                   </Button>
-                  
-                  
+
                   <Button 
                     variant="outline" 
                     size="sm"

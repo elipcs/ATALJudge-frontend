@@ -19,7 +19,6 @@ interface BackendStatusDetails {
   [key: string]: unknown;
 }
 
-
 export function BackendStatus({ showDetails = false }: BackendStatusProps) {
   const [status, setStatus] = useState<{
     isHealthy: boolean;

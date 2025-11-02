@@ -1,7 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Question, Submission } from "@/types";
 
-// Note: Using QuestionList instead of List from types
 interface List {
   id: string;
   title: string;

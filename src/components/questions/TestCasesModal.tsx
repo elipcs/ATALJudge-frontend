@@ -8,8 +8,8 @@ interface TestCase {
   id: string;
   input: string;
   expectedOutput: string;
-  isPublic: boolean;
-  points: number;
+  isSample: boolean;
+  weight: number;
   order?: number;
 }
 
@@ -31,8 +31,8 @@ export default function TestCasesModal({
       id: "1",
       input: "",
       expectedOutput: "",
-      isPublic: true,
-      points: 10,
+      isSample: true,
+      weight: 10,
     },
   ]);
   const [isSaving, setIsSaving] = useState(false);
@@ -70,13 +70,13 @@ export default function TestCasesModal({
       if (Array.isArray(cases) && cases.length > 0) {
         logger.debug('Mapeando casos de teste', { count: cases.length });
         setTestCases(
-          cases.map((tc) => ({
+          cases.map((tc, index) => ({
             id: tc.id,
             input: tc.input,
-            expectedOutput: tc.expectedOutput,  // ✅ camelCase
-            isPublic: tc.isPublic,              // ✅ camelCase
-            points: tc.points,
-            order: tc.order,
+            expectedOutput: tc.expectedOutput,  
+            isSample: tc.isSample,
+            weight: tc.weight,
+            order: index,
           }))
         );
       } else {
@@ -86,8 +86,8 @@ export default function TestCasesModal({
             id: "new-1",
             input: "",
             expectedOutput: "",
-            isPublic: true,
-            points: 10,
+            isSample: true,
+            weight: 10,
           },
         ]);
       }
@@ -106,8 +106,8 @@ export default function TestCasesModal({
       id: `new-${Date.now()}`,
       input: "",
       expectedOutput: "",
-      isPublic: false,
-      points: 10,
+      isSample: false,
+      weight: 10,
       order: testCases.length,
     };
     setTestCases([...testCases, newTestCase]);
@@ -194,10 +194,11 @@ export default function TestCasesModal({
         const tc = newCases[i];
         logger.debug('Criando caso de teste');
         const created = await testCasesService.createTestCase(questionId, {
+          questionId,
           input: tc.input,
-          expectedOutput: tc.expectedOutput,  // ✅ camelCase
-          isPublic: tc.isPublic,              // ✅ camelCase
-          points: tc.points,
+          expectedOutput: tc.expectedOutput,
+          isSample: tc.isSample,
+          weight: tc.weight,
           order: i,
         });
         createdIds.push(created.id);
@@ -209,9 +210,9 @@ export default function TestCasesModal({
         logger.debug('Atualizando caso de teste', { id: tc.id });
         await testCasesService.updateTestCase(questionId, tc.id, {
           input: tc.input,
-          expectedOutput: tc.expectedOutput,  // ✅ camelCase
-          isPublic: tc.isPublic,              // ✅ camelCase
-          points: tc.points,
+          expectedOutput: tc.expectedOutput,
+          isSample: tc.isSample,
+          weight: tc.weight,
           order: newCases.length + i,
         });
       }
@@ -244,7 +245,7 @@ export default function TestCasesModal({
   };
 
   const calculateTotalPoints = () => {
-    return testCases.reduce((sum, tc) => sum + tc.points, 0);
+    return testCases.reduce((sum, tc) => sum + tc.weight, 0);
   };
 
   return (
@@ -259,14 +260,14 @@ export default function TestCasesModal({
           <h2 className="text-2xl font-bold text-slate-900">Gerenciar Casos de Teste</h2>
         </div>
 
-        {/* Loading State */}
+        {}
         {isLoading && (
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
           </div>
         )}
 
-        {/* Success State */}
+        {}
         {saveSuccess && (
           <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl">
             <div className="flex items-center gap-2">
@@ -280,7 +281,7 @@ export default function TestCasesModal({
 
         {!isLoading && (
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Seção de Casos de Teste */}
+            {}
             <div>
               <div className="flex items-center justify-between mb-4">
                 <div>
@@ -341,8 +342,8 @@ export default function TestCasesModal({
                       <input
                         type="checkbox"
                         id={`public-${testCase.id}`}
-                        checked={testCase.isPublic}
-                        onChange={(e) => updateTestCase(testCase.id, "isPublic", e.target.checked)}
+                        checked={testCase.isSample}
+                        onChange={(e) => updateTestCase(testCase.id, "isSample", e.target.checked)}
                         className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
                       />
                       <label
@@ -358,8 +359,8 @@ export default function TestCasesModal({
                         type="number"
                         min="0"
                         max="100"
-                        value={testCase.points}
-                        onChange={(e) => updateTestCase(testCase.id, "points", parseInt(e.target.value) || 0)}
+                        value={testCase.weight}
+                        onChange={(e) => updateTestCase(testCase.id, "weight", parseInt(e.target.value) || 0)}
                         className="w-full h-10 px-3 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 bg-white text-slate-900"
                       />
                     </div>
@@ -369,7 +370,7 @@ export default function TestCasesModal({
             </div>
           </div>
 
-          {/* Informações */}
+          {}
           <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
             <div className="flex items-start gap-3">
               <svg className="w-5 h-5 text-blue-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -387,7 +388,7 @@ export default function TestCasesModal({
             </div>
           </div>
 
-          {/* Error State - Mostrado antes dos botões */}
+          {}
           {error && (
             <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-xl">
               <div className="flex items-start gap-2">
@@ -399,7 +400,7 @@ export default function TestCasesModal({
             </div>
           )}
 
-          {/* Botões de Ação */}
+          {}
           <div className="flex gap-3 mt-8 pt-6 border-t border-slate-200">
             <button 
               type="button" 
@@ -439,7 +440,7 @@ export default function TestCasesModal({
         )}
       </div>
 
-      {/* Modal de Confirmação de Exclusão */}
+      {}
       {deleteConfirm.isOpen && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60]">
           <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md mx-4 animate-in fade-in zoom-in duration-200">

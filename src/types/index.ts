@@ -139,10 +139,6 @@ export interface SystemNotice {
   date: string;
 }
 
-// =============================================================================
-// Question Arrangements & Groups
-// =============================================================================
-
 export interface QuestionGroup {
   id: string;
   name: string;

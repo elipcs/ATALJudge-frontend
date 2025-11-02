@@ -2,8 +2,7 @@ export function formatDateTime(dateString: string | null | undefined): string {
   if (!dateString) {
     return 'Data não definida';
   }
-  
-  
+
   let date: Date;
   
   date = new Date(dateString);
@@ -22,8 +21,7 @@ export function formatDateTime(dateString: string | null | undefined): string {
       date = new Date(dateString.replace(' ', 'T'));
     }
   }
-  
-  
+
   if (isNaN(date.getTime())) {
     console.warn('❌ [formatDateTime] Data inválida:', dateString);
     return 'Data inválida';
@@ -45,7 +43,6 @@ export function formatDateTime(dateString: string | null | undefined): string {
   return `${formattedDate} às ${formattedTime}`;
 }
 
-
 export function formatDate(dateString: string | null | undefined): string {
   if (!dateString) {
     return 'Data não definida';
@@ -61,7 +58,6 @@ export function formatDate(dateString: string | null | undefined): string {
     timeZone: 'America/Sao_Paulo'
   });
 }
-
 
 export function formatDateTimeFull(dateString: string | null | undefined): string {
   if (!dateString) {
@@ -79,7 +75,6 @@ export function formatDateTimeFull(dateString: string | null | undefined): strin
   });
 }
 
-  
 export function getCurrentDateFormatted(): string {
   return new Date().toLocaleDateString('pt-BR', {
     weekday: 'long',
@@ -89,7 +84,6 @@ export function getCurrentDateFormatted(): string {
     timeZone: 'America/Sao_Paulo'
   });
 }
-
 
 export function createBrazilianDate(dateString: string | null | undefined): Date | null {
   if (!dateString) {
@@ -109,7 +103,6 @@ export function createBrazilianDate(dateString: string | null | undefined): Date
   return date;
 }
 
-
 export function isDatePassed(dateString: string | null | undefined): boolean {
   const date = createBrazilianDate(dateString);
   if (!date) return false;
@@ -117,7 +110,6 @@ export function isDatePassed(dateString: string | null | undefined): boolean {
   const now = new Date();
   return now >= date;
 }
-
 
 export function isDateFuture(dateString: string | null | undefined): boolean {
   const date = createBrazilianDate(dateString);

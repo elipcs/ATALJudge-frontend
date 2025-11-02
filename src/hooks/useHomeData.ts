@@ -17,7 +17,6 @@ export const useStaffHomeData = () => {
   );
 };
 
-
 export const useCurrentUser = () => {
   const hasToken = authApi.getToken();
   

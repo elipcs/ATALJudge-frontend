@@ -23,14 +23,12 @@ export default function WelcomeHeader({
   const firstName = currentUser.name.split(' ')[0];
   const displayTitle = title || `Bem-vindo, ${firstName}!`;
 
-
-
   return (
     <div className="bg-white rounded-3xl shadow-lg border border-slate-200 p-8">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
 
-          {/* Conteúdo */}
+          {}
           <div>
             <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-2">
               {displayTitle}
@@ -55,7 +53,7 @@ export default function WelcomeHeader({
           </div>
         </div>
 
-        {/* Perfil do usuário */}
+        {}
         <div className="flex items-center gap-4">
           <div className="text-right">
             <div className="font-semibold text-blue-700">{currentUser.name}</div>

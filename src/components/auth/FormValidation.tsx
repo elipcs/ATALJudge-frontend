@@ -2,7 +2,6 @@
 
 import { useState, useMemo, useCallback } from "react";
 
-
 interface ValidationRule {
   required?: boolean;
   minLength?: number;

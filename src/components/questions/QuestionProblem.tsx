@@ -8,7 +8,7 @@ interface QuestionProblemProps {
 export default function QuestionProblem({ question }: QuestionProblemProps) {
   return (
     <div className="space-y-6">
-      {/* Statement */}
+      {}
       <Card className="p-6">
         <h2 className="text-xl font-semibold mb-4">Problema</h2>
         <div className="prose max-w-none">
@@ -18,7 +18,7 @@ export default function QuestionProblem({ question }: QuestionProblemProps) {
         </div>
       </Card>
 
-      {/* Examples */}
+      {}
       <Card className="p-6">
         <h2 className="text-xl font-semibold mb-4">Exemplos</h2>
         <div className="space-y-4">

@@ -19,7 +19,6 @@ interface StaffHomeProps {
   userRole: 'professor' | 'assistant';
 }
 
-
 const StaffHome = memo(({ currentUser, userRole }: StaffHomeProps) => {
   const { data } = useStaffHomeData();
   

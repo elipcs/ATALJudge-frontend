@@ -14,11 +14,9 @@ const STATUS_TRANSLATIONS: Record<string, string> = {
   'failed': 'Rejeitada'
 };
 
-
 export function normalizeStatus(status: string): string {
   return STATUS_TRANSLATIONS[status] || status;
 }
-
 
 export function getSubmissionStatusColor(status: string): string {
   const normalizedStatus = normalizeStatus(status);
@@ -38,7 +36,6 @@ export function getSubmissionStatusColor(status: string): string {
   return 'bg-gray-100 text-gray-800';
 }
 
-
 export function getVerdictColor(verdict: string): string {
   if (verdict === 'Accepted') return 'text-green-600';
   if (verdict.includes('Wrong Answer')) return 'text-red-600';
@@ -47,9 +44,6 @@ export function getVerdictColor(verdict: string): string {
   return 'text-gray-600';
 }
 
-/**
- * Retorna a cor adequada para o status da lista
- */
 export function getListStatusColor(status?: 'scheduled' | 'open' | 'closed'): string {
   switch (status) {
     case 'open':
@@ -63,9 +57,6 @@ export function getListStatusColor(status?: 'scheduled' | 'open' | 'closed'): st
   }
 }
 
-/**
- * Retorna o texto traduzido para o status da lista
- */
 export function getListStatusText(status?: 'scheduled' | 'open' | 'closed'): string {
   switch (status) {
     case 'open':
@@ -79,9 +70,6 @@ export function getListStatusText(status?: 'scheduled' | 'open' | 'closed'): str
   }
 }
 
-/**
- * Retorna a classe de badge (fundo e texto) para o status da lista
- */
 export function getListStatusBadgeClass(status?: 'scheduled' | 'open' | 'closed'): string {
   switch (status) {
     case 'open':

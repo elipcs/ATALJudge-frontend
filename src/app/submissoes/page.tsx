@@ -9,6 +9,7 @@ import { useUserRoleContext } from "../../contexts/UserRoleContext";
 import { submissionsApi, SubmissionFilters } from "../../services/submissions";
 import { listsApi, isCurrentIpAllowedForList } from "../../services/lists";
 import { Submission } from "../../types";
+import { SubmissionResponseDTO } from "@/types/dtos";
 import PageHeader from "../../components/PageHeader";
 import PageLoading from "../../components/PageLoading";
 import { getSubmissionStatusColor, normalizeStatus } from "../../utils/statusUtils";
@@ -16,8 +17,8 @@ import { SUBMISSION_STATUS_OPTIONS } from "../../constants";
 import { logger } from '@/utils/logger';
 
 interface SubmissionsPageState {
-  submissions: Submission[];
-  filteredSubmissions: Submission[];
+  submissions: SubmissionResponseDTO[];
+  filteredSubmissions: SubmissionResponseDTO[];
   loading: boolean;
   searchTerm: string;
   selectedStatus: string;
@@ -51,42 +52,10 @@ export default function SubmissoesPage() {
       };
       
       const submissions = await submissionsApi.getSubmissions(filters);
-      
-      // Se for estudante, verificar IPs restritos
+
       const restrictedListIds = new Set<string>();
-      if (userRole === 'student') {
-        // Identificar listas únicas nas submissões
-        const uniqueListIds = Array.from(new Set(submissions.map(s => s.questionList.id)));
-        
-        // Para cada lista, verificar se é restrita e se o IP está autorizado (em paralelo)
-        const restrictionChecks = await Promise.allSettled(
-          uniqueListIds.map(async (listId) => {
-            try {
-              const list = await listsApi.getById(listId);
-              if (list?.isRestricted) {
-                const isAllowed = await isCurrentIpAllowedForList(listId);
-                return { listId, isRestricted: !isAllowed };
-              }
-              return { listId, isRestricted: false };
-            } catch (err) {
-              logger.error('Erro ao verificar restrição da lista', { listId, error: err });
-              return { listId, isRestricted: false };
-            }
-          })
-        );
-        
-        // Coletar IDs de listas restritas
-        restrictionChecks.forEach(result => {
-          if (result.status === 'fulfilled' && result.value.isRestricted) {
-            restrictedListIds.add(result.value.listId);
-          }
-        });
-      }
-      
-      // Filtrar submissões de listas restritas
-      const accessibleSubmissions = userRole === 'student' 
-        ? submissions.filter(s => !restrictedListIds.has(s.questionList.id))
-        : submissions;
+
+      const accessibleSubmissions = submissions;
       
       setState(prev => ({
         ...prev,
@@ -118,9 +87,9 @@ export default function SubmissoesPage() {
     if (state.searchTerm.trim()) {
       const searchLower = state.searchTerm.toLowerCase();
       filtered = filtered.filter(submission => 
-        submission.question.name.toLowerCase().includes(searchLower) ||
-        submission.questionList.name.toLowerCase().includes(searchLower) ||
-        submission.student.name.toLowerCase().includes(searchLower)
+        submission.questionId.toLowerCase().includes(searchLower) ||
+        submission.userId.toLowerCase().includes(searchLower) ||
+        submission.language.toLowerCase().includes(searchLower)
       );
     }
 
@@ -175,7 +144,7 @@ export default function SubmissoesPage() {
         description="Acompanhe suas submissões e resultados"
       />
       
-      {/* Aviso de submissões restritas por IP */}
+      {}
       {userRole === 'student' && state.restrictedListIds.size > 0 && (
         <Card className="bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-200 rounded-2xl shadow-lg p-6">
           <div className="flex items-center gap-4">
@@ -195,7 +164,7 @@ export default function SubmissoesPage() {
         </Card>
       )}
       
-      {/* Filtros */}
+      {}
       <Card className="p-6">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1">
@@ -232,7 +201,7 @@ export default function SubmissoesPage() {
         </div>
       </Card>
 
-      {/* Lista de Submissões */}
+      {}
       <Card className="p-6">
         <div className="space-y-4">
           <div className="flex items-center justify-between">
@@ -258,7 +227,7 @@ export default function SubmissoesPage() {
             </div>
           ) : (
             <>
-              {/* Tabela de Submissões */}
+              {}
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
@@ -279,12 +248,12 @@ export default function SubmissoesPage() {
                       <tr key={submission.id} className="border-b border-gray-100 hover:bg-gray-50">
                         <td className="py-3 px-4">
                           <div className="font-medium text-gray-900">
-                            {submission.question.name}
+                            {submission.questionId.substring(0, 8)}...
                           </div>
                         </td>
                         <td className="py-3 px-4">
                           <div className="text-gray-600">
-                            {submission.questionList.name}
+                            -
                           </div>
                         </td>
                         <td className="py-3 px-4">
@@ -304,13 +273,13 @@ export default function SubmissoesPage() {
                         </td>
                         <td className="py-3 px-4">
                           <div className="text-gray-600 text-sm">
-                            {new Date(submission.submittedAt).toLocaleString('pt-BR')}
+                            {new Date(submission.createdAt).toLocaleString('pt-BR')}
                           </div>
                         </td>
                         {userRole !== 'student' && (
                           <td className="py-3 px-4">
                             <div className="text-gray-600">
-                              {submission.student.name}
+                              {submission.userId}
                             </div>
                           </td>
                         )}
@@ -320,7 +289,7 @@ export default function SubmissoesPage() {
                 </table>
               </div>
 
-              {/* Paginação */}
+              {}
               {state.totalPages > 1 && (
                 <div className="flex items-center justify-between pt-4">
                   <div className="text-sm text-gray-600">

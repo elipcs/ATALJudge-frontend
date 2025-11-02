@@ -278,7 +278,7 @@ export default function EditListModal({ isOpen, onClose, onSubmit, onRefresh, cl
           </button>
         </div>
 
-        {/* Mensagem de sucesso */}
+        {}
         {showSuccessMessage && (
           <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl">
             <div className="flex items-center gap-3">
@@ -295,7 +295,7 @@ export default function EditListModal({ isOpen, onClose, onSubmit, onRefresh, cl
           </div>
         )}
 
-        {/* Mensagem de erro */}
+        {}
         {errorMessage && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
             <div className="flex items-center gap-3">

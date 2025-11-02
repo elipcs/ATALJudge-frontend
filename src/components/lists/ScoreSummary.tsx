@@ -30,7 +30,7 @@ export default function ScoreSummary({ list, submissions, backendScore }: ScoreS
         </div>
       </div>
 
-      {/* Barra de Progresso */}
+      {}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm font-semibold text-slate-600">Progresso</span>
@@ -44,7 +44,7 @@ export default function ScoreSummary({ list, submissions, backendScore }: ScoreS
         </div>
       </div>
 
-      {/* Modo Simples */}
+      {}
       {mode === 'simple' && questionScores && questionScores.length > 0 && (
         <div className="space-y-2">
           {questionScores.slice(0, list.minQuestionsForMaxScore || list.questions.length).map((score) => {
@@ -73,7 +73,7 @@ export default function ScoreSummary({ list, submissions, backendScore }: ScoreS
         </div>
       )}
 
-      {/* Modo por Grupos */}
+      {}
       {mode === 'groups' && groups && groups.length > 0 && (
         <div className="space-y-3">
           {groups.map((group, index) => {
@@ -103,7 +103,7 @@ export default function ScoreSummary({ list, submissions, backendScore }: ScoreS
         </div>
       )}
 
-      {/* Nenhuma submissão */}
+      {}
       {submissions.length === 0 && (
         <div className="bg-slate-50 rounded-2xl p-8 text-center border border-slate-200">
           <div className="p-4 bg-slate-200 rounded-xl mx-auto mb-4 w-fit">

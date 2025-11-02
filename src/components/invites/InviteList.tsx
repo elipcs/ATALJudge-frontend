@@ -1,7 +1,8 @@
+"use client";
+
 import { Invite } from "@/types";
 import { Card } from "../ui/card";
 import { InviteItem } from "./InviteItem";
-import { useInviteFilters } from "../../hooks/useInviteFilters";
 
 interface InviteListProps {
   invites: Invite[];
@@ -24,7 +25,6 @@ export function InviteList({
   onRevoke, 
   onReload 
 }: InviteListProps) {
-  const { filterRole, filterStatus, updateRoleFilter, updateStatusFilter } = useInviteFilters();
 
   if (loading) {
     return (
@@ -84,35 +84,6 @@ export function InviteList({
     <Card className="p-6">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-semibold">Convites Criados</h2>
-        <div className="flex items-center gap-4">
-          {/* Filtros */}
-          <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-gray-700">Filtrar por:</label>
-            <div className="flex gap-2">
-              <select
-                value={filterRole}
-                onChange={(e) => updateRoleFilter(e.target.value as any)}
-                className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="all">Todos os tipos</option>
-                <option value="student">Alunos</option>
-                <option value="assistant">Monitores</option>
-                <option value="professor">Professores</option>
-              </select>
-              
-              <select
-                value={filterStatus}
-                onChange={(e) => updateStatusFilter(e.target.value as any)}
-                className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="all">Todos os status</option>
-                <option value="active">Ativos</option>
-                <option value="used">Usados</option>
-                <option value="expired">Expirados</option>
-              </select>
-            </div>
-          </div>
-        </div>
       </div>
       
       <div className="space-y-3">

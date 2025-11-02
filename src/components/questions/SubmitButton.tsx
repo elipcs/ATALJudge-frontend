@@ -21,24 +21,3 @@ export default function SubmitButton({ onSubmit, disabled = false, submitting = 
   );
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -2,18 +2,19 @@ import { API } from '../config/api';
 import { TestCaseResponseDTO } from '@/types/dtos';
 
 export interface CreateTestCaseData {
+  questionId: string;
   input: string;
   expectedOutput: string;
-  isPublic: boolean;
-  points: number;
+  isSample: boolean;
+  weight: number;
   order?: number;
 }
 
 export interface UpdateTestCaseData {
   input?: string;
   expectedOutput?: string;
-  isPublic?: boolean;
-  points?: number;
+  isSample?: boolean;
+  weight?: number;
   order?: number;
 }
 

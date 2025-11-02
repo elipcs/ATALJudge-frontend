@@ -18,7 +18,6 @@ import { useListsData } from "@/hooks/useListsData";
 import { useListsActions } from "@/hooks/useListsActions";
 import PageLoading from "@/components/PageLoading";
 
-
 export default function ListsPage() {
   const [search, setSearch] = useState('');
   
@@ -81,7 +80,6 @@ export default function ListsPage() {
     await refreshLists();
   };
 
-
   useMemo(() => {
     const filters = {
       search: search || undefined
@@ -102,7 +100,6 @@ export default function ListsPage() {
       return matchSearch;
     });
   }, [lists, search]);
-
 
   if (loading && lists.length === 0) {
     return <PageLoading message="Carregando listas..." description="Preparando as listas de exercícios" />;
@@ -149,9 +146,9 @@ export default function ListsPage() {
         )}
       </PageHeader>
 
-  {/* Estatísticas removidas */}
+  {}
 
-      {/* Filtros */}
+      {}
       <ListsFilters
         search={search}
         userRole={userRole}
@@ -159,7 +156,7 @@ export default function ListsPage() {
         onClearFilters={handleClearFilters}
       />
 
-      {/* Lista de listas */}
+      {}
       <ListsGrid
         lists={filteredLists}
         userRole={userRole}
@@ -170,7 +167,7 @@ export default function ListsPage() {
         classes={classes}
       />
 
-      {/* Modais */}
+      {}
       <CreateListModal
         isOpen={showCreateModal}
         onClose={closeCreateModal}

@@ -1,11 +1,9 @@
 import { VALIDATION_RULES } from '../constants';
 import { createBrazilianDate } from './dateUtils';
 
-
 export function isValidEmail(email: string): boolean {
   return VALIDATION_RULES.EMAIL.test(email);
 }
-
 
 export function validatePassword(password: string): {
   isValid: boolean;
@@ -39,7 +37,6 @@ export function validatePassword(password: string): {
   };
 }
 
-
 export function validateName(name: string): {
   isValid: boolean;
   error?: string;
@@ -69,7 +66,6 @@ export function validateName(name: string): {
   return { isValid: true };
 }
 
-
 export function validateTitle(title: string): {
   isValid: boolean;
   error?: string;
@@ -88,7 +84,6 @@ export function validateTitle(title: string): {
   return { isValid: true };
 }
 
-
 export function validateDescription(description: string): {
   isValid: boolean;
   error?: string;
@@ -102,7 +97,6 @@ export function validateDescription(description: string): {
 
   return { isValid: true };
 }
-
 
 export function validateNumber(
   value: number | string, 
@@ -129,7 +123,6 @@ export function validateNumber(
   return { isValid: true };
 }
 
-
 export function isValidUrl(url: string): boolean {
   try {
     new URL(url);
@@ -139,17 +132,14 @@ export function isValidUrl(url: string): boolean {
   }
 }
 
-
 export function isValidToken(token: string): boolean {
   return Boolean(token && token.length > 0 && /^[a-zA-Z0-9-_]+$/.test(token));
 }
-
 
 export function isValidDate(date: string | Date): boolean {
   const dateObj = typeof date === 'string' ? new Date(date) : date;
   return dateObj instanceof Date && !isNaN(dateObj.getTime());
 }
-
 
 export function isFutureDate(date: string | Date): boolean {
   const dateObj = typeof date === 'string' ? createBrazilianDate(date) : date;
@@ -157,18 +147,15 @@ export function isFutureDate(date: string | Date): boolean {
   return dateObj > new Date();
 }
 
-
 export function isPastDate(date: string | Date): boolean {
   const dateObj = typeof date === 'string' ? createBrazilianDate(date) : date;
   if (!dateObj) return false;
   return dateObj < new Date();
 }
 
-
 export function isNotEmpty<T>(array: T[]): boolean {
   return Array.isArray(array) && array.length > 0;
 }
-
 
 export function isNotEmptyObject(obj: Record<string, unknown>): boolean {
   return Boolean(obj && typeof obj === 'object' && Object.keys(obj).length > 0);

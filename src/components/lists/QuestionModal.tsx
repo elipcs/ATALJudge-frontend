@@ -199,7 +199,7 @@ export default function QuestionModal({
             />
           </div>
 
-          {/* Seção de Exemplos */}
+          {}
           <div className="border-t border-slate-200 pt-6">
             <div className="flex items-center justify-between mb-4">
               <label className="block text-sm font-medium text-slate-700">Exemplos</label>

@@ -119,7 +119,7 @@ export default function EditClassModal({
             </div>
           </div>
 
-          {/* Mensagens de erro */}
+          {}
           {(localError || error) && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl">
               <div className="flex items-center gap-2">
@@ -131,7 +131,7 @@ export default function EditClassModal({
             </div>
           )}
 
-          {/* Botões */}
+          {}
           <div className="flex gap-3 mt-8 pt-6 border-t border-slate-200">
             <Button
               type="button"

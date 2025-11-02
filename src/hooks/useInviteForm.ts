@@ -21,7 +21,6 @@ export function useInviteForm() {
   const [classesError, setClassesError] = useState<string | null>(null);
   const [isClassDropdownOpen, setIsClassDropdownOpen] = useState(false);
   const [isExpirationDropdownOpen, setIsExpirationDropdownOpen] = useState(false);
-  const [buttonSuccess, setButtonSuccess] = useState(false);
 
   const loadClasses = async () => {
     try {
@@ -86,8 +85,6 @@ export function useInviteForm() {
       maxUses: 1,
       expirationDays: 7,
     });
-    setButtonSuccess(true);
-    setTimeout(() => setButtonSuccess(false), 3000);
   };
 
   const validateForm = (): string | null => {
@@ -109,7 +106,6 @@ export function useInviteForm() {
     classesError,
     isClassDropdownOpen,
     isExpirationDropdownOpen,
-    buttonSuccess,
     updateFormData,
     resetForm,
     validateForm,

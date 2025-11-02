@@ -25,7 +25,6 @@ export interface FinalScore {
   questionScores?: SubmissionScore[];
 }
 
-
 export function calculateSimpleScore(
   submissions: SubmissionScore[],
   minQuestionsForMaxScore: number,
@@ -69,7 +68,6 @@ export function calculateSimpleScore(
     questionScores: sortedScores
   };
 }
-
 
 export function calculateGroupScore(
   submissions: SubmissionScore[],
@@ -190,7 +188,6 @@ export function calculateGroupScore(
   };
 }
 
-
 export function calculateListScore(
   list: QuestionList,
   submissions: SubmissionScore[]
@@ -206,11 +203,9 @@ export function calculateListScore(
   return calculateSimpleScore(submissions, minQuestionsForMaxScore, maxScore);
 }
 
-
 export function formatScore(score: number, decimals: number = 1): string {
   return score.toFixed(decimals);
 }
-
 
 export function getScoreColor(percentage: number): string {
   if (percentage >= 90) return 'text-green-600 bg-green-50';
@@ -219,7 +214,6 @@ export function getScoreColor(percentage: number): string {
   if (percentage >= 30) return 'text-orange-600 bg-orange-50';
   return 'text-red-600 bg-red-50';
 }
-
 
 export function getScoreBadgeColor(percentage: number): string {
   if (percentage >= 90) return 'bg-gradient-to-r from-green-500 to-green-600';

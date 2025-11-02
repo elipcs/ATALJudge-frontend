@@ -41,7 +41,7 @@ export default function QuestionView({
   if (!question) return null;
   return (
     <div className="space-y-6">
-      {/* Navegação entre questões */}
+      {}
       <div className="flex items-center justify-between bg-white/70 p-4 rounded shadow border border-slate-200">
         <button
           className="px-3 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700"
@@ -58,7 +58,7 @@ export default function QuestionView({
         >Próxima</button>
       </div>
 
-      {/* Enunciado */}
+      {}
       <div className="bg-white/70 p-6 rounded shadow border border-slate-200">
         <h2 className="text-xl font-bold mb-2 text-blue-800">{question.title}</h2>
         <p className="mb-2 text-slate-800 whitespace-pre-line">{question.statement}</p>
@@ -74,7 +74,7 @@ export default function QuestionView({
         </div>
       </div>
 
-      {/* Editor de código */}
+      {}
       <div className="bg-white/70 p-6 rounded shadow border border-slate-200">
         <div className="flex gap-2 mb-2">
           <button

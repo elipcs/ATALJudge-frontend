@@ -4,10 +4,12 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useUserRole } from "./useUserRole";
 import { profileApi, ProfileData, UpdateProfileData, ChangePasswordData } from "../services/profile";
+import { useToast } from "./use-toast";
 
 export function useProfile() {
   const router = useRouter();
   const { userRole, isLoading: isLoadingRole } = useUserRole();
+  const { toast } = useToast();
   
   const [user, setUser] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -15,7 +17,6 @@ export function useProfile() {
   const [changingPassword, setChangingPassword] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [buttonSuccess, setButtonSuccess] = useState(false);
 
   const loadData = useCallback(async () => {
     try {
@@ -80,9 +81,11 @@ export function useProfile() {
       
   const updatedProfile = await profileApi.updateProfile(updateData);
   setUser(updatedProfile);
-
-      setButtonSuccess(true);
-      setTimeout(() => setButtonSuccess(false), 3000);
+      
+      toast({
+        description: "Perfil atualizado com sucesso!",
+        variant: "success",
+      });
     } catch (error) {
       console.error('Error saving profile:', error);
       if (error instanceof Error && (error.message.includes('Não autorizado') || error.message.includes('Token expirado'))) {
@@ -149,8 +152,10 @@ export function useProfile() {
       
       await profileApi.changePassword(changePasswordData);
 
-      setButtonSuccess(true);
-      setTimeout(() => setButtonSuccess(false), 3000);
+      toast({
+        description: "Senha alterada com sucesso!",
+        variant: "success",
+      });
     } catch (error) {
       console.error('Error changing password:', error);
       if (error instanceof Error && (error.message.includes('Não autorizado') || error.message.includes('Token expirado'))) {
@@ -205,7 +210,6 @@ export function useProfile() {
     changingPassword,
     error,
     success,
-    buttonSuccess,
     isLoadingRole,
     loadData,
     saveProfile,

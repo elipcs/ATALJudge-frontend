@@ -11,21 +11,6 @@ import {
   InviteResponseDTO
 } from '@/types/dtos';
 
-/**
- * Cliente HTTP para comunicação direta com o backend
- * 
- * Características:
- * - Chamadas diretas ao backend Flask (sem API routes do Next.js)
- * - Backend retorna dados em camelCase (sem transformações necessárias)
- * - Autenticação automática via JWT
- * - Tratamento de erros padronizado
- * - Timeout configurável
- */
-
-// =============================================================================
-// Tipos e Interfaces
-// =============================================================================
-
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -42,15 +27,7 @@ interface RequestConfig extends RequestInit {
   timeout?: number;
 }
 
-// =============================================================================
-// Configuração
-// =============================================================================
-
 export const API_BASE_URL = (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_API_BASE_URL) || 'http://localhost:5000/api';
-
-// =============================================================================
-// Cliente HTTP
-// =============================================================================
 
 async function apiClient<T>(
   endpoint: string,
@@ -108,15 +85,14 @@ async function apiClient<T>(
       if (typeof envelope === 'string') {
         errMessage = envelope;
       } else if (typeof envelope === 'object' && envelope !== null) {
-        // Tentar extrair mensagem de erro de diferentes formatos
+        
         const errorObj = envelope as any;
         errMessage = errorObj.message || 
                     errorObj.error || 
                     errorObj.detail || 
                     errorObj.msg || 
                     (errorObj.data?.message || errorObj.data?.error || errorObj.data?.detail);
-        
-        // Se ainda não encontrou, tentar usar o primeiro valor não-undefined
+
         if (!errMessage || errMessage === `HTTP ${response.status}`) {
           const values = Object.values(errorObj);
           const firstString = values.find(v => typeof v === 'string' && v.length > 0);
@@ -124,7 +100,6 @@ async function apiClient<T>(
         }
       }
 
-      // Tentativa de auto-refresh em 401 (token expirado) quando não for rota pública
       const isUnauthorized = response.status === 401 || (typeof errMessage === 'string' && errMessage.toLowerCase().includes('token expirado'));
       const canRefresh = !skipAuth && typeof window !== 'undefined';
       if (isUnauthorized && canRefresh) {
@@ -144,7 +119,7 @@ async function apiClient<T>(
             const refreshEnvelope = (refreshIsJson ? await refreshResp.json() : await refreshResp.text()) as any;
 
             if (refreshResp.ok) {
-              // Extrair tokens (snake_case ou camelCase)
+              
               const refreshData = (typeof refreshEnvelope === 'object' && 'data' in refreshEnvelope) ? refreshEnvelope.data : refreshEnvelope;
               const newAccessToken = refreshData.accessToken || refreshData.access_token;
               const newRefreshToken = refreshData.refreshToken || refreshData.refresh_token;
@@ -153,7 +128,6 @@ async function apiClient<T>(
                 localStorage.setItem('token', newAccessToken);
                 localStorage.setItem('refreshToken', newRefreshToken);
 
-                // Refazer requisição original com novo token
                 const retriedHeaders: HeadersInit = {
                   ...((requestConfig.headers as HeadersInit) || {}),
                   'Content-Type': 'application/json; charset=utf-8',
@@ -180,7 +154,6 @@ async function apiClient<T>(
                   ? (successRetryEnvelope as any).data as T
                   : (retryEnvelope as unknown as T);
 
-                // Transformar tokens (se aplicável) como abaixo
                 let finalRetryData: T = retryData;
                 if (finalRetryData && typeof finalRetryData === 'object') {
                   const dataObj = finalRetryData as any;
@@ -203,10 +176,9 @@ async function apiClient<T>(
             }
           }
         } catch (_refreshErr) {
-          // Ignorar e prosseguir para limpeza e redirecionamento abaixo
+          
         }
 
-        // Refresh falhou: limpar e redirecionar para login
         try {
           localStorage.removeItem('token');
           localStorage.removeItem('refreshToken');
@@ -224,10 +196,9 @@ async function apiClient<T>(
       ? (successEnvelope as any).data as T
       : (envelope as unknown as T);
 
-    // Transformar tokens de snake_case para camelCase se necessário
     if (data && typeof data === 'object') {
       const dataObj = data as any;
-      // Verificar se tem access_token ou refresh_token (resposta do backend)
+      
       if (dataObj.access_token || dataObj.refresh_token) {
         data = {
           ...dataObj,
@@ -252,10 +223,6 @@ async function apiClient<T>(
     throw new ApiError('Erro desconhecido', 0, 'UNKNOWN_ERROR');
   }
 }
-
-// =============================================================================
-// Helpers HTTP
-// =============================================================================
 
 export async function get<T>(endpoint: string, config?: RequestConfig): Promise<ApiResult<T>> {
   return apiClient<T>(endpoint, { ...config, method: 'GET' });
@@ -289,12 +256,8 @@ export async function del<T>(endpoint: string, config?: RequestConfig): Promise<
   return apiClient<T>(endpoint, { ...config, method: 'DELETE' });
 }
 
-// =============================================================================
-// Objeto API com Endpoints Organizados
-// =============================================================================
-
 export const API = {
-  // Auth
+  
   auth: {
     login: (email: string, password: string) => 
       post<{ user: UserResponseDTO; accessToken: string; refreshToken: string }>(
@@ -312,7 +275,6 @@ export const API = {
       ),
   },
 
-  // Users
   users: {
     me: () => get<{ userId: string; email: string; role: UserRole }>('/users/me'),
     profile: () => get<UserResponseDTO>('/users/profile'),
@@ -320,7 +282,6 @@ export const API = {
     changePassword: (data: { currentPassword: string; newPassword: string }) => post<null>('/users/change-password', data),
   },
 
-  // Classes
   classes: {
     list: () => get<ClassResponseDTO[]>('/classes'),
     get: (id: string) => get<ClassResponseDTO>(`/classes/${id}`),
@@ -330,7 +291,6 @@ export const API = {
     students: (id: string) => get<{ students: Array<{ id: string; name: string; email: string; role: string; studentRegistration?: string; createdAt: string }> }>(`/classes/${id}/students`),
   },
 
-  // Lists
   lists: {
     list: (params?: Record<string, string>) => {
       const query = params ? `?${new URLSearchParams(params).toString()}` : '';
@@ -346,7 +306,6 @@ export const API = {
     removeQuestion: (listId: string, questionId: string) => del<null>(`/lists/${listId}/questions/${questionId}`),
   },
 
-  // Questions
   questions: {
     list: () => get<{ questions: QuestionResponseDTO[] }>('/questions'),
     get: (id: string) => get<QuestionResponseDTO>(`/questions/${id}`),
@@ -355,7 +314,6 @@ export const API = {
     delete: (id: string) => del<null>(`/questions/${id}`),
   },
 
-  // Invites
   invites: {
     list: () => get<InviteResponseDTO[]>('/invites'),
     get: (id: string) => get<InviteResponseDTO>(`/invites/${id}`),
@@ -369,7 +327,6 @@ export const API = {
     ),
   },
 
-  // Submissions
   submissions: {
     list: (params?: Record<string, string>) => {
       const query = params ? `?${new URLSearchParams(params).toString()}` : '';
@@ -381,7 +338,6 @@ export const API = {
     ),
   },
 
-  // Test Cases
   testCases: {
     list: (questionId: string) => get<TestCaseResponseDTO[]>(`/questions/${questionId}/testcases`),
     create: (questionId: string, data: Omit<TestCaseResponseDTO, 'id' | 'createdAt'>) => post<TestCaseResponseDTO>(`/questions/${questionId}/testcases`, data),
@@ -393,7 +349,6 @@ export const API = {
       post<null>(`/questions/${questionId}/testcases/reorder`, { testCaseIds }),
   },
 
-  // Password Reset
   password: {
     forgotPassword: (email: string) => 
       post<{ message: string }>('/auth/forgot-password', { email }, { skipAuth: true }),
@@ -403,7 +358,6 @@ export const API = {
       post<{ valid: boolean; message?: string }>('/auth/verify-reset-token', { token }, { skipAuth: true }),
   },
 
-  // Configuration
   config: {
     getAllowedIps: () => get<{ allowedIPs: Array<{ id: string; ip: string; description: string; active: boolean; createdAt: string }> }>(
       '/config/allowed-ips'
@@ -412,27 +366,22 @@ export const API = {
       const query = listId ? `?listId=${listId}` : '';
       return get<{ allowed: boolean }>(`/config/allowed-ips/check${query}`);
     },
-    toggleAllowedIp: (id: string) => post<null>(`/config/allowed-ips/${id}/toggle`),
+    toggleAllowedIp: (id: string) => put<null>(`/config/allowed-ips/${id}/toggle`),
     deleteAllowedIp: (id: string) => del<null>(`/config/allowed-ips/${id}`),
     createAllowedIp: (data: { ip: string; description: string }) => post<null>('/config/allowed-ips', data),
-    getStudents: () => get<{ students: Array<{ id: string; name: string; email: string; studentRegistration: string; classId: string; className: string; submissionsCount: number; createdAt: string }> }>(
-      '/config/students'
+    getStudents: () => get<Array<{ id: string; name: string; email: string; studentRegistration?: string; classId?: string; className?: string; submissionsCount?: number; createdAt?: string }>>(
+      '/users/role/student'
     ),
     removeStudents: (studentIds: string[]) => 
       post<null>('/config/remove-students', { studentIds }),
     systemReset: () => post<null>('/config/system-reset'),
   },
 
-  // Execution (Judge0)
   execution: {
     getLanguages: () => get<string[]>('/execution/languages'),
     getStatus: () => get<{ healthy: boolean; judge0Url?: string }>("/execution/status"),
   },
 };
-
-// =============================================================================
-// Utilitários
-// =============================================================================
 
 export async function diagnoseBackendConnection(): Promise<{
   backend: boolean;

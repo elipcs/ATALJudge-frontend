@@ -8,7 +8,6 @@ import PageHeader from "@/components/PageHeader";
 import PageLoading from "@/components/PageLoading";
 import { Button } from "@/components/ui/button";
 
-
 export default function TurmasPage() {
   const {
     userRole,
@@ -113,7 +112,7 @@ export default function TurmasPage() {
         </PageHeader>
       )}
 
-      {/* Mensagens de feedback */}
+      {}
       {error && (
         <div className="bg-gradient-to-r from-red-50 to-pink-50 border border-red-200 text-red-700 px-6 py-4 rounded-xl shadow-sm mb-6">
           <div className="flex items-center gap-3">
@@ -136,7 +135,7 @@ export default function TurmasPage() {
         </div>
       )}
 
-      {/* Conteúdo principal */}
+      {}
       {showDetails && classDetails ? (
         <ClassDetails
           classDetails={classDetails}
@@ -157,7 +156,7 @@ export default function TurmasPage() {
         />
       )}
 
-      {/* Modal de criar turma */}
+      {}
       <CreateClassModal
         isOpen={createClassModal}
         onClose={() => setCreateClassModal(false)}
@@ -167,7 +166,7 @@ export default function TurmasPage() {
         success={success}
       />
 
-      {/* Modal de editar turma */}
+      {}
       <EditClassModal
         isOpen={editClassModal}
         onClose={() => setEditClassModal(false)}
@@ -177,7 +176,7 @@ export default function TurmasPage() {
         error={error}
       />
 
-      {/* Modal de excluir turma */}
+      {}
       <DeleteClassModal
         isOpen={deleteClassModal}
         onClose={() => setDeleteClassModal(false)}

@@ -26,7 +26,7 @@ const toastVariants = cva(
         destructive:
           "border-red-200 bg-red-50 text-red-700",
         success:
-          "border-green-200 bg-green-50 text-green-700",
+          "border-blue-200 bg-blue-50 text-blue-700",
         warning:
           "border-yellow-200 bg-yellow-50 text-yellow-700",
         info:
@@ -72,7 +72,7 @@ const ToastClose = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <ToastPrimitives.Close
     ref={ref}
-    className={`absolute right-2 top-2 rounded-md p-1 text-foreground/50 opacity-0 transition-opacity hover:text-foreground focus:opacity-100 focus:outline-none focus:ring-2 group-hover:opacity-100 group-[.destructive]:text-red-600 group-[.destructive]:hover:text-red-700 group-[.destructive]:focus:ring-red-400 group-[.success]:text-green-600 group-[.success]:hover:text-green-700 group-[.warning]:text-yellow-600 group-[.warning]:hover:text-yellow-700 group-[.info]:text-blue-600 group-[.info]:hover:text-blue-700 ${className || ""}`}
+    className={`absolute right-2 top-2 rounded-md p-1 text-foreground/50 opacity-0 transition-opacity hover:text-foreground focus:opacity-100 focus:outline-none focus:ring-2 group-hover:opacity-100 group-[.destructive]:text-red-600 group-[.destructive]:hover:text-red-700 group-[.destructive]:focus:ring-red-400 group-[.success]:text-blue-600 group-[.success]:hover:text-blue-700 group-[.warning]:text-yellow-600 group-[.warning]:hover:text-yellow-700 group-[.info]:text-blue-600 group-[.info]:hover:text-blue-700 ${className || ""}`}
     toast-close=""
     {...props}
   >

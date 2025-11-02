@@ -104,7 +104,7 @@ export const homeApi = {
           classes,
           students: allStudents,
           submissions: Array.isArray(submissions) ? submissions : [],
-          systemNotices: [] // Sistema de avisos pode ser implementado depois
+          systemNotices: [] 
         };
       } catch (error) {
         logger.error('Erro ao buscar dados do staff', { error });
@@ -118,7 +118,7 @@ export const homeApi = {
     },
 
     async getSystemNotices(): Promise<SystemNotice[]> {
-      // TODO: Implementar quando backend tiver endpoint de system notices
+      
       return [];
     },
 
@@ -126,15 +126,12 @@ export const homeApi = {
       try {
         const response = await API.lists.list({});
         const data = response.data as any;
-        
-        // Garantir que sempre retornamos um array
+
         if (!data) return [];
-        
-        // A resposta pode vir como { data: { lists: [...] } } ou { lists: [...] } ou diretamente como [...]
+
         const lists = data.data?.lists || data.lists || data;
         const listsArray = Array.isArray(lists) ? lists : [];
-        
-        // Adicionar calculatedStatus a cada lista
+
         return listsArray.map((list: any) => {
           const now = new Date();
           const startDate = list.startDate ? new Date(list.startDate) : null;

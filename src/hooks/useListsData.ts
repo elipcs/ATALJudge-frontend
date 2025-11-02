@@ -78,8 +78,7 @@ export function useListsData(userRole?: string, currentUser?: any): UseListsData
       const newList = await listsApi.create(listData);
       
       setLists(prev => [newList, ...prev]);
-      
-      
+
       return newList;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao criar lista';
@@ -127,8 +126,7 @@ export function useListsData(userRole?: string, currentUser?: any): UseListsData
       const duplicatedList = await listsApi.duplicateList(id, newTitle);
       
       setLists(prev => [duplicatedList, ...prev]);
-      
-      
+
       return duplicatedList;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao duplicar lista';

@@ -34,7 +34,6 @@ interface UseFormReturn<T> {
   reset: () => void;
 }
 
-
 export function useForm<T extends Record<string, unknown>>(
   options: UseFormOptions<T>
 ): UseFormReturn<T> {

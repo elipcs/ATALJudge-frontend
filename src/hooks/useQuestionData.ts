@@ -33,11 +33,10 @@ export const useQuestionData = () => {
     }
   }, []);
 
-
   const loadSubmissions = useCallback(async (questionId: string, listId: string): Promise<Submission[]> => {
     try {
       const response = await submissionsApi.getSubmissions({ questionId, listId });
-      return response;
+      return response as any;
     } catch (error) {
       console.error('Error loading submissions:', error);
       return [];

@@ -1,18 +1,18 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import PageHeader from "../../components/PageHeader";
-import { InviteForm, InviteList, InviteGuide } from "../../components/invites";
+import { InviteForm, InviteList, FilterDropdown, InviteTabs } from "../../components/invites";
 import { useUserRole } from "../../hooks/useUserRole";
 import { useInvites } from "../../hooks/useInvites";
 import { useInviteFilters } from "../../hooks/useInviteFilters";
 import { useToast } from "@/hooks/use-toast";
 import { logger } from '@/utils/logger';
 
-
 export default function InvitesPage() {
+  const [activeTab, setActiveTab] = useState('generate');
   const { userRole, isLoading } = useUserRole();
-  const { filterRole, filterStatus } = useInviteFilters();
+  const { filterRole, filterStatus, updateRoleFilter, updateStatusFilter } = useInviteFilters();
   const { 
     invites, 
     loading: invitesLoading, 
@@ -25,10 +25,11 @@ export default function InvitesPage() {
   } = useInvites();
   const { toast } = useToast();
 
-
   useEffect(() => {
-    loadInvites(filterRole, filterStatus);
-  }, [loadInvites, filterRole, filterStatus]);
+    if (filterRole || filterStatus) {
+      loadInvites(filterRole, filterStatus);
+    }
+  }, [filterRole, filterStatus, loadInvites]);
 
   useEffect(() => {
     if (!isLoading && userRole !== 'professor') {
@@ -59,7 +60,7 @@ export default function InvitesPage() {
   return (
     <div className="p-6">
       <PageHeader
-        title="Gerenciar Convites"
+        title="Convites"
         description="Crie e gerencie links de convite para novos usuários"
         icon={
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -69,51 +70,87 @@ export default function InvitesPage() {
         iconColor="blue"
       />
 
-      <InviteForm onInviteCreated={handleInviteCreated} />
+      <InviteTabs activeTab={activeTab} setActiveTab={setActiveTab} />
 
-      <InviteList
-        invites={invites}
-        loading={invitesLoading}
-        error={invitesError}
-        copied={copied}
-        onCopyLink={copyLink}
-        onDelete={async (invite) => {
-          try {
-            await deleteInvite(invite.id);
-            await loadInvites(filterRole, filterStatus);
-            toast({
-              description: "Convite excluído com sucesso!",
-            });
-          } catch (e) {
-            logger.error('Erro ao excluir convite', { error: e });
-            toast({
-              title: "Erro",
-              description: "Erro ao excluir convite",
-              variant: "destructive",
-            });
-          }
-        }}
-        onRevoke={async (invite) => {
-          try {
-            await revokeInvite(invite.id);
-            toast({
-              description: "Convite revogado com sucesso!",
-            });
-            // Não recarrega a lista para manter o convite revogado visível
-            // A atualização local já é feita no hook useInvites
-          } catch (e) {
-            logger.error('Erro ao revogar convite', { error: e });
-            toast({
-              title: "Erro",
-              description: "Erro ao revogar convite",
-              variant: "destructive",
-            });
-          }
-        }}
-        onReload={() => loadInvites(filterRole, filterStatus)}
-      />
+      {activeTab === 'generate' && (
+        <div className="space-y-6">
+          <InviteForm onInviteCreated={handleInviteCreated} />
+        </div>
+      )}
 
-      <InviteGuide />
+      {activeTab === 'manage' && (
+        <div className="space-y-6">
+          <div className="p-6 bg-white rounded-lg border border-gray-200 shadow-sm">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FilterDropdown
+                label="Tipo de Usuário"
+                value={filterRole}
+                options={[
+                  { value: 'all', label: 'Todos os tipos' },
+                  { value: 'student', label: 'Alunos' },
+                  { value: 'assistant', label: 'Monitores' },
+                  { value: 'professor', label: 'Professores' }
+                ]}
+                onChange={updateRoleFilter}
+              />
+              
+              <FilterDropdown
+                label="Status"
+                value={filterStatus}
+                options={[
+                  { value: 'all', label: 'Todos os status' },
+                  { value: 'active', label: 'Ativos' },
+                  { value: 'used', label: 'Usados' },
+                  { value: 'expired', label: 'Expirados' }
+                ]}
+                onChange={updateStatusFilter}
+              />
+            </div>
+          </div>
+
+          <InviteList
+            invites={invites}
+            loading={invitesLoading}
+            error={invitesError}
+            copied={copied}
+            onCopyLink={copyLink}
+            onDelete={async (invite) => {
+              try {
+                await deleteInvite(invite.id);
+                await loadInvites(filterRole, filterStatus);
+                toast({
+                  description: "Convite excluído com sucesso!",
+                  variant: "success",
+                });
+              } catch (e) {
+                logger.error('Erro ao excluir convite', { error: e });
+                toast({
+                  title: "Erro",
+                  description: "Erro ao excluir convite",
+                  variant: "destructive",
+                });
+              }
+            }}
+            onRevoke={async (invite) => {
+              try {
+                await revokeInvite(invite.id);
+                toast({
+                  description: "Convite revogado com sucesso!",
+                  variant: "success",
+                });
+              } catch (e) {
+                logger.error('Erro ao revogar convite', { error: e });
+                toast({
+                  title: "Erro",
+                  description: "Erro ao revogar convite",
+                  variant: "destructive",
+                });
+              }
+            }}
+            onReload={() => loadInvites(filterRole, filterStatus)}
+          />
+        </div>
+      )}
     </div>
   );
 }

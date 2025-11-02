@@ -18,7 +18,7 @@ export function AuthLayout({
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white flex items-center justify-center p-4">
       <div className="w-full max-w-md mx-auto">
         <div className="bg-white rounded-3xl shadow-lg border border-slate-200 p-8 sm:p-12">
-          {/* Logo */}
+          {}
           {showLogo && (
             <div className="mb-4 flex justify-center">
               <div className="p-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-blue-600 rounded-xl shadow-lg border border-blue-200">
@@ -40,7 +40,7 @@ export function AuthLayout({
             </div>
           )}
 
-          {/* Header */}
+          {}
           <div className="text-center mb-8">
             <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-3">
               {title}

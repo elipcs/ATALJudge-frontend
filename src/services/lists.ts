@@ -3,34 +3,27 @@ import { API } from '../config/api';
 import { logger } from '../utils/logger';
 import { QuestionListResponseDTO } from '@/types/dtos';
 
-/**
- * Calcula o status da lista baseado nas datas de início e fim
- */
 function calculateListStatus(startDate?: string, endDate?: string): 'scheduled' | 'open' | 'closed' {
   const now = new Date();
-  
-  // Se não tem datas definidas, considera aberta
+
   if (!startDate && !endDate) {
     return 'open';
   }
-  
-  // Se tem data de início e ainda não começou
+
   if (startDate) {
     const start = new Date(startDate);
     if (now < start) {
       return 'scheduled';
     }
   }
-  
-  // Se tem data de fim e já passou
+
   if (endDate) {
     const end = new Date(endDate);
     if (now > end) {
       return 'closed';
     }
   }
-  
-  // Se está entre as datas ou só tem data de início no passado
+
   return 'open';
 }
 
@@ -66,31 +59,6 @@ export async function isCurrentIpAllowedForList(listId?: string): Promise<boolea
   }
 }
 
-/**
- * API de listas de questões
- * 
- * Gerencia todas as operações relacionadas a listas de questões, incluindo:
- * - CRUD de listas (criar, ler, atualizar, deletar)
- * - Filtragem e busca
- * - Gerenciamento de permissões e restrições de IP
- * - Cálculo automático de status (scheduled/open/closed)
- * 
- * @example
- * ```typescript
- * // Buscar todas as listas
- * const lists = await listsApi.getLists();
- * 
- * // Criar nova lista
- * await listsApi.create({
- *   title: "Lista 1",
- *   description: "Primeira lista",
- *   classIds: ["class-id-1"]
- * });
- * 
- * // Verificar se IP está permitido
- * const allowed = await isCurrentIpAllowedForList("list-id");
- * ```
- */
 export const listsApi = {
   async getLists(filters?: ListFilters, userRole?: string, currentUser?: { classId?: string }): Promise<QuestionList[]> {
     try {

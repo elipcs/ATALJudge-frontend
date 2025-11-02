@@ -61,7 +61,7 @@ export default function LogoutButton({ isCollapsed = false }: LogoutButtonProps)
       }`}>
         {isLoggingOut ? 'Saindo...' : 'Sair'}
       </span>
-      {/* Tooltip para modo colapsado */}
+      {}
       {isCollapsed && (
         <div className="absolute left-full ml-2 px-2 py-1 bg-slate-900 text-white text-xs rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-50">
           {isLoggingOut ? 'Saindo...' : 'Sair'}

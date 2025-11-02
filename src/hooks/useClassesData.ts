@@ -118,7 +118,7 @@ export const useClassStudents = (classId: string) => {
         setLoading(true);
         setError(null);
         const result = await classesApi.getClassStudents(classId);
-        setStudents(result);
+        setStudents(result as any);
       } catch (err) {
         console.error('useClassStudents: erro:', err);
         setError(err instanceof Error ? err.message : 'Erro ao carregar alunos');

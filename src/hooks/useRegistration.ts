@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { authApi, RegistrationFormData, TokenInfo } from '../services/auth';
 
-
 export interface PasswordValidation {
   minLength: boolean;
   hasLetters: boolean;
@@ -22,7 +21,6 @@ export function useRegistration() {
   const [isRegistrationFinished, setIsRegistrationFinished] = useState(false);
   const [countdown, setCountdown] = useState(10);
 
-
   useEffect(() => {
     const urlToken = searchParams.get('token');
     if (urlToken) {
@@ -30,7 +28,6 @@ export function useRegistration() {
     }
   }, [searchParams]);
 
-  // Countdown após registro bem-sucedido
   useEffect(() => {
     if (!isRegistrationFinished) return;
 

@@ -94,10 +94,10 @@ export function InviteItem({ invite, copied, onCopyLink, onDelete, onRevoke }: I
       }`}
     >
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
-        {/* Tipo e Status - Coluna 1 */}
+        {}
         <div className="lg:col-span-2">
           <div className="flex items-center gap-3">
-            {/* Tipo de Usuário */}
+            {}
             <div className={`p-2 rounded-lg border ${
               invite.role === 'student' 
                 ? 'border-blue-500 bg-blue-50' 
@@ -116,7 +116,7 @@ export function InviteItem({ invite, copied, onCopyLink, onDelete, onRevoke }: I
               </div>
             </div>
 
-            {/* Status */}
+            {}
             <div className={`p-2 rounded-lg border ${
               isActive 
                 ? 'border-green-500 bg-green-50' 
@@ -137,10 +137,10 @@ export function InviteItem({ invite, copied, onCopyLink, onDelete, onRevoke }: I
           </div>
         </div>
 
-        {/* Informações Principais - Coluna 2 */}
+        {}
         <div className="lg:col-span-5">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            {/* Tipo e Status Texto */}
+            {}
             <div>
               <div className="text-sm font-medium text-gray-900">{translateUserRole(invite.role)}</div>
               <div className={`text-xs font-medium ${
@@ -154,7 +154,7 @@ export function InviteItem({ invite, copied, onCopyLink, onDelete, onRevoke }: I
               </div>
             </div>
             
-            {/* Usos */}
+            {}
             <div>
               <div className="text-sm font-medium text-gray-900">
                 {invite.currentUses || 0}/{invite.maxUses} usos
@@ -162,7 +162,7 @@ export function InviteItem({ invite, copied, onCopyLink, onDelete, onRevoke }: I
               <div className="text-xs text-gray-500">Limite</div>
             </div>
 
-            {/* Turma (se aplicável) */}
+            {}
             {invite.classId && (
               <div>
                 <div className="text-sm font-medium text-indigo-600">
@@ -174,7 +174,7 @@ export function InviteItem({ invite, copied, onCopyLink, onDelete, onRevoke }: I
           </div>
         </div>
 
-        {/* Datas - Coluna 3 */}
+        {}
         <div className="lg:col-span-3">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
@@ -193,10 +193,10 @@ export function InviteItem({ invite, copied, onCopyLink, onDelete, onRevoke }: I
           </div>
         </div>
 
-        {/* Ações - Coluna 4 */}
+        {}
         <div className="lg:col-span-2">
           <div className="flex flex-col gap-2">
-            {/* Botão de Copiar (só se ativo) */}
+            {}
             {isActive && (
               <Button
                 onClick={() => onCopyLink(invite.link, invite.id)}
@@ -224,7 +224,7 @@ export function InviteItem({ invite, copied, onCopyLink, onDelete, onRevoke }: I
               </Button>
             )}
             
-            {/* Botão de Ação (Revogar/Excluir) */}
+            {}
             <Button
               variant="outline"
               onClick={() => setModalOpen(isExpired || isUsed ? "delete" : "revoke")}
@@ -263,7 +263,7 @@ export function InviteItem({ invite, copied, onCopyLink, onDelete, onRevoke }: I
         </div>
       </div>
 
-      {/* Link do Convite (linha separada) */}
+      {}
       <div className="mt-3 pt-3 border-t border-gray-200">
         <div className="flex items-center gap-2 mb-1">
           <svg className="w-3 h-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -1,10 +1,4 @@
-/**
- * Logger Centralizado
- * 
- * Sistema de logging com níveis e ambiente-aware.
- * Em desenvolvimento: exibe logs no console
- * Em produção: pode ser integrado com serviços de monitoring
- */
+
 
 type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
@@ -21,61 +15,40 @@ class Logger {
     this.isProduction = process.env.NODE_ENV === 'production';
   }
 
-  /**
-   * Debug - Informações detalhadas para debugging
-   * Apenas em desenvolvimento
-   */
   debug(message: string, context?: LogContext): void {
     if (!this.isDevelopment) return;
     
     console.log(`[DEBUG] ${message}`, context || '');
   }
 
-  /**
-   * Info - Informações gerais
-   */
   info(message: string, context?: LogContext): void {
     if (!this.isDevelopment) return;
     
     console.info(`[INFO] ${message}`, context || '');
   }
 
-  /**
-   * Warn - Avisos que não impedem execução
-   */
   warn(message: string, context?: LogContext): void {
     if (!this.isDevelopment) return;
     
     console.warn(`[WARN] ${message}`, context || '');
   }
 
-  /**
-   * Error - Erros que precisam atenção
-   * Sempre exibe, mas pode enviar para serviço externo em produção
-   */
   error(message: string, error?: Error | unknown, context?: LogContext): void {
     if (this.isDevelopment) {
       console.error(`[ERROR] ${message}`, error, context || '');
     }
 
-    // Em produção, enviar para serviço de monitoring
     if (this.isProduction) {
       this.sendToMonitoring(message, error, context);
     }
   }
 
-  /**
-   * Success - Operações bem-sucedidas importantes
-   */
   success(message: string, context?: LogContext): void {
     if (!this.isDevelopment) return;
     
     console.log(`[SUCCESS] ✅ ${message}`, context || '');
   }
 
-  /**
-   * API Call - Log de chamadas API
-   */
   apiCall(method: string, url: string, status?: number, duration?: number): void {
     if (!this.isDevelopment) return;
     
@@ -85,14 +58,8 @@ class Logger {
     console.log(`[API] ${statusEmoji} ${method} ${url}${durationText}`, status ? `Status: ${status}` : '');
   }
 
-  /**
-   * Enviar para serviço de monitoring em produção
-   * Pode ser integrado com Sentry, LogRocket, etc.
-   */
   private sendToMonitoring(message: string, error?: Error | unknown, context?: LogContext): void {
-    // TODO: Integrar com Sentry ou outro serviço de monitoring
-    
-    // Por enquanto, apenas loga no console mesmo em produção para erros críticos
+
     console.error('[PRODUCTION ERROR]', {
       message,
       error: error instanceof Error ? {
@@ -106,9 +73,6 @@ class Logger {
     });
   }
 
-  /**
-   * Grupo de logs (para organizar logs relacionados)
-   */
   group(label: string, callback: () => void): void {
     if (!this.isDevelopment) {
       callback();
@@ -120,9 +84,6 @@ class Logger {
     console.groupEnd();
   }
 
-  /**
-   * Medir performance de uma operação
-   */
   async time<T>(label: string, operation: () => Promise<T>): Promise<T> {
     const start = performance.now();
     
@@ -140,9 +101,6 @@ class Logger {
     }
   }
 
-  /**
-   * Criar logger com contexto específico
-   */
   createContext(contextName: string) {
     return {
       debug: (message: string, context?: LogContext) => 
@@ -159,14 +117,11 @@ class Logger {
   }
 }
 
-// Exportar instância singleton
 export const logger = new Logger();
 
-// Exportar loggers com contexto pré-definido
 export const apiLogger = logger.createContext('API');
 export const authLogger = logger.createContext('AUTH');
 export const uiLogger = logger.createContext('UI');
 
-// Exportar a classe para casos especiais
 export { Logger };
 

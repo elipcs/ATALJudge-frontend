@@ -63,29 +63,6 @@ export interface SubmissionFilters {
   limit?: number;
 }
 
-/**
- * API de submissões de código
- * 
- * Gerencia todas as operações relacionadas a submissões de código, incluindo:
- * - Buscar submissões (com filtros)
- * - Buscar detalhes de uma submissão específica
- * - Obter resultados de testes de uma submissão
- * 
- * @example
- * ```typescript
- * // Buscar submissões de uma questão
- * const submissions = await submissionsApi.getSubmissions({
- *   questionId: "question-id",
- *   listId: "list-id"
- * });
- * 
- * // Buscar detalhes de uma submissão
- * const submission = await submissionsApi.getSubmissionById("submission-id");
- * 
- * // Buscar resultados dos testes
- * const results = await submissionsApi.getSubmissionResults("submission-id");
- * ```
- */
 export const submissionsApi = {
   async getSubmissions(filters?: SubmissionFilters): Promise<SubmissionResponseDTO[]> {
     try {

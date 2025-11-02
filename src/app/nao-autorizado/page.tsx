@@ -9,7 +9,7 @@ export default function UnauthorizedPage() {
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white flex items-center justify-center p-4">
       <div className="w-full max-w-2xl mx-auto">
         <div className="bg-white rounded-3xl shadow-lg border border-slate-200 p-8 sm:p-12 text-center">
-          {/* Logo */}
+          {}
           <div className="mb-8 flex justify-center">
             <div className="p-4 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl shadow-lg border border-red-200">
               <svg 
@@ -23,7 +23,7 @@ export default function UnauthorizedPage() {
             </div>
           </div>
 
-          {/* Content */}
+          {}
           <div className="space-y-8">
             <div>
               <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-red-600 to-red-700 bg-clip-text text-transparent mb-4 leading-tight">
@@ -34,7 +34,7 @@ export default function UnauthorizedPage() {
               </p>
             </div>
 
-            {/* Action Buttons */}
+            {}
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/home" className="flex-1 sm:flex-none">
                 <Button size="lg" className="w-full sm:w-auto bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 border border-blue-200 shadow-sm hover:shadow-md font-semibold transition-all duration-200 transform hover:scale-[1.02]">

@@ -27,7 +27,7 @@ export default function ListHeader({
         </div>
       </div>
       <div className="flex items-center gap-3">
-        {/* Seleção de arranjo */}
+        {}
         {availableArrangements.length > 1 && (
           <div className="flex rounded-lg overflow-hidden border border-slate-300 bg-white/80">
             {availableArrangements.map((arr, idx) => (

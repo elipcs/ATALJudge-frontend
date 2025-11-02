@@ -167,7 +167,6 @@ export default function QuestionsPage() {
   const activeIndex = activeQuestionIndex;
   const activeQuestion = orderedQuestions[activeIndex];
 
-  // Bloquear acesso se lista não começou para estudante
   if (userRole === 'student' && !isListStarted()) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white flex items-center justify-center p-4">
@@ -208,7 +207,7 @@ export default function QuestionsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white p-6">
-      {/* Cabeçalho */}
+      {}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-4">
           <Link href="/listas">
@@ -224,11 +223,11 @@ export default function QuestionsPage() {
           </div>
         </div>
         
-        {/* Navegação entre páginas com estilo do perfil */}
+        {}
         <ListTabs id={id} activeTab="questoes" hasQuestions={!!hasQuestions()} userRole={userRole || 'student'} />
       </div>
 
-      {/* Aviso de IP restrito */}
+      {}
       {error === 'ipRestricted' && (
         <Card className="bg-gradient-to-r from-red-50 to-pink-50 border-red-200 rounded-2xl shadow-lg p-6 mb-6">
           <div className="flex items-center gap-4">
@@ -247,7 +246,7 @@ export default function QuestionsPage() {
         </Card>
       )}
 
-      {/* Navegação entre questões */}
+      {}
       {error !== 'ipRestricted' && (
         <QuestionTabs
           labels={questionLabels}
@@ -257,10 +256,10 @@ export default function QuestionsPage() {
         />
       )}
 
-      {/* Grid com questão e submissão lado a lado */}
+      {}
       {error !== 'ipRestricted' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Exibe a questão ativa */}
+        {}
         <Card className="bg-white border-slate-200 rounded-3xl shadow-lg p-6">
           <div className="mb-6">
             <div className="flex items-center gap-3 mb-4">
@@ -268,7 +267,7 @@ export default function QuestionsPage() {
                 {questionLabels[activeIndex]}. {activeQuestion.title}
               </h2>
               
-              {/* Badge do grupo (se modo for groups) */}
+              {}
               {list.scoringMode === 'groups' && list.questionGroups && (() => {
                 const group = list.questionGroups.find(g => {
                   if (!g || !g.questionIds) return false;
@@ -288,7 +287,7 @@ export default function QuestionsPage() {
               })()}
             </div>
             
-            {/* Enunciado */}
+            {}
             {activeQuestion.statement && (
               <div className="mb-6">
                 <h3 className="text-lg font-semibold text-slate-800 mb-2">Enunciado</h3>
@@ -298,7 +297,7 @@ export default function QuestionsPage() {
               </div>
             )}
 
-          {/* Entrada */}
+          {}
           {activeQuestion.inputFormat && (
             <div className="mb-6">
               <h3 className="text-lg font-semibold text-slate-800 mb-2">Entrada</h3>
@@ -308,7 +307,7 @@ export default function QuestionsPage() {
             </div>
           )}
 
-          {/* Saída */}
+          {}
           {activeQuestion.outputFormat && (
             <div className="mb-6">
               <h3 className="text-lg font-semibold text-slate-800 mb-2">Saída</h3>
@@ -318,7 +317,7 @@ export default function QuestionsPage() {
             </div>
           )}
 
-          {/* Restrições */}
+          {}
           {activeQuestion.constraints && (
             <div className="mb-6">
               <h3 className="text-lg font-semibold text-slate-800 mb-2">Restrições</h3>
@@ -328,7 +327,7 @@ export default function QuestionsPage() {
             </div>
           )}
 
-          {/* Exemplos */}
+          {}
           {activeQuestion.examples && activeQuestion.examples.length > 0 && (
             <div className="mb-6">
               <h3 className="text-lg font-semibold text-slate-800 mb-2">Exemplos</h3>
@@ -356,7 +355,7 @@ export default function QuestionsPage() {
             </div>
           )}
 
-          {/* Observações */}
+          {}
           {activeQuestion.notes && (
             <div className="mb-6">
               <h3 className="text-lg font-semibold text-slate-800 mb-2">📝 Observações</h3>
@@ -369,7 +368,7 @@ export default function QuestionsPage() {
         </div>
       </Card>
 
-      {/* Área de submissão de código - ocultar se lista não começou ou já terminou */}
+      {}
       {!(userRole === 'student' && !isListStarted()) && !(userRole === 'student' && isListEnded()) && (
         <CodeSubmission
           questionId={activeQuestion.id}
@@ -381,7 +380,7 @@ export default function QuestionsPage() {
         />
       )}
 
-      {/* Aviso quando lista já terminou */}
+      {}
       {userRole === 'student' && isListEnded() && (
         <Card className="bg-gradient-to-r from-red-50 to-pink-50 border-red-200 rounded-3xl shadow-lg p-6">
           <div className="flex items-center gap-4">

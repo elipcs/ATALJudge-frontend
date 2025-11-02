@@ -14,22 +14,8 @@ export function useInvites() {
       setLoading(true);
       setError(null);
       
-      const params = new URLSearchParams();
-      if (filterRole !== 'all') {
-        params.append('role', filterRole);
-      }
-      if (filterStatus !== 'all') {
-        if (filterStatus === 'used') {
-          params.append('used', 'true');
-        } else if (filterStatus === 'active') {
-          params.append('used', 'false');
-        }
-      }
-      
-      const queryString = params.toString();
-      const invitesDTO = await invitesApi.getAll(queryString);
+      const invitesDTO = await invitesApi.getAll();
 
-      // Converter InviteResponseDTO para Invite
       const invites: Invite[] = invitesDTO.map(dto => ({
         id: dto.id,
         role: dto.role,
@@ -49,15 +35,24 @@ export function useInvites() {
       const now = new Date();
       const filtered = invites.filter((inv) => {
         const roleOk = filterRole === 'all' || inv.role === filterRole;
-        const expiresAt = createBrazilianDate(inv.expiresAt);
-        const isActive = !inv.used && expiresAt && now < expiresAt;
-        const isExpired = expiresAt && now >= expiresAt;
-        const isUsed = inv.used;
-        const statusOk =
-          filterStatus === 'all' ||
-          (filterStatus === 'active' && !!isActive) ||
-          (filterStatus === 'used' && !!isUsed) ||
-          (filterStatus === 'expired' && !!isExpired);
+        
+        let statusOk = false;
+        if (filterStatus === 'all') {
+          statusOk = true;
+        } else if (filterStatus === 'used') {
+          statusOk = inv.used;
+        } else if (filterStatus === 'active' || filterStatus === 'expired') {
+          const expiresAt = createBrazilianDate(inv.expiresAt);
+          if (expiresAt) {
+            const isExpired = now >= expiresAt;
+            if (filterStatus === 'active') {
+              statusOk = !inv.used && !isExpired;
+            } else {
+              statusOk = isExpired;
+            }
+          }
+        }
+        
         return roleOk && statusOk;
       });
 

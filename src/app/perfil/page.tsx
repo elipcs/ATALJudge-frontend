@@ -13,8 +13,6 @@ import {
 } from "../../components/profile";
 import PageLoading from "../../components/PageLoading";
 
-
-
 export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState('profile');
   
@@ -25,16 +23,12 @@ export default function ProfilePage() {
     changingPassword,
     error,
     success: _success,
-    buttonSuccess,
     isLoadingRole,
     loadData,
     saveProfile,
     changePassword,
     clearError
   } = useProfile();
-
-
-
 
   if (loading || isLoadingRole) {
     return (
@@ -75,7 +69,6 @@ export default function ProfilePage() {
             user={user}
             onSave={saveProfile}
             saving={saving}
-            buttonSuccess={buttonSuccess}
           />
         </div>
       )}
@@ -86,7 +79,6 @@ export default function ProfilePage() {
             user={user}
             onChangePassword={changePassword}
             changingPassword={changingPassword}
-            buttonSuccess={buttonSuccess}
           />
         </div>
       )}

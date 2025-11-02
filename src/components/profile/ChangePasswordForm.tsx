@@ -10,14 +10,12 @@ interface ChangePasswordFormProps {
   user: ProfileData;
   onChangePassword: (changePasswordData: ChangePasswordData) => Promise<void>;
   changingPassword: boolean;
-  buttonSuccess: boolean;
 }
 
 export default function ChangePasswordForm({ 
   user, 
   onChangePassword, 
-  changingPassword, 
-  buttonSuccess 
+  changingPassword
 }: ChangePasswordFormProps) {
   const [formData, setFormData] = useState({
     currentPassword: '',
@@ -162,11 +160,9 @@ export default function ChangePasswordForm({
           onClick={handleChangePassword}
           disabled={changingPassword || !isFormValid()}
           className={`w-full shadow-sm hover:shadow-md font-semibold transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none py-3 rounded-xl ${
-            buttonSuccess 
-              ? 'bg-gradient-to-r from-green-500 to-green-600 text-white border border-green-600' 
-              : user.role === 'professor' ? 'bg-gradient-to-r from-purple-50 to-purple-100 text-purple-700 border border-purple-200' :
-                user.role === 'student' ? 'bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 border border-blue-200' :
-                'bg-gradient-to-r from-green-50 to-green-100 text-green-700 border border-green-200'
+            user.role === 'professor' ? 'bg-gradient-to-r from-purple-50 to-purple-100 text-purple-700 border border-purple-200' :
+            user.role === 'student' ? 'bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 border border-blue-200' :
+            'bg-gradient-to-r from-green-50 to-green-100 text-green-700 border border-green-200'
           }`}
         >
           {changingPassword ? (
@@ -177,13 +173,6 @@ export default function ChangePasswordForm({
                 'border-green-600'
               }`}></div>
               Alterando...
-            </>
-          ) : buttonSuccess ? (
-            <>
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              Senha Alterada!
             </>
           ) : (
             <>

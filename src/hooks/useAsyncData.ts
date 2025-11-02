@@ -16,7 +16,6 @@ interface UseAsyncDataReturn<T> {
   reset: () => void;
 }
 
-
 export function useAsyncData<T>(
   asyncFunction: (...args: unknown[]) => Promise<T>,
   options: UseAsyncDataOptions<T> = {}
@@ -130,7 +129,6 @@ export function useAsyncData<T>(
     };
   }, [immediate]);
 
-  
   return {
     data,
     loading,

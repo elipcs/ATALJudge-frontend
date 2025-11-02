@@ -18,18 +18,6 @@ interface LocalSubmission {
   feedback?: string;
 }
 
-/**
- * Hook para gerenciar a página de uma lista de questões
- * 
- * Funcionalidades:
- * - Carrega dados da lista e questões
- * - Gerencia submissões de código
- * - Controla navegação entre questões
- * - Valida permissões de acesso (IP whitelisting)
- * - Gerencia estado de visualização (lista vs questão individual)
- * 
- * @returns Objeto com estado e funções para gerenciar a lista
- */
 export function useListPage() {
   const params = useParams();
   const router = useRouter();
@@ -51,7 +39,6 @@ export function useListPage() {
   } | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'question'>('list');
   const [selectedLanguage, setSelectedLanguage] = useState<'python' | 'java'>('python');
-
 
   const loadListData = useCallback(async () => {
     try {
@@ -126,7 +113,7 @@ export function useListPage() {
 
   const loadSubmissions = useCallback(async (listData: QuestionList) => {
     try {
-      // Otimização: buscar todas as submissões em paralelo em vez de sequencialmente
+      
       const submissionsPromises = listData.questions.map(question =>
         submissionsApi.getSubmissions({ questionId: question.id, listId })
           .then(questionSubmissions => ({
@@ -142,10 +129,10 @@ export function useListPage() {
         const localSubmissions = questionSubmissions.map((sub, index) => ({
           id: sub.id,
           questionId: question.id,
-          status: sub.status,
+          status: (sub.status as any),
           score: sub.score,
           attempt: index + 1,
-          submittedAt: sub.submittedAt,
+          submittedAt: typeof sub.createdAt === 'string' ? sub.createdAt : sub.createdAt.toISOString(),
           code: sub.code,
           language: sub.language,
           feedback: sub.verdict
@@ -196,9 +183,9 @@ export function useListPage() {
         id: submission.id,
         questionId: selectedQuestion.id,
         status: submission.status.toLowerCase() as 'pending' | 'accepted' | 'error' | 'timeout',
-        score: submission.totalScore || 0,
+        score: submission.score || 0,
         attempt: submissions.filter(s => s.questionId === selectedQuestion.id).length + 1,
-        submittedAt: submission.createdAt,
+        submittedAt: typeof submission.createdAt === 'string' ? submission.createdAt : submission.createdAt.toISOString(),
         code: submission.code,
         language: submission.language,
         feedback: undefined
@@ -213,7 +200,7 @@ export function useListPage() {
                 statusLower === 'error' ? 'Erro na solução' :
                 statusLower === 'timeout' ? 'Tempo limite excedido' :
                 'Submissão enviada com sucesso!',
-        score: submission.totalScore || 0
+        score: submission.score || 0
       });
 
     } catch (err) {

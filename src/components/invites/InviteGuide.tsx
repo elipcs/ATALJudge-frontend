@@ -16,7 +16,7 @@ export function InviteGuide() {
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Convite para Alunos */}
+        {}
         <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
           <div className="flex items-center gap-3 mb-3">
             <div className="p-2 bg-blue-100 rounded-lg">
@@ -47,7 +47,7 @@ export function InviteGuide() {
           </ul>
         </div>
 
-        {/* Convite para Monitores */}
+        {}
         <div className="p-4 bg-green-50 rounded-lg border border-green-200">
           <div className="flex items-center gap-3 mb-3">
             <div className="p-2 bg-green-100 rounded-lg">
@@ -77,7 +77,7 @@ export function InviteGuide() {
           </ul>
         </div>
 
-        {/* Convite para Professores */}
+        {}
         <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
           <div className="flex items-center gap-3 mb-3">
             <div className="p-2 bg-purple-100 rounded-lg">
@@ -108,7 +108,7 @@ export function InviteGuide() {
         </div>
       </div>
 
-      {/* Dicas Adicionais */}
+      {}
       <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
         <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
           <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">

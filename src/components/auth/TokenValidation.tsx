@@ -8,8 +8,6 @@ import { API } from "../../config/api";
 
 import { AuthLayout } from "./index";
 
-
-
 interface TokenInfo {
   role: 'student' | 'assistant' | 'professor';
   class?: string;

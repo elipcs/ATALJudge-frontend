@@ -1,6 +1,5 @@
 'use client';
 
-/* eslint-disable no-console */
 import { useEffect } from 'react';
 
 type DevWindow = typeof globalThis & {
@@ -8,17 +7,12 @@ type DevWindow = typeof globalThis & {
   clearAllStorage?: () => void;
 };
 
-/**
- * Componente que disponibiliza ferramentas de desenvolvimento no console
- */
 export default function DevTools() {
   useEffect(() => {
-    // Disponibilizar funções de limpeza no console
+    
     const isDev = typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'development';
     if (typeof window !== 'undefined' && isDev) {
-      /**
-       * Limpar apenas dados de autenticação
-       */
+      
       (globalThis as DevWindow).clearAuthStorage = () => {
         const itemsToRemove = [
           'token',
@@ -43,9 +37,6 @@ export default function DevTools() {
         console.log('🔄 Recarregue a página para ver as mudanças.');
       };
 
-      /**
-       * Limpar TODOS os dados do localStorage
-       */
       (globalThis as DevWindow).clearAllStorage = () => {
         console.log('🧹 Limpando TODO o localStorage...');
         localStorage.clear();
@@ -61,6 +52,4 @@ export default function DevTools() {
 
   return null;
 }
-
-/* eslint-enable no-console */
 

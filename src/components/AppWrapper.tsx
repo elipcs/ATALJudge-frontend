@@ -55,8 +55,6 @@ function AppWrapperContent({
     pathname === route || pathname.startsWith(route + '/')
   );
 
-
-
   if (isPublicRoute) {
     return <>{children}</>;
   }

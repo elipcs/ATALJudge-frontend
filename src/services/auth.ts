@@ -20,28 +20,6 @@ export interface TokenInfo {
   expires: string;
 }
 
-/**
- * API de autenticação
- * 
- * Gerencia todas as operações de autenticação, incluindo:
- * - Login/Logout
- * - Registro de usuários
- * - Gerenciamento de tokens (JWT + Refresh Token)
- * - Validação de tokens
- * - Recuperação de senha
- * 
- * @example
- * ```typescript
- * // Login
- * await authApi.login('usuario@email.com', 'senha123');
- * 
- * // Logout
- * await authApi.logout();
- * 
- * // Verificar se token está expirado
- * const isExpired = authApi.isTokenExpired(token);
- * ```
- */
 export const authApi = {
   getToken() {
     if (typeof window === "undefined") return null;

@@ -31,10 +31,10 @@ interface Student {
   id: string;
   name: string;
   email: string;
-  studentRegistration: string;
-  classId: string;
-  className: string;
-  submissionsCount: number;
+  studentRegistration?: string;
+  classId?: string;
+  className?: string;
+  submissionsCount?: number;
 }
 
 export default function ConfiguracoesPage() {
@@ -83,8 +83,7 @@ export default function ConfiguracoesPage() {
     try {
       setLoading(true);
       const response = await API.config.getStudents();
-      const payload = response.data as { students?: Student[] } | Student[];
-      const list = Array.isArray(payload) ? payload : (payload.students ?? []);
+      const list = Array.isArray(response.data) ? response.data : [];
       setStudents(list);
     } catch (_error) {
       setError('Erro ao carregar estudantes');
@@ -218,8 +217,8 @@ export default function ConfiguracoesPage() {
   const filteredStudents = students.filter(student =>
     student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     student.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    student.studentRegistration.includes(searchTerm) ||
-    student.className.toLowerCase().includes(searchTerm.toLowerCase())
+    student.studentRegistration?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    student.className?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (isLoading) {
@@ -245,7 +244,7 @@ export default function ConfiguracoesPage() {
         iconColor="gray"
       />
 
-      {/* Tabs Navigation */}
+      {}
   <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-2 mb-6">
         <nav className="flex space-x-2">
           {[
@@ -268,7 +267,7 @@ export default function ConfiguracoesPage() {
         </nav>
       </div>
 
-      {/* System Reset Tab */}
+      {}
       {activeTab === 'reset' && (
   <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6">
           <h3 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
@@ -418,7 +417,7 @@ export default function ConfiguracoesPage() {
         </div>
       )}
 
-      {/* Allowed IPs Tab */}
+      {}
       {activeTab === 'ips' && (
         <div className="space-y-6">
           <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6">
@@ -542,7 +541,7 @@ export default function ConfiguracoesPage() {
         </div>
       )}
 
-      {/* Students Management Tab */}
+      {}
       {activeTab === 'students' && (
         <div className="space-y-6">
           <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6">
@@ -658,7 +657,7 @@ export default function ConfiguracoesPage() {
         </div>
       )}
 
-      {/* Error Toast */}
+      {}
       {error && (
         <div className="fixed top-4 right-4 bg-slate-700 text-white px-6 py-3 rounded-lg shadow-lg z-50">
           <div className="flex items-center justify-between gap-2">
@@ -677,7 +676,7 @@ export default function ConfiguracoesPage() {
         </div>
       )}
 
-      {/* Success Toast */}
+      {}
       {success && (
         <div className="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50">
           <div className="flex items-center justify-between gap-2">

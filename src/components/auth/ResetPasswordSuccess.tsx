@@ -11,7 +11,7 @@ export function ResetPasswordSuccess() {
   const [countdown, setCountdown] = useState(5);
 
   useEffect(() => {
-    // Redirecionamento automático após 5 segundos
+    
     const timer = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {

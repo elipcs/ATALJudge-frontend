@@ -1,13 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Otimizações para desenvolvimento
-  experimental: {
-    // Habilita cache de compilação mais agressivo
-    // optimizeCss: true, // Removido para evitar conflitos com critters
-  },
   
-  // Configuração do Turbopack (substitui experimental.turbo)
+  experimental: {
+
+  },
+
   turbopack: {
     rules: {
       '*.svg': {
@@ -16,30 +14,26 @@ const nextConfig: NextConfig = {
       },
     },
   },
-  
-  // Otimizações de compilação
+
   compiler: {
-    // Remove console.log em produção
+    
     removeConsole: process.env.NODE_ENV === 'production',
   },
-  
-  // Configuração de modularização de imports
+
   modularizeImports: {
     'lucide-react': {
       transform: 'lucide-react/dist/esm/icons/{{kebabCase member}}',
     },
   },
-  
-  // Configurações de webpack para melhor performance
+
   webpack: (config, { dev, isServer }) => {
     if (dev && !isServer) {
-      // Otimizações para desenvolvimento
+      
       config.watchOptions = {
         poll: 1000,
         aggregateTimeout: 300,
       };
-      
-      // Cache mais agressivo para desenvolvimento
+
       config.cache = {
         type: 'filesystem',
         buildDependencies: {
@@ -47,8 +41,7 @@ const nextConfig: NextConfig = {
         },
       };
     }
-    
-    // Otimizações para todos os ambientes
+
     config.optimization = {
       ...config.optimization,
       splitChunks: {

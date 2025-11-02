@@ -41,14 +41,14 @@ export function useResetPassword(token: string | null) {
       let errorMessage = "Erro ao redefinir senha";
       
       if (err instanceof Error) {
-        // Se for um ApiError, usar a mensagem original
+        
         if ('statusCode' in err && err.statusCode) {
           const apiError = err as any;
-          // Se o código de status indica erro do servidor, mostrar a mensagem específica
+          
           if (apiError.statusCode !== 408 || !err.message.includes('Timeout')) {
             errorMessage = err.message;
           } else {
-            // Para timeout, tentar uma mensagem mais útil
+            
             errorMessage = "A requisição demorou muito. O token pode estar inválido ou já ter sido usado.";
           }
         } else {

@@ -74,11 +74,9 @@ export default function CodeSubmission({
 
         if (newStatus === 'completed') {
           try {
-            // NOTA: Endpoint /submissions/{id}/results foi removido do backend
-            // Os resultados agora vêm diretamente na resposta da submissão
+
             logger.warn('Endpoint de resultados não disponível');
-            // const resultsData = await submissionsApi.getSubmissionResults(submissionInfo.id);
-            // setSubmissionResults(resultsData);
+
           } catch (error) {
             logger.error('Erro ao buscar resultados da submissão', { error });
           }
@@ -112,14 +110,13 @@ export default function CodeSubmission({
         }
 
         if (submission.status === "COMPLETED") {
-          // NOTA: Endpoint /submissions/{id}/results foi removido do backend
-          // Os resultados agora vêm diretamente no objeto submission
+
           logger.warn('Endpoint de resultados não disponível');
           
           setResult({
             status: "success",
             message: `Submissão concluída`,
-            details: `Pontuação: ${submission.totalScore || 0} pontos`,
+            details: `Pontuação: ${submission.score || 0} pontos`,
           });
         } else if (submission.status === "FAILED") {
           setResult({
@@ -167,7 +164,7 @@ export default function CodeSubmission({
           id: submission.id,
           status: submission.status,
           language: submission.language,
-          createdAt: submission.createdAt,
+          createdAt: typeof submission.createdAt === 'string' ? submission.createdAt : submission.createdAt.toISOString(),
           code: code,
         });
         setShowSubmissionModal(true);
@@ -313,7 +310,7 @@ export default function CodeSubmission({
         </div>
       </div>
 
-      {/* Seletor de Linguagem */}
+      {}
       <div className="mb-4">
         <label className="block text-sm font-semibold text-slate-700 mb-2">
           Linguagem de Programação
@@ -328,7 +325,7 @@ export default function CodeSubmission({
         </select>
       </div>
 
-      {/* Editor de Código */}
+      {}
       <div className="mb-4 flex-1 flex flex-col">
         <label className="block text-sm font-semibold text-slate-700 mb-2">
           Seu Código
@@ -346,7 +343,7 @@ export default function CodeSubmission({
         />
       </div>
 
-      {/* Resultado */}
+      {}
       {result && (
         <div
           className={`mb-4 p-4 rounded-xl border ${getResultColor()} transition-all duration-300`}
@@ -359,7 +356,7 @@ export default function CodeSubmission({
                 <p className="text-sm opacity-90">{result.details}</p>
               )}
               
-              {/* Resultados detalhados */}
+              {}
               {result.resultsData && (
                 <div className="mt-4 space-y-2">
                   <div className="text-xs font-semibold text-slate-700">
@@ -405,7 +402,7 @@ export default function CodeSubmission({
         </div>
       )}
 
-      {/* Botões de Ação */}
+      {}
       <div className="flex gap-3">
         <Button
           onClick={handleSubmit}
@@ -450,7 +447,7 @@ export default function CodeSubmission({
         </Button>
       </div>
 
-      {/* Dicas */}
+      {}
       <div className="mt-4 p-3 bg-blue-50 rounded-xl border border-blue-200">
         <p className="text-xs text-blue-800">
           <span className="font-semibold">Dica:</span> Seu código será
@@ -459,7 +456,7 @@ export default function CodeSubmission({
         </p>
       </div>
 
-      {/* Modal de Casos de Teste */}
+      {}
       <TestCasesModal
         isOpen={isTestCasesModalOpen}
         onClose={() => setIsTestCasesModalOpen(false)}
@@ -469,7 +466,7 @@ export default function CodeSubmission({
         }}
       />
 
-      {/* Modal de Confirmação de Submissão */}
+      {}
       <Dialog open={showSubmissionModal} onOpenChange={setShowSubmissionModal}>
         <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -507,7 +504,7 @@ export default function CodeSubmission({
           </DialogHeader>
           
           <div className="space-y-4 py-4">
-            {/* Status e Informações Básicas */}
+            {}
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-slate-50 p-3 rounded-lg">
                 <div className="flex items-center justify-between mb-1">
@@ -546,10 +543,10 @@ export default function CodeSubmission({
               </div>
             </div>
 
-            {/* Resultados dos Testes */}
+            {}
             {submissionResults && submissionInfo?.status.toLowerCase() === 'completed' && (
               <div className="space-y-3">
-                {/* Sumário */}
+                {}
                 <div className={`p-4 rounded-lg border-2 ${
                   submissionResults.summary.passedCount === submissionResults.summary.totalCases
                     ? 'bg-green-50 border-green-300'
@@ -585,7 +582,7 @@ export default function CodeSubmission({
                   </div>
                 </div>
 
-                {/* Lista de Resultados dos Casos de Teste */}
+                {}
                 <div className="space-y-2">
                   <h4 className="text-sm font-semibold text-slate-700">Detalhes dos Casos de Teste:</h4>
                   <div className="max-h-64 overflow-y-auto space-y-2">
@@ -665,7 +662,7 @@ export default function CodeSubmission({
               </div>
             )}
 
-            {/* Informações Adicionais (colapsadas quando há resultados) */}
+            {}
             <details className="bg-slate-50 p-3 rounded-lg" open={!submissionResults}>
               <summary className="text-sm font-semibold text-slate-700 cursor-pointer">
                 Informações da Submissão

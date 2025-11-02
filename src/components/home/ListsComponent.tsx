@@ -125,7 +125,7 @@ export default function ListsComponent() {
       <h3 className="text-lg font-semibold text-gray-900">Listas Ativas</h3>
       <div className="grid gap-4">
         {availableLists.slice(0, 3).map((list) => {
-          const listWithStatus = list as QuestionList & { calculatedStatus: 'scheduled' | 'open' | 'closed' };
+          const listWithStatus = list as unknown as QuestionList & { calculatedStatus: 'scheduled' | 'open' | 'closed' };
           return (
           <Card key={listWithStatus.id} className="p-4 hover:shadow-md transition-shadow">
             <div className="flex items-start justify-between mb-3">
