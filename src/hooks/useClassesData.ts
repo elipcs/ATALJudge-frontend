@@ -18,7 +18,7 @@ export const useUserClasses = (userId: string, userRole: string) => {
     try {
       setLoading(true);
       setError(null);
-      const result = await classesApi.getUserClasses(userId, userRole);
+      const result = await classesApi.getUserClasses(userId, userRole, true);
       setClasses(result);
     } catch (err) {
       console.error('Erro ao carregar turmas:', err);
@@ -118,7 +118,18 @@ export const useClassStudents = (classId: string) => {
         setLoading(true);
         setError(null);
         const result = await classesApi.getClassStudents(classId);
-        setStudents(result as any);
+        // Mapear para o tipo Student preservando os grades se existirem
+        const mappedStudents: Student[] = result.map((s: any) => ({
+          id: s.id,
+          name: s.name,
+          email: s.email,
+          studentRegistration: s.studentRegistration || '',
+          role: s.role,
+          classId: classId,
+          grades: s.grades || [], // Preservar grades se existirem
+          createdAt: s.createdAt || new Date().toISOString(),
+        }));
+        setStudents(mappedStudents);
       } catch (err) {
         console.error('useClassStudents: erro:', err);
         setError(err instanceof Error ? err.message : 'Erro ao carregar alunos');

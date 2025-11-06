@@ -11,6 +11,13 @@ function mapClassDTO(dto: ClassResponseDTO): Class {
         email: dto.professor.email,
         role: dto.professor.role,
       }
+    : dto.professorName
+    ? {
+        id: dto.professorId,
+        name: dto.professorName,
+        email: '',
+        role: 'professor',
+      }
     : null;
 
   const students = Array.isArray(dto.students)
@@ -38,9 +45,10 @@ function mapClassDTO(dto: ClassResponseDTO): Class {
 }
 
 export const classesApi = {
-  async getAll(): Promise<Class[]> {
+  async getAll(includeRelations: boolean = false): Promise<Class[]> {
     try {
-      const { data } = await API.classes.list();
+      const params = includeRelations ? { include: 'relations' as string } : undefined;
+      const { data } = await API.classes.list(params);
       const array = Array.isArray(data) ? data : [];
       return array.map(mapClassDTO);
     } catch (error) {
@@ -51,25 +59,109 @@ export const classesApi = {
 
   async getById(id: string): Promise<Class | null> {
     try {
-      const { data } = await API.classes.get(id);
-      return data ? mapClassDTO(data) : null;
+      // Buscar dados básicos da turma com professor
+      const { data } = await API.classes.get(id, true);
+      if (!data) return null;
+      
+      console.log('classesApi.getById - Class data:', data);
+      console.log('classesApi.getById - Professor:', data.professor);
+      
+      // Buscar estudantes com grades separadamente
+      const studentsResponse = await API.classes.students(id);
+      
+      console.log('classesApi.getById - Raw response:', studentsResponse);
+      console.log('classesApi.getById - Students:', studentsResponse.data.students);
+      
+      const studentsWithGrades = Array.isArray(studentsResponse.data.students)
+        ? studentsResponse.data.students.map((s: any) => {
+            console.log('Mapeando aluno:', s.name, 'grades:', s.grades);
+            const mapped = {
+              id: s.id,
+              name: s.name,
+              email: s.email,
+              studentRegistration: s.studentRegistration || '',
+              role: s.role,
+              classId: id,
+              grades: s.grades || [],
+              createdAt: typeof s.createdAt === 'string' ? s.createdAt : new Date(s.createdAt).toISOString(),
+            };
+            console.log('Aluno mapeado:', mapped);
+            return mapped;
+          })
+        : [];
+      
+      console.log('classesApi.getById - Final studentsWithGrades:', studentsWithGrades);
+      
+      // Mapear professor se existir na resposta, ou usar professorName como fallback
+      const professor: Professor | null = data.professor
+        ? {
+            id: data.professor.id,
+            name: data.professor.name,
+            email: data.professor.email,
+            role: data.professor.role,
+          }
+        : data.professorName
+        ? {
+            id: data.professorId,
+            name: data.professorName,
+            email: '',
+            role: 'professor',
+          }
+        : null;
+
+      return {
+        id: data.id,
+        name: data.name,
+        professor,
+        students: studentsWithGrades,
+        studentCount: studentsWithGrades.length,
+        createdAt: typeof data.createdAt === 'string' ? data.createdAt : new Date(data.createdAt).toISOString(),
+        updatedAt: typeof data.updatedAt === 'string' ? data.updatedAt : new Date(data.updatedAt).toISOString(),
+      };
     } catch (error) {
       logger.error('Erro ao buscar turma', { error });
       return null;
     }
   },
 
-  async getUserClasses(userId: string, userRole: string): Promise<Class[]> {
+    async getUserClasses(
+    userId: string,
+    userRole: string,
+    includeRelations: boolean = true
+  ): Promise<Class[]> {
     try {
-      const allClasses = await API.classes.list();
+      // Sempre incluir relations para obter professor
+      const params = { include: 'relations' as string };
+      const allClasses = await API.classes.list(params);
       const array = Array.isArray(allClasses.data) ? allClasses.data : [];
-      const mapped = array.map(mapClassDTO);
+      
+      // Para alunos, filtrar turmas onde o usuário é aluno
       if (userRole === 'student') {
-        return mapped.filter((cls) => 
-          Array.isArray(cls.students) && cls.students.some(student => student.id === userId)
+        const studentClasses = array.filter((clsData: ClassResponseDTO) => 
+          Array.isArray(clsData.students) && clsData.students.some(student => student.id === userId)
         );
+        
+        // Buscar dados completos de cada turma (com grades dos estudantes)
+        const classesWithGrades = await Promise.all(
+          studentClasses.map(async (clsData: ClassResponseDTO) => {
+            const fullClassData = await this.getById(clsData.id);
+            return fullClassData;
+          })
+        );
+        
+        return classesWithGrades.filter((cls): cls is Class => cls !== null);
       }
-      return mapped;
+      
+      // Para professores/assistentes, mapear diretamente (professor já vem no list)
+      // e buscar grades se necessário
+      const classesWithGrades = await Promise.all(
+        array.map(async (clsData: ClassResponseDTO) => {
+          const fullClassData = await this.getById(clsData.id);
+          return fullClassData;
+        })
+      );
+      
+      return classesWithGrades.filter((cls): cls is Class => cls !== null);
     } catch (error) {
       logger.error('Erro ao buscar turmas do usuário', { error });
       throw error;

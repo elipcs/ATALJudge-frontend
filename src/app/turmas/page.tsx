@@ -135,11 +135,12 @@ export default function TurmasPage() {
         </div>
       )}
 
-      {}
+      {/* Detalhes da turma ou lista de turmas */}
       {showDetails && classDetails ? (
         <ClassDetails
           classDetails={classDetails}
           userRole={userRole || 'student'}
+          currentUserId={_currentUser?.id}
           onBack={handleBackToList}
           onEditClass={handleOpenEditModal}
           onDeleteClass={handleOpenDeleteModal}

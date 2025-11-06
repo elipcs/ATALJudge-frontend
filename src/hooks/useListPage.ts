@@ -116,9 +116,9 @@ export function useListPage() {
       
       const submissionsPromises = listData.questions.map(question =>
         submissionsApi.getSubmissions({ questionId: question.id, listId })
-          .then(questionSubmissions => ({
+          .then(response => ({
             question,
-            submissions: questionSubmissions
+            submissions: response.submissions
           }))
       );
       
@@ -250,6 +250,10 @@ export function useListPage() {
     loadListData();
   }, [loadListData]);
 
+  const reloadList = useCallback(() => {
+    loadListData();
+  }, [loadListData]);
+
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash;
@@ -297,6 +301,7 @@ export function useListPage() {
     formatDateTime,
     isListStarted,
     isListEnded,
-    hasQuestions
+    hasQuestions,
+    reloadList
   };
 }

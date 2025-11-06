@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 
-import { listsApi, CreateListRequest, ListFilters } from '@/services/lists';
+import { listsApi, CreateListRequest, ListFilters, UpdateListScoringRequest } from '@/services/lists';
 import { classesApi } from '@/services/classes';
 import { QuestionList, Class } from '@/types';
 
@@ -12,6 +12,7 @@ interface UseListsDataReturn {
   refreshLists: () => Promise<void>;
   createList: (listData: CreateListRequest) => Promise<QuestionList>;
   updateList: (id: string, updates: CreateListRequest) => Promise<QuestionList>;
+  updateListScoring: (id: string, scoringData: UpdateListScoringRequest) => Promise<QuestionList>;
   deleteList: (id: string) => Promise<void>;
   duplicateList: (id: string, newTitle?: string) => Promise<QuestionList>;
   addQuestionToList: (listId: string, questionId: string) => Promise<void>;
@@ -106,6 +107,25 @@ export function useListsData(userRole?: string, currentUser?: any): UseListsData
     }
   }, []);
 
+  const updateListScoring = useCallback(async (id: string, scoringData: any): Promise<QuestionList> => {
+    try {
+      setError(null);
+      const updatedList = await listsApi.updateScoring(id, scoringData);
+      
+      if (!updatedList || !updatedList.id) {
+        throw new Error('Resposta inválida da API ao atualizar pontuação');
+      }
+      
+      setLists(prev => prev.map(list => list.id === id ? updatedList : list));
+      
+      return updatedList;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao atualizar pontuação';
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    }
+  }, []);
+
   const deleteList = useCallback(async (id: string): Promise<void> => {
     try {
       setError(null);
@@ -175,6 +195,7 @@ export function useListsData(userRole?: string, currentUser?: any): UseListsData
     refreshLists,
     createList,
     updateList,
+    updateListScoring,
     deleteList,
     duplicateList,
     addQuestionToList,

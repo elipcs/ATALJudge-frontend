@@ -187,7 +187,7 @@ export default function EditListModal({ isOpen, onClose, onSubmit, onRefresh, cl
       const now = new Date();
       const defaultEndDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
       
-      const startTime = hasStarted
+      const startDate = hasStarted
         ? (listData?.startDate || now.toISOString())
         : (form.startDate ? fromBrazilianDateTimeLocal(form.startDate) : now.toISOString());
 
@@ -198,8 +198,8 @@ export default function EditListModal({ isOpen, onClose, onSubmit, onRefresh, cl
       const payload: CreateListRequest = {
         title: form.title,
         description: form.description,
-        startTime,
-        endTime: form.endDate ? fromBrazilianDateTimeLocal(form.endDate) : defaultEndDate.toISOString(),
+        startDate,
+        endDate: form.endDate ? fromBrazilianDateTimeLocal(form.endDate) : defaultEndDate.toISOString(),
         classIds
       };
 

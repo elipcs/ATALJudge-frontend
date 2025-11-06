@@ -26,6 +26,7 @@ export default function TestCasesModal({
   questionId,
   onSave,
 }: TestCasesModalProps) {
+  const [submissionType, setSubmissionType] = useState<"local" | "codeforces">("local");
   const [testCases, setTestCases] = useState<TestCase[]>([
     {
       id: "1",
@@ -35,6 +36,8 @@ export default function TestCasesModal({
       weight: 10,
     },
   ]);
+  const [codeforcesContestId, setCodeforcesContestId] = useState("");
+  const [codeforcesProblemIndex, setCodeforcesProblemIndex] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -257,7 +260,64 @@ export default function TestCasesModal({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold text-slate-900">Gerenciar Casos de Teste</h2>
+          <h2 className="text-2xl font-bold text-slate-900">Gerenciar Submissão</h2>
+        </div>
+
+        {/* Seletor de tipo de submissão */}
+        <div className="mb-8">
+          {/* Botão: Submissão Local */}
+          <button
+            type="button"
+            onClick={() => setSubmissionType('local')}
+            className={`w-full text-left border-2 rounded-xl p-4 cursor-pointer transition-all mb-3 ${
+              submissionType === 'local'
+                ? 'border-blue-500 bg-blue-50'
+                : 'border-slate-200 bg-white hover:border-slate-300'
+            }`}
+          >
+            <div className="flex items-start gap-3">
+              <div className={`mt-1 w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                submissionType === 'local'
+                  ? 'border-blue-500 bg-blue-500'
+                  : 'border-slate-300'
+              }`}>
+                {submissionType === 'local' && (
+                  <div className="w-2 h-2 rounded-full bg-white"></div>
+                )}
+              </div>
+              <div className="flex-1">
+                <div className="font-semibold text-slate-900">Submissão Local</div>
+                <div className="text-sm text-slate-600 mt-1">Configure casos de teste diretamente nesta plataforma</div>
+              </div>
+            </div>
+          </button>
+
+          {/* Botão: Codeforces */}
+          <button
+            type="button"
+            onClick={() => setSubmissionType('codeforces')}
+            className={`w-full text-left border-2 rounded-xl p-4 cursor-pointer transition-all ${
+              submissionType === 'codeforces'
+                ? 'border-blue-500 bg-blue-50'
+                : 'border-slate-200 bg-white hover:border-slate-300'
+            }`}
+          >
+            <div className="flex items-start gap-3">
+              <div className={`mt-1 w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                submissionType === 'codeforces'
+                  ? 'border-blue-500 bg-blue-500'
+                  : 'border-slate-300'
+              }`}>
+                {submissionType === 'codeforces' && (
+                  <div className="w-2 h-2 rounded-full bg-white"></div>
+                )}
+              </div>
+              <div className="flex-1">
+                <div className="font-semibold text-slate-900">Codeforces</div>
+                <div className="text-sm text-slate-600 mt-1">Integre com um problema existente do Codeforces</div>
+              </div>
+            </div>
+          </button>
         </div>
 
         {}
@@ -267,7 +327,6 @@ export default function TestCasesModal({
           </div>
         )}
 
-        {}
         {saveSuccess && (
           <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl">
             <div className="flex items-center gap-2">
@@ -281,126 +340,203 @@ export default function TestCasesModal({
 
         {!isLoading && (
           <form onSubmit={handleSubmit} className="space-y-6">
-            {}
-            <div>
-              <div className="flex items-center justify-between mb-4">
+            {/* Seção: Submissão Local */}
+            {submissionType === 'local' && (
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700">Casos de Teste</label>
+                    <p className="text-xs text-slate-500 mt-1">
+                      Configure os casos de teste que serão usados para avaliar as submissões
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={addTestCase}
+                    disabled={isSaving}
+                    className="px-3 py-1 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    + Adicionar Caso
+                  </button>
+                </div>
+                
+                <div className="space-y-4">
+                  {testCases.map((testCase, index) => (
+                    <div key={testCase.id} className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-sm font-semibold text-slate-700">Caso de Teste {index + 1}</span>
+                        {testCases.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removeTestCase(testCase.id, `Caso de Teste ${index + 1}`)}
+                            className="text-red-600 hover:text-red-700 text-sm font-medium"
+                          >
+                            Remover
+                          </button>
+                        )}
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                        <div>
+                          <label className="block text-xs font-medium text-slate-600 mb-1">Entrada</label>
+                          <textarea
+                            value={testCase.input}
+                            onChange={(e) => updateTestCase(testCase.id, "input", e.target.value)}
+                            className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 bg-white text-slate-900 placeholder:text-slate-500 h-20 text-sm font-mono"
+                            placeholder="Digite a entrada do caso de teste..."
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-slate-600 mb-1">Saída Esperada</label>
+                          <textarea
+                            value={testCase.expectedOutput}
+                            onChange={(e) => updateTestCase(testCase.id, "expectedOutput", e.target.value)}
+                            className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 bg-white text-slate-900 placeholder:text-slate-500 h-20 text-sm font-mono"
+                            placeholder="Digite a saída esperada..."
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            id={`public-${testCase.id}`}
+                            checked={testCase.isSample}
+                            onChange={(e) => updateTestCase(testCase.id, "isSample", e.target.checked)}
+                            className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                          />
+                          <label
+                            htmlFor={`public-${testCase.id}`}
+                            className="text-xs font-medium text-slate-700 cursor-pointer"
+                          >
+                            Visível para os alunos (caso público)
+                          </label>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-slate-600 mb-1">Pontuação</label>
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={testCase.weight}
+                            onChange={(e) => updateTestCase(testCase.id, "weight", parseInt(e.target.value) || 0)}
+                            className="w-full h-10 px-3 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 bg-white text-slate-900"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
+                  <div className="flex items-start gap-3">
+                    <svg className="w-5 h-5 text-blue-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div className="flex-1">
+                      <p className="text-sm text-blue-800 font-semibold mb-1">
+                        Pontuação Total: {calculateTotalPoints()} pontos
+                      </p>
+                      <p className="text-xs text-blue-700">
+                        Casos públicos são visíveis aos alunos e ajudam no entendimento do problema. 
+                        Casos privados são usados apenas na avaliação final.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {error && (
+                  <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-xl">
+                    <div className="flex items-start gap-2">
+                      <svg className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <p className="text-sm text-red-800">{error}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+          {/* Seção: Submissão Codeforces */}
+          {submissionType === 'codeforces' && (
+            <div className="space-y-6">
+              <div className="bg-blue-50 rounded-xl p-4 border border-blue-200 mb-6">
+                <div className="flex items-start gap-3">
+                  <svg className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div>
+                    <p className="text-sm text-blue-800 font-semibold mb-1">Integração com Codeforces</p>
+                    <p className="text-xs text-blue-700">
+                      Configure esta questão para usar casos de teste do Codeforces.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700">Casos de Teste</label>
-                  <p className="text-xs text-slate-500 mt-1">
-                    Configure os casos de teste que serão usados para avaliar as submissões
-                  </p>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    ID do Contest
+                  </label>
+                  <input
+                    type="text"
+                    value={codeforcesContestId}
+                    onChange={(e) => setCodeforcesContestId(e.target.value)}
+                    placeholder="Ex: 1234"
+                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 bg-white text-slate-900 placeholder:text-slate-500"
+                  />
+                  <p className="text-xs text-slate-500 mt-1">Identificador único do contest no Codeforces</p>
                 </div>
-                <button
-                  type="button"
-                  onClick={addTestCase}
-                  disabled={isSaving}
-                  className="px-3 py-1 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  + Adicionar Caso
-              </button>
-            </div>
-            
-            <div className="space-y-4">
-              {testCases.map((testCase, index) => (
-                <div key={testCase.id} className="bg-slate-50 rounded-xl p-4 border border-slate-200">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-sm font-semibold text-slate-700">Caso de Teste {index + 1}</span>
-                    {testCases.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => removeTestCase(testCase.id, `Caso de Teste ${index + 1}`)}
-                        className="text-red-600 hover:text-red-700 text-sm font-medium"
-                      >
-                        Remover
-                      </button>
-                    )}
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1">Entrada</label>
-                      <textarea
-                        value={testCase.input}
-                        onChange={(e) => updateTestCase(testCase.id, "input", e.target.value)}
-                        className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 bg-white text-slate-900 placeholder:text-slate-500 h-20 text-sm font-mono"
-                        placeholder="Digite a entrada do caso de teste..."
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1">Saída Esperada</label>
-                      <textarea
-                        value={testCase.expectedOutput}
-                        onChange={(e) => updateTestCase(testCase.id, "expectedOutput", e.target.value)}
-                        className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 bg-white text-slate-900 placeholder:text-slate-500 h-20 text-sm font-mono"
-                        placeholder="Digite a saída esperada..."
-                      />
-                    </div>
-                  </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        id={`public-${testCase.id}`}
-                        checked={testCase.isSample}
-                        onChange={(e) => updateTestCase(testCase.id, "isSample", e.target.checked)}
-                        className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
-                      />
-                      <label
-                        htmlFor={`public-${testCase.id}`}
-                        className="text-xs font-medium text-slate-700 cursor-pointer"
-                      >
-                        Visível para os alunos (caso público)
-                      </label>
-                    </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    Índice do Problema
+                  </label>
+                  <input
+                    type="text"
+                    value={codeforcesProblemIndex}
+                    onChange={(e) => setCodeforcesProblemIndex(e.target.value)}
+                    placeholder="Ex: A, B, C..."
+                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 bg-white text-slate-900 placeholder:text-slate-500"
+                  />
+                  <p className="text-xs text-slate-500 mt-1">Letra do problema (A, B, C, etc)</p>
+                </div>
+              </div>
+
+              {(codeforcesContestId || codeforcesProblemIndex) && (
+                <div className="bg-green-50 rounded-xl p-4 border border-green-200">
+                  <div className="flex items-start gap-3">
+                    <svg className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
                     <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1">Pontuação</label>
-                      <input
-                        type="number"
-                        min="0"
-                        max="100"
-                        value={testCase.weight}
-                        onChange={(e) => updateTestCase(testCase.id, "weight", parseInt(e.target.value) || 0)}
-                        className="w-full h-10 px-3 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 bg-white text-slate-900"
-                      />
+                      <p className="text-sm text-green-800 font-semibold">
+                        Link: https://codeforces.com/contest/{codeforcesContestId}/problem/{codeforcesProblemIndex}
+                      </p>
+                      <p className="text-xs text-green-700 mt-1">
+                        Quando configurado, os casos de teste serão importados do Codeforces
+                      </p>
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
+              )}
 
-          {}
-          <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
-            <div className="flex items-start gap-3">
-              <svg className="w-5 h-5 text-blue-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <div className="flex-1">
-                <p className="text-sm text-blue-800 font-semibold mb-1">
-                  Pontuação Total: {calculateTotalPoints()} pontos
-                </p>
-                <p className="text-xs text-blue-700">
-                  Casos públicos são visíveis aos alunos e ajudam no entendimento do problema. 
-                  Casos privados são usados apenas na avaliação final.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {}
-          {error && (
-            <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-xl">
-              <div className="flex items-start gap-2">
-                <svg className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <p className="text-sm text-red-800">{error}</p>
-              </div>
+              {error && (
+                <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-xl">
+                  <div className="flex items-start gap-2">
+                    <svg className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p className="text-sm text-red-800">{error}</p>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
-          {}
           <div className="flex gap-3 mt-8 pt-6 border-t border-slate-200">
             <button 
               type="button" 

@@ -56,7 +56,7 @@ export const homeApi = {
             professorName: userClass.professor?.name || ''
           },
           availableLists,
-          classParticipants: userClass.students || []
+          classParticipants: (userClass.students || []).sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))
         };
       } catch (error) {
         logger.error('Erro ao buscar dados do estudante', { error });
@@ -98,7 +98,7 @@ export const homeApi = {
           submissions = data.submissions || data || [];
         }
 
-        const allStudents = classes.flatMap(cls => cls.students || []);
+        const allStudents = classes.flatMap(cls => cls.students || []).sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
 
         return {
           classes,

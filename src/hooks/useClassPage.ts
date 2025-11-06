@@ -36,7 +36,8 @@ export function useClassPage() {
     if (userRole === 'student' && selectedClassId && !studentsLoading && classes.length > 0) {
       const classData = classes.find(cls => cls.id === selectedClassId);
       if (classData) {
-        const studentsToUse = students.length > 0 ? students : (classData.students || []);
+        // Usar sempre os students de classData pois já vêm com dados completos
+        const studentsToUse = (classData.students || []).length > 0 ? (classData.students || []) : students;
         const id = setTimeout(() => {
           setClassDetails({
             cls: classData,
@@ -53,7 +54,8 @@ export function useClassPage() {
     if ((userRole === 'professor' || userRole === 'assistant') && selectedClassId && !studentsLoading && classes.length > 0) {
       const classData = classes.find(cls => cls.id === selectedClassId);
       if (classData) {
-        const studentsToUse = students.length > 0 ? students : (classData.students || []);
+        // Usar sempre os students de classData pois já vêm com dados completos
+        const studentsToUse = (classData.students || []).length > 0 ? (classData.students || []) : students;
         const id = setTimeout(() => {
           setClassDetails({
             cls: classData,

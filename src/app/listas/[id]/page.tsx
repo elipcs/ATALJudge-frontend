@@ -34,7 +34,8 @@ export default function ListPage() {
     formatDateTime,
     isListStarted,
     isListEnded,
-    hasQuestions
+    hasQuestions,
+    reloadList
   } = useListPage();
 
   const {
@@ -53,22 +54,18 @@ export default function ListPage() {
     try {
       logger.debug('Configuração recebida do modal', { config });
       
-      const backendConfig: any = {
-        title: list!.title,
-        description: list!.description,
-        startDate: list!.startDate,
-        endDate: list!.endDate,
-        classIds: list!.classIds,
+      // Usar a rota específica de pontuação (PATCH /lists/:id/scoring)
+      const scoringData: any = {
         scoringMode: config.scoringMode,
         maxScore: config.maxScore,
       };
 
       if (config.scoringMode === 'simple') {
-        backendConfig.minQuestionsForMaxScore = config.minQuestionsForMaxScore;
+        scoringData.minQuestionsForMaxScore = config.minQuestionsForMaxScore;
       }
 
       if (config.scoringMode === 'groups' && config.questionGroups) {
-          backendConfig.questionGroups = config.questionGroups.map((group: any) => ({
+        scoringData.questionGroups = config.questionGroups.map((group: any) => ({
           id: group.id,
           name: group.name,
           questionIds: group.questionIds,
@@ -76,13 +73,20 @@ export default function ListPage() {
         }));
       }
 
-      logger.debug('Dados convertidos para backend', { backendConfig });
+      logger.debug('Dados de pontuação para backend', { scoringData });
       
-      await listsApi.update(id, backendConfig);
+      await listsApi.updateScoring(id, scoringData);
       
       logger.info('Configuração salva com sucesso');
+      toast({
+        title: "Sucesso",
+        description: "Configuração de pontuação salva com sucesso.",
+      });
       setShowScoreConfigModal(false);
-      window.location.reload();
+      // Aguarda um pouco antes de recarregar para garantir que backend processou
+      setTimeout(() => {
+        reloadList();
+      }, 500);
     } catch (error) {
       logger.error('Erro ao salvar configuração de pontuação', { error });
       toast({

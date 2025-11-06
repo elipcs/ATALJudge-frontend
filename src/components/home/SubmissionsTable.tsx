@@ -1,30 +1,72 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 
 import { Button } from "../ui/button";
 import { Submission } from "@/types";
 import { normalizeStatus, getSubmissionStatusColor } from "../../utils/statusUtils";
+import { listsApi } from "@/services/lists";
+import SubmissionStatusModal from "../submissions/SubmissionStatusModal";
 
 interface SubmissionsTableProps {
   submissions: Submission[];
   showActions?: boolean;
 }
 
+function QuestionLink({ listId, questionId, questionTitle }: { listId: string; questionId: string; questionTitle: string }) {
+  const [questionIndex, setQuestionIndex] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchListAndFindIndex = async () => {
+      try {
+        const list = await listsApi.getById(listId);
+        if (list) {
+          const questions = list.questions || [];
+          const index = questions.findIndex((q: any) => q.id === questionId);
+          setQuestionIndex(index >= 0 ? index : 0);
+        }
+      } catch (error) {
+        console.error('Erro ao buscar lista:', error);
+        setQuestionIndex(0);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchListAndFindIndex();
+  }, [listId, questionId]);
+
+  if (loading) {
+    return <span className="text-blue-600">{questionTitle}</span>;
+  }
+
+  const href = questionIndex !== null ? `/listas/${listId}/questoes?q=${questionIndex}` : `/listas/${listId}`;
+
+  return (
+    <Link href={href} className="text-blue-600 hover:text-blue-800 hover:underline font-medium">
+      {questionTitle}
+    </Link>
+  );
+}
+
 export default function SubmissionsTable({ submissions, showActions = false }: SubmissionsTableProps) {
-  const [selectedSubmission, setSelectedSubmission] = useState<SubmissionsTableProps["submissions"][number] | null>(null);
+  const [selectedSubmissionId, setSelectedSubmissionId] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [selectedSubmissionData, setSelectedSubmissionData] = useState<any>(null);
 
   const safeSubmissions = Array.isArray(submissions) ? submissions : [];
 
-  const openModal = (submission: SubmissionsTableProps["submissions"][number]) => {
-    setSelectedSubmission(submission);
+  const openModal = (submission: any) => {
+    setSelectedSubmissionId(submission.id);
+    setSelectedSubmissionData(submission);
     setShowModal(true);
   };
 
   const closeModal = () => {
-    setSelectedSubmission(null);
+    setSelectedSubmissionId(null);
+    setSelectedSubmissionData(null);
     setShowModal(false);
   };
 
@@ -56,17 +98,21 @@ export default function SubmissionsTable({ submissions, showActions = false }: S
             </tr>
           </thead>
           <tbody>
-            {safeSubmissions.slice(0, 5).map((submission, index) => {
-              const studentName = submission.student?.name || 'Aluno';
-              const listTitle = submission.questionList?.name || 'Lista desconhecida';
-              const questionTitle = submission.question?.name || 'Questão desconhecida';
-              const listId = submission.questionList?.id;
-              const questionId = submission.question?.id;
+            {safeSubmissions.slice(0, 5).map((submission: any, index) => {
+              // O backend retorna campos expandidos diretamente
+              const studentName = submission.userName || submission.student?.name || 'Aluno';
+              const listTitle = submission.listName || submission.listTitle || submission.questionList?.name || 'Lista desconhecida';
+              const questionTitle = submission.questionName || submission.question?.name || 'Questão desconhecida';
+              const listId = submission.listId || submission.questionList?.id;
+              const questionId = submission.questionId || submission.question?.id;
               
               return (
                 <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
                   <td className="py-3 px-4">
                     <div className="font-medium text-gray-900">{studentName}</div>
+                    {(submission as any).studentRegistration && (
+                      <div className="text-xs text-gray-500">Mat: {(submission as any).studentRegistration}</div>
+                    )}
                   </td>
                   <td className="py-3 px-4 text-gray-900">
                     {listId ? (
@@ -77,14 +123,12 @@ export default function SubmissionsTable({ submissions, showActions = false }: S
                   </td>
                   <td className="py-3 px-4 text-gray-900">
                     {listId && questionId ? (
-                      <Link href={`/listas/${listId}/questoes/${questionId}`} className="text-blue-600 hover:text-blue-800 hover:underline font-medium">
-                        {questionTitle}
-                      </Link>
+                      <QuestionLink listId={listId} questionId={questionId} questionTitle={questionTitle} />
                     ) : questionTitle}
                   </td>
                   <td className="py-3 px-4">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getSubmissionStatusColor(submission.status)}`}>
-                      {normalizeStatus(submission.status)}
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getSubmissionStatusColor((submission as any).verdict || submission.status)}`}>
+                      {(submission as any).verdict || normalizeStatus(submission.status)}
                     </span>
                   </td>
                   {showActions && (
@@ -106,51 +150,17 @@ export default function SubmissionsTable({ submissions, showActions = false }: S
         </div>
       )}
       
-      {}
-      {showModal && selectedSubmission && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black opacity-40" onClick={closeModal}></div>
-          <div className="relative bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-96 overflow-y-auto">
-            <h3 className="text-lg font-semibold mb-4">Detalhes da Submissão</h3>
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div>
-                <div className="text-gray-600">Aluno</div>
-                <div className="font-medium">{selectedSubmission.student?.name || 'Aluno'}</div>
-              </div>
-              <div>
-                <div className="text-gray-600">Status</div>
-                <div className="font-medium">{selectedSubmission.status || selectedSubmission.verdict || '-'}</div>
-              </div>
-              <div>
-                <div className="text-gray-600">Veredito</div>
-                <div className="font-medium">{selectedSubmission.verdict || '-'}</div>
-              </div>
-              <div>
-                <div className="text-gray-600">Pontuação</div>
-                <div className="font-medium">{selectedSubmission.score ?? '-'}</div>
-              </div>
-              <div>
-                <div className="text-gray-600">Linguagem</div>
-                <div className="font-medium">{selectedSubmission.language || '-'}</div>
-              </div>
-              <div>
-                <div className="text-gray-600">Enviado em</div>
-                <div className="font-medium">{new Date(selectedSubmission.submittedAt).toLocaleString('pt-BR')}</div>
-              </div>
-            </div>
-
-            <div>
-              <div className="text-gray-600 mb-2">Código</div>
-              <pre className="bg-gray-100 rounded p-3 text-xs overflow-x-auto max-h-64">{selectedSubmission.code}</pre>
-            </div>
-
-            <div className="mt-4 text-right">
-              <Button onClick={closeModal} variant="outline">
-                Fechar
-              </Button>
-            </div>
-          </div>
-        </div>
+      {selectedSubmissionId && selectedSubmissionData && (
+        <SubmissionStatusModal
+          isOpen={showModal}
+          onClose={closeModal}
+          submissionId={selectedSubmissionId}
+          initialStatus={selectedSubmissionData.status}
+          initialLanguage={selectedSubmissionData.language}
+          code={selectedSubmissionData.code}
+          questionName={selectedSubmissionData.questionName || selectedSubmissionData.question?.name}
+          listName={selectedSubmissionData.listName || selectedSubmissionData.listTitle || selectedSubmissionData.questionList?.name}
+        />
       )}
     </div>
   );

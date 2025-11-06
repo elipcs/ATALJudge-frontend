@@ -30,9 +30,23 @@ function calculateListStatus(startDate?: string, endDate?: string): 'scheduled' 
 export interface CreateListRequest {
   title: string;
   description?: string;
-  startTime?: string;
-  endTime?: string;
+  startDate?: string;
+  endDate?: string;
   classIds?: string[];
+  isRestricted?: boolean;
+  // Opcionalmente incluir dados de pontuação na criação
+  scoringMode?: 'simple' | 'groups';
+  maxScore?: number;
+  minQuestionsForMaxScore?: number;
+  questionGroups?: Array<{
+    id: string;
+    name: string;
+    questionIds: string[];
+    percentage?: number;
+  }>;
+}
+
+export interface UpdateListScoringRequest {
   scoringMode?: 'simple' | 'groups';
   maxScore?: number;
   minQuestionsForMaxScore?: number;
@@ -82,7 +96,8 @@ export const listsApi = {
           createdAt: String(list.createdAt),
           updatedAt: String(list.updatedAt),
           classIds: list.classIds || [],
-          questions: [],
+          questions: (list.questions as any) || [],
+          questionCount: list.questionCount || (list.questions as any)?.length || 0,
           isRestricted: list.isRestricted,
           scoringMode: list.scoringMode,
           maxScore: list.maxScore,
@@ -152,6 +167,16 @@ export const listsApi = {
     }
   },
 
+  async updateScoring(id: string, scoringData: UpdateListScoringRequest): Promise<QuestionList> {
+    try {
+      const { data } = await API.lists.updateScoring(id, scoringData);
+      return await this.getById(data.id) as QuestionList;
+    } catch (error) {
+      logger.error('Erro ao atualizar pontuação da lista', { error });
+      throw error;
+    }
+  },
+
   async delete(id: string): Promise<boolean> {
     try {
       await API.lists.delete(id);
@@ -168,25 +193,36 @@ export const listsApi = {
       if (!originalList) throw new Error('Lista não encontrada');
 
       const title = newTitle || `${originalList.title} (Cópia)`;
+      
+      // 1. Criar lista com dados básicos
       const newListData: CreateListRequest = {
         title,
         description: originalList.description,
-        startTime: originalList.startDate,
-        endTime: originalList.endDate,
+        startDate: originalList.startDate,
+        endDate: originalList.endDate,
         classIds: originalList.classIds,
-        scoringMode: originalList.scoringMode,
-        maxScore: originalList.maxScore,
-        minQuestionsForMaxScore: originalList.minQuestionsForMaxScore,
-        questionGroups: originalList.questionGroups?.map(group => ({
-          id: group.id,
-          name: group.name,
-          questionIds: group.questionIds || [],
-          percentage: group.percentage
-        })),
+        isRestricted: originalList.isRestricted
       };
 
       const newList = await this.create(newListData);
 
+      // 2. Atualizar configuração de pontuação separadamente
+      if (originalList.scoringMode || originalList.maxScore || originalList.questionGroups) {
+        const scoringData: UpdateListScoringRequest = {
+          scoringMode: originalList.scoringMode,
+          maxScore: originalList.maxScore,
+          minQuestionsForMaxScore: originalList.minQuestionsForMaxScore,
+          questionGroups: originalList.questionGroups?.map(group => ({
+            id: group.id,
+            name: group.name,
+            questionIds: group.questionIds || [],
+            percentage: group.percentage
+          })),
+        };
+        await this.updateScoring(newList.id, scoringData);
+      }
+
+      // 3. Adicionar questões
       if (originalList.questions && originalList.questions.length > 0) {
         for (const question of originalList.questions) {
           if (question && (question as any).id) {
@@ -195,7 +231,7 @@ export const listsApi = {
         }
       }
 
-      return newList;
+      return await this.getById(newList.id) as QuestionList;
     } catch (error) {
       logger.error('Erro ao duplicar lista', { error });
       throw error;

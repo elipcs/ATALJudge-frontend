@@ -14,6 +14,7 @@ export interface ClassResponseDTO {
   id: string;
   name: string;
   professorId: string;
+  professorName?: string;
   studentIds?: string[];
   professor?: { id: string; name: string; email: string; role: string };
   students?: Array<{ id: string; name: string; email: string; role: string; studentRegistration?: string; createdAt: string }>;
@@ -75,6 +76,7 @@ export interface QuestionListResponseDTO {
   isRestricted: boolean;
   classIds?: string[];
   questions?: unknown[];
+  questionCount?: number;
   createdAt: string | Date;
   updatedAt: string | Date;
   calculatedStatus?: 'next' | 'open' | 'closed';
@@ -97,6 +99,7 @@ export interface SubmissionResponseDTO {
   id: string;
   userId: string;
   questionId: string;
+  listId?: string;
   code: string;
   language: ProgrammingLanguage;
   status: SubmissionStatus;
@@ -109,6 +112,12 @@ export interface SubmissionResponseDTO {
   errorMessage?: string;
   createdAt: string | Date;
   updatedAt: string | Date;
+  // Campos expandidos opcionais
+  userName?: string;
+  userEmail?: string;
+  questionName?: string;
+  listName?: string;
+  listTitle?: string; // Alias para listName (mantido para compatibilidade)
 }
 
 export interface TestCaseResultDTO {
@@ -133,6 +142,18 @@ export interface HiddenTestsSummaryDTO {
 export interface SubmissionDetailDTO extends SubmissionResponseDTO {
   sampleTestResults: TestCaseResultDTO[];
   hiddenTestsSummary: HiddenTestsSummaryDTO;
+}
+
+export interface PaginationMetadata {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface PaginatedSubmissionsResponse {
+  submissions: SubmissionResponseDTO[];
+  pagination: PaginationMetadata;
 }
 
 export interface InviteResponseDTO {

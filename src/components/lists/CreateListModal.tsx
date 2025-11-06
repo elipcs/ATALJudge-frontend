@@ -159,8 +159,8 @@ export default function CreateListModal({ isOpen, onClose, onSubmit, classes }: 
       const listData: CreateListRequest = {
         title: form.title,
         description: form.description,
-        startTime: form.startDate ? fromBrazilianDateTimeLocal(form.startDate) : now.toISOString(),
-        endTime: form.endDate ? fromBrazilianDateTimeLocal(form.endDate) : defaultEndDate.toISOString(),
+        startDate: form.startDate ? fromBrazilianDateTimeLocal(form.startDate) : now.toISOString(),
+        endDate: form.endDate ? fromBrazilianDateTimeLocal(form.endDate) : defaultEndDate.toISOString(),
         classIds: form.classIds.length > 0 ? form.classIds : [classes[0]?.id || '']
       };
 

@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Button } from "../../components/ui/button";
 import { Card } from "../../components/ui/card";
 import { Input } from "../../components/ui/input";
+import { Dropdown } from "../../components/ui/dropdown";
 import { useUserRoleContext } from "../../contexts/UserRoleContext";
 import { submissionsApi, SubmissionFilters } from "../../services/submissions";
 import { listsApi, isCurrentIpAllowedForList } from "../../services/lists";
@@ -12,6 +13,7 @@ import { Submission } from "../../types";
 import { SubmissionResponseDTO } from "@/types/dtos";
 import PageHeader from "../../components/PageHeader";
 import PageLoading from "../../components/PageLoading";
+import SubmissionStatusModal from "../../components/submissions/SubmissionStatusModal";
 import { getSubmissionStatusColor, normalizeStatus } from "../../utils/statusUtils";
 import { SUBMISSION_STATUS_OPTIONS } from "../../constants";
 import { logger } from '@/utils/logger';
@@ -25,7 +27,10 @@ interface SubmissionsPageState {
   currentPage: number;
   itemsPerPage: number;
   totalPages: number;
+  totalItems: number;
   restrictedListIds: Set<string>;
+  selectedSubmissionId: string | null;
+  isModalOpen: boolean;
 }
 
 export default function SubmissoesPage() {
@@ -38,9 +43,12 @@ export default function SubmissoesPage() {
     searchTerm: "",
     selectedStatus: "all",
     currentPage: 1,
-    itemsPerPage: 10,
+    itemsPerPage: 20,
     totalPages: 1,
+    totalItems: 0,
     restrictedListIds: new Set(),
+    selectedSubmissionId: null,
+    isModalOpen: false,
   });
 
   const loadSubmissions = useCallback(async () => {
@@ -48,14 +56,25 @@ export default function SubmissoesPage() {
     
     try {
       const filters: SubmissionFilters = {
-        limit: 100
+        page: state.currentPage,
+        limit: state.itemsPerPage
       };
       
-      const submissions = await submissionsApi.getSubmissions(filters);
+      // Adiciona filtros de verdict se não for "all"
+      if (state.selectedStatus !== "all") {
+        filters.verdict = state.selectedStatus as any;
+      }
+      
+      // O backend automaticamente filtra as submissões baseado no papel do usuário:
+      // - Estudantes: veem apenas suas próprias submissões
+      // - Professores/Monitores: veem todas as submissões
+      // (o filtro é feito pelo token JWT no backend)
+      
+      const response = await submissionsApi.getSubmissions(filters);
 
       const restrictedListIds = new Set<string>();
 
-      const accessibleSubmissions = submissions;
+      const accessibleSubmissions = response.submissions;
       
       setState(prev => ({
         ...prev,
@@ -63,7 +82,8 @@ export default function SubmissoesPage() {
         filteredSubmissions: accessibleSubmissions,
         loading: false,
         restrictedListIds,
-        totalPages: Math.ceil(accessibleSubmissions.length / prev.itemsPerPage)
+        totalPages: response.pagination.totalPages,
+        totalItems: response.pagination.total
       }));
     } catch (error) {
       logger.error('Erro ao carregar submissões', { error });
@@ -71,58 +91,48 @@ export default function SubmissoesPage() {
         ...prev, 
         loading: false,
         submissions: [],
-        filteredSubmissions: []
+        filteredSubmissions: [],
+        totalPages: 1,
+        totalItems: 0
       }));
     }
-  }, [userRole]);
+  }, [state.currentPage, state.itemsPerPage, state.selectedStatus]);
 
   useEffect(() => {
     const id = setTimeout(() => { loadSubmissions(); }, 0);
     return () => clearTimeout(id);
   }, [loadSubmissions]);
 
-  const applyFilters = useCallback(() => {
-    let filtered = state.submissions;
-
-    if (state.searchTerm.trim()) {
-      const searchLower = state.searchTerm.toLowerCase();
-      filtered = filtered.filter(submission => 
-        submission.questionId.toLowerCase().includes(searchLower) ||
-        submission.userId.toLowerCase().includes(searchLower) ||
-        submission.language.toLowerCase().includes(searchLower)
-      );
-    }
-
-    if (state.selectedStatus !== "all") {
-      filtered = filtered.filter(submission => 
-        normalizeStatus(submission.status) === state.selectedStatus
-      );
-    }
-
-    setState(prev => ({
-      ...prev,
-      filteredSubmissions: filtered,
-      totalPages: Math.ceil(filtered.length / prev.itemsPerPage),
-      currentPage: 1
-    }));
-  }, [state.submissions, state.searchTerm, state.selectedStatus]);
+  // Filtro local de busca por texto (não enviado ao backend)
+  const displayedSubmissions = state.searchTerm.trim()
+    ? state.submissions.filter(submission => {
+        const searchLower = state.searchTerm.toLowerCase();
+        return (
+          submission.questionId.toLowerCase().includes(searchLower) ||
+          submission.questionName?.toLowerCase().includes(searchLower) ||
+          submission.userId.toLowerCase().includes(searchLower) ||
+          submission.userName?.toLowerCase().includes(searchLower) ||
+          submission.listName?.toLowerCase().includes(searchLower) ||
+          submission.listTitle?.toLowerCase().includes(searchLower) ||
+          submission.language.toLowerCase().includes(searchLower)
+        );
+      })
+    : state.submissions;
 
   useEffect(() => {
-    const id = setTimeout(() => { applyFilters(); }, 0);
-    return () => clearTimeout(id);
-  }, [applyFilters]);
-
-  const paginatedSubmissions = state.filteredSubmissions.slice(
-    (state.currentPage - 1) * state.itemsPerPage,
-    state.currentPage * state.itemsPerPage
-  );
+    // Atualiza os submissions filtrados quando mudar o termo de busca
+    setState(prev => ({
+      ...prev,
+      filteredSubmissions: displayedSubmissions
+    }));
+  }, [state.searchTerm, state.submissions]);
 
   const handleSearchChange = (value: string) => {
     setState(prev => ({ ...prev, searchTerm: value }));
   };
 
   const handleStatusChange = (status: string) => {
-    setState(prev => ({ ...prev, selectedStatus: status }));
+    setState(prev => ({ ...prev, selectedStatus: status, currentPage: 1 }));
   };
 
   const handlePageChange = (page: number) => {
@@ -133,6 +143,22 @@ export default function SubmissoesPage() {
     loadSubmissions();
   };
 
+  const handleSubmissionClick = (submissionId: string) => {
+    setState(prev => ({ 
+      ...prev, 
+      selectedSubmissionId: submissionId,
+      isModalOpen: true 
+    }));
+  };
+
+  const handleCloseModal = () => {
+    setState(prev => ({ 
+      ...prev, 
+      selectedSubmissionId: null,
+      isModalOpen: false 
+    }));
+  };
+
   if (state.loading) {
     return <PageLoading message="Carregando submissões..." description="Buscando dados das submissões" />;
   }
@@ -140,8 +166,12 @@ export default function SubmissoesPage() {
   return (
     <div className="p-6 space-y-6">
       <PageHeader
-        title="Minhas Submissões"
-        description="Acompanhe suas submissões e resultados"
+        title={userRole === 'student' ? "Minhas Submissões" : "Submissões"}
+        description={
+          userRole === 'student' 
+            ? "Acompanhe suas submissões e resultados" 
+            : "Visualize e acompanhe todas as submissões dos estudantes"
+        }
       />
       
       {}
@@ -174,21 +204,32 @@ export default function SubmissoesPage() {
               onChange={(e) => handleSearchChange(e.target.value)}
               className="w-full"
             />
+            {state.searchTerm.trim() && (
+              <p className="text-xs text-gray-500 mt-1">
+                ℹ️ Buscando localmente nos resultados da página atual
+              </p>
+            )}
           </div>
           
           <div className="flex gap-2">
-            <select
+            <Dropdown
               value={state.selectedStatus}
-              onChange={(e) => handleStatusChange(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md text-sm"
-            >
-              <option value="all">Todos os Status</option>
-              {SUBMISSION_STATUS_OPTIONS.map(option => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+              onChange={handleStatusChange}
+              options={SUBMISSION_STATUS_OPTIONS}
+              placeholder="Selecione um status"
+            />
+            
+            <Dropdown
+              value={state.itemsPerPage.toString()}
+              onChange={(value) => setState(prev => ({ ...prev, itemsPerPage: Number(value), currentPage: 1 }))}
+              options={[
+                { value: "10", label: "10 por página" },
+                { value: "20", label: "20 por página" },
+                { value: "50", label: "50 por página" },
+                { value: "100", label: "100 por página" }
+              ]}
+              placeholder="Itens por página"
+            />
             
             <Button
               onClick={refreshSubmissions}
@@ -206,7 +247,7 @@ export default function SubmissoesPage() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold">
-              Submissões ({state.filteredSubmissions.length})
+              Submissões ({state.totalItems})
             </h2>
           </div>
 
@@ -221,7 +262,9 @@ export default function SubmissoesPage() {
               <p className="text-gray-500">
                 {state.searchTerm || state.selectedStatus !== "all" 
                   ? "Tente ajustar os filtros de busca" 
-                  : "Você ainda não fez nenhuma submissão"
+                  : userRole === 'student'
+                    ? "Você ainda não fez nenhuma submissão"
+                    : "Nenhum estudante fez submissões ainda"
                 }
               </p>
             </div>
@@ -244,21 +287,33 @@ export default function SubmissoesPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {paginatedSubmissions.map((submission) => (
-                      <tr key={submission.id} className="border-b border-gray-100 hover:bg-gray-50">
+                    {state.filteredSubmissions.map((submission) => (
+                      <tr 
+                        key={submission.id} 
+                        className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors"
+                        onClick={() => handleSubmissionClick(submission.id)}
+                      >
                         <td className="py-3 px-4">
                           <div className="font-medium text-gray-900">
-                            {submission.questionId.substring(0, 8)}...
+                            {submission.questionName || `ID: ${submission.questionId.substring(0, 8)}...`}
                           </div>
                         </td>
                         <td className="py-3 px-4">
                           <div className="text-gray-600">
-                            -
+                            {submission.listName || submission.listTitle ? (
+                              submission.listName || submission.listTitle
+                            ) : submission.listId ? (
+                              <span className="text-gray-400 text-xs">
+                                Lista sem nome
+                              </span>
+                            ) : (
+                              <span className="text-gray-400">-</span>
+                            )}
                           </div>
                         </td>
                         <td className="py-3 px-4">
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${getSubmissionStatusColor(submission.status)}`}>
-                            {SUBMISSION_STATUS_OPTIONS.find(opt => opt.value === normalizeStatus(submission.status))?.label || submission.status}
+                            {submission.verdict || SUBMISSION_STATUS_OPTIONS.find(opt => opt.value === normalizeStatus(submission.status))?.label || submission.status}
                           </span>
                         </td>
                         <td className="py-3 px-4">
@@ -279,7 +334,7 @@ export default function SubmissoesPage() {
                         {userRole !== 'student' && (
                           <td className="py-3 px-4">
                             <div className="text-gray-600">
-                              {submission.userId}
+                              {submission.userName || submission.userId}
                             </div>
                           </td>
                         )}
@@ -290,12 +345,32 @@ export default function SubmissoesPage() {
               </div>
 
               {}
-              {state.totalPages > 1 && (
-                <div className="flex items-center justify-between pt-4">
-                  <div className="text-sm text-gray-600">
-                    Página {state.currentPage} de {state.totalPages}
-                  </div>
+              <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+                <div className="text-sm text-gray-600">
+                  {state.searchTerm.trim() ? (
+                    <>
+                      Mostrando {state.filteredSubmissions.length} resultado(s) filtrado(s) de {state.totalItems} submissões
+                    </>
+                  ) : (
+                    <>
+                      Mostrando {((state.currentPage - 1) * state.itemsPerPage) + 1} a {Math.min(state.currentPage * state.itemsPerPage, state.totalItems)} de {state.totalItems} submissões
+                    </>
+                  )}
+                  {state.totalPages > 1 && (
+                    <> · Página {state.currentPage} de {state.totalPages}</>
+                  )}
+                </div>
+                {state.totalPages > 1 && (
                   <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePageChange(1)}
+                      disabled={state.currentPage === 1}
+                      className="px-3"
+                    >
+                      ««
+                    </Button>
                     <Button
                       variant="outline"
                       size="sm"
@@ -312,13 +387,53 @@ export default function SubmissoesPage() {
                     >
                       Próxima
                     </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePageChange(state.totalPages)}
+                      disabled={state.currentPage === state.totalPages}
+                      className="px-3"
+                    >
+                      »»
+                    </Button>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </>
           )}
         </div>
       </Card>
+
+      {/* Modal de Detalhes da Submissão */}
+      {state.selectedSubmissionId && (
+        <SubmissionStatusModal
+          isOpen={state.isModalOpen}
+          onClose={handleCloseModal}
+          submissionId={state.selectedSubmissionId}
+          initialStatus={
+            state.submissions.find(s => s.id === state.selectedSubmissionId)?.status || 'pending'
+          }
+          initialLanguage={
+            state.submissions.find(s => s.id === state.selectedSubmissionId)?.language || 'python'
+          }
+          initialVerdict={
+            state.submissions.find(s => s.id === state.selectedSubmissionId)?.verdict
+          }
+          questionName={
+            state.submissions.find(s => s.id === state.selectedSubmissionId)?.questionName || ''
+          }
+          userName={
+            state.submissions.find(s => s.id === state.selectedSubmissionId)?.userName || ''
+          }
+          listName={
+            state.submissions.find(s => s.id === state.selectedSubmissionId)?.listName || 
+            state.submissions.find(s => s.id === state.selectedSubmissionId)?.listTitle || ''
+          }
+          code={
+            state.submissions.find(s => s.id === state.selectedSubmissionId)?.code || ''
+          }
+        />
+      )}
     </div>
   );
 }

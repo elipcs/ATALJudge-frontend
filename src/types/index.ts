@@ -17,7 +17,13 @@ export interface Student {
   studentRegistration: string;
   role: string;
   classId: string;
-  grades: { questionListId: string; score: number }[];
+  grades: { 
+    id: string;
+    listId: string; 
+    score: string | number;
+    createdAt: string;
+    updatedAt: string;
+  }[];
   createdAt: string;
 }
 
@@ -104,6 +110,7 @@ export interface QuestionList {
   description?: string;
   classIds: string[];
   questions: Question[];
+  questionCount?: number;
   startDate?: string;
   endDate?: string;
   createdAt?: string;

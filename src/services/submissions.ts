@@ -1,6 +1,6 @@
 import { API } from '../config/api';
 import { logger } from '../utils/logger';
-import { SubmissionResponseDTO, SubmissionDetailDTO } from '@/types/dtos';
+import { SubmissionResponseDTO, SubmissionDetailDTO, PaginatedSubmissionsResponse } from '@/types/dtos';
 
 export type SubmissionStatus = 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED';
 
@@ -16,6 +16,35 @@ export interface Judge0Submission {
   createdAt: string;
   updatedAt: string;
   judge0BatchToken?: string;
+}
+
+export interface TestResult {
+  testCaseId: string;
+  verdict: string;
+  passed: boolean;
+  executionTimeMs?: number;
+  memoryUsedKb?: number;
+  actualOutput?: string;
+  errorMessage?: string | null;
+}
+
+export interface SubmissionDetailsResponse {
+  id: string;
+  userId: string;
+  questionId: string;
+  code: string;
+  language: string;
+  status: string;
+  score: number;
+  totalTests: number;
+  passedTests: number;
+  executionTimeMs?: number;
+  memoryUsedKb?: number;
+  verdict?: string;
+  errorMessage?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  testResults: TestResult[];
 }
 
 export interface SubmissionResult {
@@ -59,25 +88,35 @@ export interface SubmissionFilters {
   questionId?: string;
   listId?: string;
   userId?: string;
-  status?: 'pending' | 'accepted' | 'error' | 'timeout';
+  verdict?: 'pending' | 'accepted' | 'failed' | 'error' | 'timeout';
+  page?: number;
   limit?: number;
 }
 
 export const submissionsApi = {
-  async getSubmissions(filters?: SubmissionFilters): Promise<SubmissionResponseDTO[]> {
+  async getSubmissions(filters?: SubmissionFilters): Promise<PaginatedSubmissionsResponse> {
     try {
       const queryParams: Record<string, string> = {};
       if (filters?.questionId) queryParams.questionId = filters.questionId;
       if (filters?.listId) queryParams.listId = filters.listId;
       if (filters?.userId) queryParams.userId = filters.userId;
-      if (filters?.status) queryParams.status = filters.status;
+      if (filters?.verdict) queryParams.verdict = filters.verdict;
+      if (filters?.page) queryParams.page = String(filters.page);
       if (filters?.limit) queryParams.limit = String(filters.limit);
 
       const { data } = await API.submissions.list(queryParams);
-      return data.submissions || [];
+      return data;
     } catch (error) {
       logger.error('Erro ao buscar submissões', { error });
-      return [];
+      return {
+        submissions: [],
+        pagination: {
+          page: 1,
+          limit: 20,
+          total: 0,
+          totalPages: 0
+        }
+      };
     }
   },
 
@@ -87,6 +126,16 @@ export const submissionsApi = {
       return data || null;
     } catch (error) {
       logger.error('Erro ao buscar submissão', { error });
+      return null;
+    }
+  },
+
+  async getSubmissionResults(id: string): Promise<SubmissionDetailsResponse | null> {
+    try {
+      const { data } = await API.submissions.getResults(id);
+      return data || null;
+    } catch (error) {
+      logger.error('Erro ao buscar resultados da submissão', { error });
       return null;
     }
   },

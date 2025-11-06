@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { submissionsApi, SubmissionResultsResponse } from "@/services/submissions";
+import { submissionsApi, SubmissionDetailsResponse } from "@/services/submissions";
 import { logger } from "@/utils/logger";
 
 interface SubmissionStatusModalProps {
@@ -18,7 +18,11 @@ interface SubmissionStatusModalProps {
   submissionId: string;
   initialStatus?: string;
   initialLanguage?: string;
+  initialVerdict?: string;
   code?: string;
+  questionName?: string;
+  userName?: string;
+  listName?: string;
 }
 
 export default function SubmissionStatusModal({
@@ -27,24 +31,51 @@ export default function SubmissionStatusModal({
   submissionId,
   initialStatus = "pending",
   initialLanguage = "python",
+  initialVerdict,
   code = "",
+  questionName: initialQuestionName = "",
+  userName: initialUserName = "",
+  listName: initialListName = "",
 }: SubmissionStatusModalProps) {
   const [status, setStatus] = useState(initialStatus.toLowerCase());
   const [language, setLanguage] = useState(initialLanguage);
   const [createdAt, setCreatedAt] = useState<string>(new Date().toISOString());
   const [isPolling, setIsPolling] = useState(false);
-  const [results, setResults] = useState<SubmissionResultsResponse | null>(null);
+  const [results, setResults] = useState<SubmissionDetailsResponse | null>(null);
+  const [verdict, setVerdict] = useState<string | undefined>(initialVerdict);
+  const [questionName, setQuestionName] = useState<string>(initialQuestionName);
+  const [userName, setUserName] = useState<string>(initialUserName);
+  const [listName, setListName] = useState<string>(initialListName);
 
   useEffect(() => {
     if (!isOpen || !submissionId) return;
 
     const currentStatus = status.toLowerCase();
-    if (currentStatus !== "pending" && currentStatus !== "running") {
+    
+    // Se status for completed, não fazer polling
+    if (currentStatus === "completed" || currentStatus === "failed") {
+      // Buscar os resultados uma vez se estiver completed
+      if (currentStatus === "completed" && !results) {
+        submissionsApi.getSubmissionResults(submissionId)
+          .then(submissionResults => {
+            if (submissionResults) {
+              setResults(submissionResults);
+            } else {
+              logger.warn('Resultados da submissão incompletos', { submissionResults });
+            }
+          })
+          .catch(error => {
+            logger.error('Erro ao buscar resultados da submissão', { error });
+          });
+      }
       const id = setTimeout(() => setIsPolling(false), 0);
       return () => clearTimeout(id);
     }
-
-    setTimeout(() => setIsPolling(true), 0);
+    
+    // Se status for pending ou running, fazer polling
+    if (currentStatus === "pending" || currentStatus === "running") {
+      setTimeout(() => setIsPolling(true), 0);
+    }
 
     const pollInterval = setInterval(async () => {
       try {
@@ -55,14 +86,21 @@ export default function SubmissionStatusModal({
         setStatus(newStatus);
         setLanguage(submission.language);
         setCreatedAt(typeof submission.createdAt === 'string' ? submission.createdAt : submission.createdAt.toISOString());
+        setVerdict(submission.verdict);
+        setQuestionName(submission.questionName || "");
+        setUserName(submission.userName || "");
+        setListName(submission.listName || submission.listTitle || "");
 
         if (newStatus === "completed") {
           try {
-
-            logger.warn('Endpoint de resultados não disponível');
-            
+            const submissionResults = await submissionsApi.getSubmissionResults(submissionId);
+            if (submissionResults) {
+              setResults(submissionResults);
+            } else {
+              logger.warn('Resultados da submissão incompletos', { submissionResults });
+            }
           } catch (error) {
-            console.error("Erro ao buscar resultados:", error);
+            logger.error('Erro ao buscar resultados da submissão', { error });
           }
         }
 
@@ -77,7 +115,7 @@ export default function SubmissionStatusModal({
     }, 2000);
 
     return () => clearInterval(pollInterval);
-  }, [isOpen, submissionId, status]);
+  }, [isOpen, submissionId, status, results]);
 
   const handleClose = () => {
     setResults(null);
@@ -155,6 +193,32 @@ export default function SubmissionStatusModal({
         </DialogHeader>
 
         <div className="space-y-4 py-4">
+          {/* Informações principais da submissão */}
+          {(questionName || userName || listName) && (
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {questionName && (
+                  <div>
+                    <p className="text-xs font-semibold text-slate-600 mb-1">Questão:</p>
+                    <p className="text-sm text-slate-900 font-medium">{questionName}</p>
+                  </div>
+                )}
+                {userName && (
+                  <div>
+                    <p className="text-xs font-semibold text-slate-600 mb-1">Estudante:</p>
+                    <p className="text-sm text-slate-900 font-medium">{userName}</p>
+                  </div>
+                )}
+                {listName && (
+                  <div>
+                    <p className="text-xs font-semibold text-slate-600 mb-1">Lista:</p>
+                    <p className="text-sm text-slate-900 font-medium">{listName}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {}
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-slate-50 p-3 rounded-lg">
@@ -172,7 +236,9 @@ export default function SubmissionStatusModal({
               </div>
               <div className="flex items-center gap-2">
                 <span className={`inline-block w-2 h-2 rounded-full ${statusInfo.dotColor}`}></span>
-                <p className="text-sm text-slate-900 font-medium">{statusInfo.statusText}</p>
+                <p className="text-sm text-slate-900 font-medium">
+                  {status === "completed" && verdict ? verdict : statusInfo.statusText}
+                </p>
               </div>
             </div>
 
@@ -188,14 +254,14 @@ export default function SubmissionStatusModal({
               {}
               <div
                 className={`p-4 rounded-lg border-2 ${
-                  results.summary.passedCount === results.summary.totalCases
+                  results.passedTests === results.totalTests
                     ? "bg-green-50 border-green-300"
                     : "bg-yellow-50 border-yellow-300"
                 }`}
               >
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-lg font-bold text-slate-800">Resultado da Avaliação</h3>
-                  {results.summary.passedCount === results.summary.totalCases ? (
+                  {results.passedTests === results.totalTests ? (
                     <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
@@ -209,14 +275,14 @@ export default function SubmissionStatusModal({
                   <div>
                     <p className="text-sm text-slate-600">Casos de Teste</p>
                     <p className="text-2xl font-bold text-slate-900">
-                      {results.summary.passedCount}/{results.summary.totalCases}
+                      {results.passedTests}/{results.totalTests}
                     </p>
                     <p className="text-xs text-slate-500">casos passaram</p>
                   </div>
                   <div>
                     <p className="text-sm text-slate-600">Pontuação</p>
                     <p className="text-2xl font-bold text-slate-900">
-                      {results.summary.earnedPoints}/{results.summary.totalPoints}
+                      {results.score}/100
                     </p>
                     <p className="text-xs text-slate-500">pontos obtidos</p>
                   </div>
@@ -226,71 +292,75 @@ export default function SubmissionStatusModal({
               {}
               <div className="space-y-2">
                 <h4 className="text-sm font-semibold text-slate-700">Detalhes dos Casos de Teste:</h4>
-                <div className="max-h-64 overflow-y-auto space-y-2">
-                  {results.results.map((testResult, idx) => (
+                
+                {/* Resumo visual */}
+                <div className="flex gap-2 mb-3">
+                  <div className="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-lg">
+                    <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span className="text-sm font-semibold text-green-700">
+                      {results.passedTests} Passaram
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 px-3 py-2 bg-red-50 border border-red-200 rounded-lg">
+                    <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    <span className="text-sm font-semibold text-red-700">
+                      {results.totalTests - results.passedTests} Falharam
+                    </span>
+                  </div>
+                </div>
+
+                <div className="max-h-96 overflow-y-auto space-y-2">
+                  {/* Exibir todos os casos de teste */}
+                  {(results.testResults || []).map((result, index) => (
                     <div
-                      key={testResult.id}
+                      key={result.testCaseId || index}
                       className={`p-3 rounded-lg border ${
-                        testResult.passed ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"
+                        result.passed ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"
                       }`}
                     >
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-sm font-semibold">
-                          {testResult.isPublic ? "🔓" : "🔒"} Caso {idx + 1}
-                        {testResult.testCaseName && ` - ${testResult.testCaseName}`}
+                          Caso de Teste {index + 1}
                         </span>
                         <div className="flex items-center gap-2">
                           <span
                             className={`text-xs font-bold px-2 py-1 rounded ${
-                              testResult.passed ? "bg-green-200 text-green-800" : "bg-red-200 text-red-800"
+                              result.passed ? "bg-green-200 text-green-800" : "bg-red-200 text-red-800"
                             }`}
                           >
-                            {testResult.passed ? "✓ Passou" : "✗ Falhou"}
+                            {result.passed ? "✓ Passou" : "✗ Falhou"}
                           </span>
-                          <span className="text-xs text-slate-600 font-medium">{testResult.pointsAwarded} pts</span>
+                          <span className="text-xs text-slate-600 font-medium">{result.verdict}</span>
                         </div>
                       </div>
 
-                      {testResult.executionTimeMs !== undefined && (
-                        <div className="text-xs text-slate-600 mt-1 flex gap-3">
-                          <span>⏱️ {testResult.executionTimeMs}ms</span>
-                          {testResult.memoryKb && <span>💾 {Math.round(testResult.memoryKb / 1024)}MB</span>}
+                      <div className="text-xs text-slate-600 mt-1 flex gap-3">
+                        {result.executionTimeMs !== undefined && <span>Tempo: {result.executionTimeMs}ms</span>}
+                        {result.memoryUsedKb !== undefined && <span>Memória: {(result.memoryUsedKb / 1024).toFixed(2)}MB</span>}
+                      </div>
+
+                      {result.actualOutput && (
+                        <div className="mt-2">
+                          <p className="text-xs font-semibold text-slate-700 mb-1">Sua Saída:</p>
+                          <pre className={`text-xs p-2 rounded font-mono overflow-x-auto max-h-20 ${
+                            result.passed ? "bg-green-100" : "bg-red-100"
+                          }`}>
+                            {result.actualOutput}
+                          </pre>
                         </div>
                       )}
 
-                      {!testResult.passed && testResult.isPublic && (
-                        <div className="mt-2 space-y-1">
-                          {testResult.stderr && (
-                            <div>
-                              <p className="text-xs font-semibold text-red-700 mb-1">Erro:</p>
-                              <pre className="text-xs bg-red-100 p-2 rounded font-mono overflow-x-auto max-h-24">
-                                {testResult.stderr}
-                              </pre>
-                            </div>
-                          )}
-                          {testResult.expectedOutputSnapshot && testResult.actualOutput && (
-                            <>
-                              <div>
-                                <p className="text-xs font-semibold text-slate-700 mb-1">Saída Esperada:</p>
-                                <pre className="text-xs bg-slate-100 p-2 rounded font-mono overflow-x-auto max-h-20">
-                                  {testResult.expectedOutputSnapshot}
-                                </pre>
-                              </div>
-                              <div>
-                                <p className="text-xs font-semibold text-slate-700 mb-1">Sua Saída:</p>
-                                <pre className="text-xs bg-slate-100 p-2 rounded font-mono overflow-x-auto max-h-20">
-                                  {testResult.actualOutput}
-                                </pre>
-                              </div>
-                            </>
-                          )}
+                      {result.errorMessage && (
+                        <div className="mt-2">
+                          <p className="text-xs font-semibold text-red-700 mb-1">Erro:</p>
+                          <pre className="text-xs bg-red-100 p-2 rounded font-mono overflow-x-auto max-h-24">
+                            {result.errorMessage}
+                          </pre>
                         </div>
-                      )}
-
-                      {!testResult.passed && !testResult.isPublic && (
-                        <p className="text-xs text-slate-600 mt-2 italic">
-                          Este é um caso de teste privado. Os detalhes não são exibidos.
-                        </p>
                       )}
                     </div>
                   ))}
@@ -335,3 +405,4 @@ export default function SubmissionStatusModal({
     </Dialog>
   );
 }
+

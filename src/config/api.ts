@@ -8,7 +8,8 @@ import {
   TestCaseResponseDTO,
   SubmissionResponseDTO,
   SubmissionDetailDTO,
-  InviteResponseDTO
+  InviteResponseDTO,
+  PaginatedSubmissionsResponse
 } from '@/types/dtos';
 
 export class ApiError extends Error {
@@ -283,12 +284,20 @@ export const API = {
   },
 
   classes: {
-    list: () => get<ClassResponseDTO[]>('/classes'),
-    get: (id: string) => get<ClassResponseDTO>(`/classes/${id}`),
+    list: (params?: Record<string, string>) => {
+      const query = params ? `?${new URLSearchParams(params).toString()}` : '';
+      return get<ClassResponseDTO[]>(`/classes${query}`);
+    },
+    get: (id: string, withRelations = false) => {
+      const query = withRelations ? '?withRelations=true' : '';
+      return get<ClassResponseDTO>(`/classes/${id}${query}`);
+    },
     create: (data: { name: string; professorId: string; professorName?: string }) => post<ClassResponseDTO>('/classes', data),
     update: (id: string, data: Partial<ClassResponseDTO>) => put<ClassResponseDTO>(`/classes/${id}`, data),
     delete: (id: string) => del<null>(`/classes/${id}`),
     students: (id: string) => get<{ students: Array<{ id: string; name: string; email: string; role: string; studentRegistration?: string; createdAt: string }> }>(`/classes/${id}/students`),
+    addStudent: (classId: string, studentId: string) => post<null>(`/classes/${classId}/students`, { studentId }),
+    removeStudent: (classId: string, studentId: string) => del<null>(`/classes/${classId}/students/${studentId}`),
   },
 
   lists: {
@@ -299,6 +308,8 @@ export const API = {
     get: (id: string) => get<QuestionListResponseDTO>(`/lists/${id}`),
     create: (data: Partial<QuestionListResponseDTO>) => post<QuestionListResponseDTO>('/lists', data),
     update: (id: string, data: Partial<QuestionListResponseDTO>) => put<QuestionListResponseDTO>(`/lists/${id}`, data),
+    updateScoring: (id: string, data: { scoringMode?: string; maxScore?: number; minQuestionsForMaxScore?: number; questionGroups?: any[] }) => 
+      apiClient<QuestionListResponseDTO>(`/lists/${id}/scoring`, { method: 'PATCH', body: JSON.stringify(data) }),
     delete: (id: string) => del<null>(`/lists/${id}`),
     publish: (id: string) => post<QuestionListResponseDTO>(`/lists/${id}/publish`),
     unpublish: (id: string) => post<QuestionListResponseDTO>(`/lists/${id}/unpublish`),
@@ -330,9 +341,10 @@ export const API = {
   submissions: {
     list: (params?: Record<string, string>) => {
       const query = params ? `?${new URLSearchParams(params).toString()}` : '';
-      return get<{ submissions: SubmissionResponseDTO[] }>(`/submissions${query}`);
+      return get<PaginatedSubmissionsResponse>(`/submissions${query}`);
     },
     get: (id: string) => get<SubmissionResponseDTO>(`/submissions/${id}`),
+    getResults: (id: string) => get<any>(`/submissions/${id}/results`),
     submit: (data: { questionId: string; code: string; language: string }) => post<SubmissionDetailDTO>(
       '/submissions/submit', data
     ),

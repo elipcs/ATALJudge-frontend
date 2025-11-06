@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Button } from "../ui/button";
 import { MESSAGES } from "../../constants";
 import { API } from "../../config/api";
+import { logger } from "../../utils";
 
 import { AuthLayout } from "./index";
 
@@ -32,21 +33,27 @@ export function TokenValidation({ token, onTokenValidated, children }: TokenVali
     setError("");
     
     try {
+      logger.info('Iniciando validação de token do convite');
       const response = await API.invites.verify(tokenValue);
+      logger.info('Resposta recebida da validação', { response });
+      
       const result = response.data as any;
 
-      if (!response.success || !result.valid) {
+      if (!response.success || !result || !result.id) {
+        logger.error('Token inválido ou expirado', { response, result });
         setTokenInfo({
           role: 'student',
           valid: false,
           expires: ''
         });
-        setError(result.error || MESSAGES.ERROR_GENERIC);
+        setError(result?.error || MESSAGES.ERROR_GENERIC);
         onTokenValidated(null);
         return;
       }
       
-      const data = result.data || result;
+      logger.info('Token validado com sucesso', { role: result.role, classId: result.classId });
+      
+      const data = result;
       const validatedTokenInfo = {
         role: data.role,
         classId: data.classId,
@@ -59,7 +66,8 @@ export function TokenValidation({ token, onTokenValidated, children }: TokenVali
       setTokenInfo(validatedTokenInfo);
       onTokenValidated(validatedTokenInfo);
 
-    } catch {
+    } catch (error) {
+      logger.error('Erro ao validar token', { error });
       setError(MESSAGES.ERROR_GENERIC);
       setTokenInfo({
         role: 'student',

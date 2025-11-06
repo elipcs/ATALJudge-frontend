@@ -27,10 +27,10 @@ export default function ListCard({
   }
 
   const now = new Date();
-  const startTime = createBrazilianDate(list.startDate);
-  const endTime = createBrazilianDate(list.endDate);
-  const hasStarted = startTime && now >= startTime;
-  const notEnded = endTime ? now < endTime : true;
+  const startDate = createBrazilianDate(list.startDate);
+  const endDate = createBrazilianDate(list.endDate);
+  const hasStarted = startDate && now >= startDate;
+  const notEnded = endDate ? now < endDate : true;
   const isOngoing = hasStarted && notEnded;
 
   const handleActionClick = (e: React.MouseEvent, action: () => void) => {
@@ -62,7 +62,7 @@ export default function ListCard({
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
-                  <span className="font-semibold text-slate-900">{list.questions?.length || 0} questões</span>
+                  <span className="font-semibold text-slate-900">{list.questionCount || list.questions?.length || 0} questões</span>
                 </span>
                 <span className="flex items-center gap-2 text-slate-600">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

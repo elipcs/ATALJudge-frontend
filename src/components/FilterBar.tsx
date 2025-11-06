@@ -5,6 +5,7 @@ import { ReactNode } from "react";
 import { Card } from "./ui/card";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
+import { Dropdown } from "./ui/dropdown";
 
 interface FilterOption {
   value: string;
@@ -51,17 +52,13 @@ export default function FilterBar({
               />
             )}
             {filter.type === 'select' && (
-              <select
+              <Dropdown
                 value={filter.value}
-                onChange={(e) => filter.onChange(e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-              >
-                {filter.options?.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+                onChange={filter.onChange}
+                options={filter.options || []}
+                placeholder={filter.placeholder || filter.label}
+                className="w-full"
+              />
             )}
             {filter.type === 'date' && (
               <Input

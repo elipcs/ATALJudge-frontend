@@ -358,7 +358,7 @@ export default function QuestionsPage() {
           {}
           {activeQuestion.notes && (
             <div className="mb-6">
-              <h3 className="text-lg font-semibold text-slate-800 mb-2">📝 Observações</h3>
+              <h3 className="text-lg font-semibold text-slate-800 mb-2">Observações</h3>
               <div className="text-slate-700 text-base leading-relaxed bg-amber-50 rounded-xl p-4 border border-amber-200">
                 {activeQuestion.notes}
               </div>
@@ -374,6 +374,8 @@ export default function QuestionsPage() {
           questionId={activeQuestion.id}
           listId={id}
           userRole={userRole}
+          questionName={activeQuestion.title}
+          listName={list?.title}
           onSubmit={(code, language) => {
             logger.info('Código submetido', { language, questionId: activeQuestion.id });
           }}

@@ -27,7 +27,8 @@ export const JUDGE_TYPE_OPTIONS = [
 ];
 
 export const SUBMISSION_STATUS = {
-  SUBMITTED: 'submitted',
+  SUBMITTED: 'submitted',    
+  ACCEPTED: 'accepted',
   FAILED: 'failed',
   PENDING: 'pending',
   RUNNING: 'running',
@@ -36,7 +37,7 @@ export const SUBMISSION_STATUS = {
 
 export const SUBMISSION_STATUS_OPTIONS = [
   { value: 'all', label: 'Todos os status' },
-  { value: SUBMISSION_STATUS.SUBMITTED, label: 'Aceitas' },
+  { value: SUBMISSION_STATUS.ACCEPTED, label: 'Aceitas' },
   { value: SUBMISSION_STATUS.FAILED, label: 'Rejeitadas' }
 ];
 
