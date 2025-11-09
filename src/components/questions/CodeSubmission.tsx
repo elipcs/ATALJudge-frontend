@@ -12,20 +12,20 @@ import { logger } from "@/utils/logger";
 
 interface CodeSubmissionProps {
   questionId: string;
-  listId: string;
+  questionListId: string;
   userRole?: UserRole;
   onSubmit?: (code: string, language: string) => void;
   questionName?: string;
-  listName?: string;
+  questionListTitle?: string;
 }
 
 export default function CodeSubmission({
   questionId,
-  listId,
+  questionListId,
   userRole,
   onSubmit,
   questionName,
-  listName,
+  questionListTitle,
 }: CodeSubmissionProps) {
   const [code, setCode] = useState("");
   const [language, setLanguage] = useState("python");
@@ -61,7 +61,7 @@ export default function CodeSubmission({
     try {
       const submission = await submissionsApi.submitCode({
         questionId: questionId,  
-        listId: listId,
+        questionListId: questionListId,
         language: language,
         code: code,
       });
@@ -72,12 +72,6 @@ export default function CodeSubmission({
         setSubmissionLanguage(submission.language);
         setSubmittedCode(code);
         setShowSubmissionModal(true);
-        
-        setResult({
-          status: "running",
-          message: "Código submetido! Aguardando avaliação...",
-          details: "Os casos de teste estão sendo executados.",
-        });
 
         if (onSubmit) {
           onSubmit(code, language);
@@ -312,8 +306,7 @@ export default function CodeSubmission({
       <div className="flex gap-3">
         <Button
           onClick={handleSubmit}
-          disabled={isSubmitting || !code.trim()}
-          className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
         >
           Enviar Solução
         </Button>
@@ -356,7 +349,7 @@ export default function CodeSubmission({
           initialLanguage={submissionLanguage}
           code={submittedCode}
           questionName={questionName}
-          listName={listName}
+          questionListTitle={questionListTitle}
         />
       )}
     </Card>

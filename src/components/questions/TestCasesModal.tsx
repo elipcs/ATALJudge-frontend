@@ -222,10 +222,11 @@ export default function TestCasesModal({
 
       const allIds = [...createdIds, ...existingCases.map((tc) => tc.id)];
       
-      if (allIds.length > 0) {
-        logger.debug('Reordenando casos de teste', { ids: allIds });
-        await testCasesService.reorderTestCases(questionId, allIds);
-      }
+      // TODO: Implementar rota de reordenação no backend
+      // if (allIds.length > 0) {
+      //   logger.debug('Reordenando casos de teste', { ids: allIds });
+      //   await testCasesService.reorderTestCases(questionId, allIds);
+      // }
 
       if (onSave) {
         onSave(testCases);
@@ -398,21 +399,6 @@ export default function TestCasesModal({
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            id={`public-${testCase.id}`}
-                            checked={testCase.isSample}
-                            onChange={(e) => updateTestCase(testCase.id, "isSample", e.target.checked)}
-                            className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
-                          />
-                          <label
-                            htmlFor={`public-${testCase.id}`}
-                            className="text-xs font-medium text-slate-700 cursor-pointer"
-                          >
-                            Visível para os alunos (caso público)
-                          </label>
-                        </div>
                         <div>
                           <label className="block text-xs font-medium text-slate-600 mb-1">Pontuação</label>
                           <input

@@ -54,7 +54,6 @@ export default function ListPage() {
     try {
       logger.debug('Configuração recebida do modal', { config });
       
-      // Usar a rota específica de pontuação (PATCH /lists/:id/scoring)
       const scoringData: any = {
         scoringMode: config.scoringMode,
         maxScore: config.maxScore,
@@ -83,7 +82,6 @@ export default function ListPage() {
         description: "Configuração de pontuação salva com sucesso.",
       });
       setShowScoreConfigModal(false);
-      // Aguarda um pouco antes de recarregar para garantir que backend processou
       setTimeout(() => {
         reloadList();
       }, 500);
@@ -559,7 +557,7 @@ export default function ListPage() {
             try {
               await createQuestion({
                 ...questionData,
-                listId: id,
+                questionListId: id,
               });
               setShowAddQuestionModal(false);
               window.location.reload();

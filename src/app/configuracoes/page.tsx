@@ -81,12 +81,10 @@ export default function ConfiguracoesPage() {
 
   const handleSaveStudentClass = async (studentId: string, classId: string | null) => {
     try {
-      // Se o aluno já está em uma turma, remover primeiro
       if (selectedStudent?.classId) {
         await API.classes.removeStudent(selectedStudent.classId, studentId);
       }
       
-      // Se foi selecionada uma nova turma, adicionar o aluno
       if (classId) {
         await API.classes.addStudent(classId, studentId);
       }

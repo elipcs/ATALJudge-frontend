@@ -103,7 +103,7 @@ Open [http://localhost:3000](http://localhost:3000)
 
 ### Custom Hooks Pattern
 ```typescript
-export function useListPage(listId: string) {
+export function useListPage(questionListId: string) {
   const [list, setList] = useState<QuestionList | null>(null);
   const [loading, setLoading] = useState(true);
   // ... business logic
@@ -113,8 +113,8 @@ export function useListPage(listId: string) {
 
 ### Service Layer
 ```typescript
-export const getQuestions = async (listId: string): Promise<Question[]> => {
-  return await API.config.get(`/questions/list/${listId}`);
+export const getQuestions = async (questionListId: string): Promise<Question[]> => {
+  return await API.config.get(`/questions/list/${questionListId}`);
 };
 ```
 

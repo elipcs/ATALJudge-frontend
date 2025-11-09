@@ -22,7 +22,7 @@ export interface CreateQuestionRequest {
     expectedOutput: string;
     isPublic: boolean;
   }>;
-  listId?: string;
+  questionListId?: string;
 }
 
 export interface UpdateQuestionRequest extends Partial<CreateQuestionRequest> {

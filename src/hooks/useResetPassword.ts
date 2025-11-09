@@ -14,7 +14,7 @@ export function useResetPassword(token: string | null) {
     setConfirmPassword,
     isValid,
     getValidationError,
-  } = usePasswordValidation();
+  } = usePasswordValidation(8);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

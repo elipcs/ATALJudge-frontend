@@ -33,6 +33,7 @@ export interface CreateListRequest {
   startDate?: string;
   endDate?: string;
   classIds?: string[];
+  countTowardScore?: boolean;
   isRestricted?: boolean;
   // Opcionalmente incluir dados de pontuação na criação
   scoringMode?: 'simple' | 'groups';
@@ -63,10 +64,10 @@ export interface ListFilters {
   classId?: string;
 }
 
-export async function isCurrentIpAllowedForList(listId?: string): Promise<boolean> {
+export async function isCurrentIpAllowedForList(questionListId?: string): Promise<boolean> {
   try {
     if (typeof window === 'undefined') return false;
-    const { data } = await API.config.checkAllowedIp(listId);
+    const { data } = await API.config.checkAllowedIp(questionListId);
     return Boolean((data as any).allowed ?? data);
   } catch {
     return false;
@@ -82,7 +83,7 @@ export const listsApi = {
       if (userRole === 'student' && currentUser?.classId) queryParams.classId = currentUser.classId;
 
       const { data } = await API.lists.list(queryParams);
-      const lists = data.lists as QuestionListResponseDTO[];
+      const lists = data.questionLists as QuestionListResponseDTO[];
 
       const mappedLists: QuestionList[] = (lists || []).map((list) => {
         const startDate = list.startDate;
@@ -99,6 +100,7 @@ export const listsApi = {
           questions: (list.questions as any) || [],
           questionCount: list.questionCount || (list.questions as any)?.length || 0,
           isRestricted: list.isRestricted,
+          countTowardScore: (list as any).countTowardScore ?? false,
           scoringMode: list.scoringMode,
           maxScore: list.maxScore,
           minQuestionsForMaxScore: list.minQuestionsForMaxScore,
@@ -137,6 +139,7 @@ export const listsApi = {
         minQuestionsForMaxScore: list.minQuestionsForMaxScore,
         questionGroups: (list.questionGroups as any) || [],
         isRestricted: list.isRestricted ?? false,
+        countTowardScore: (list as any).countTowardScore ?? false,
         calculatedStatus: calculateListStatus(startDate, endDate)
       };
 
@@ -201,7 +204,8 @@ export const listsApi = {
         startDate: originalList.startDate,
         endDate: originalList.endDate,
         classIds: originalList.classIds,
-        isRestricted: originalList.isRestricted
+        countTowardScore: (originalList as any).countTowardScore ?? false,
+        isRestricted: (originalList as any).isRestricted ?? false
       };
 
       const newList = await this.create(newListData);
@@ -238,18 +242,18 @@ export const listsApi = {
     }
   },
 
-  async addQuestionToList(listId: string, questionId: string): Promise<void> {
+  async addQuestionToList(questionListId: string, questionId: string): Promise<void> {
     try {
-      await API.lists.addQuestion(listId, questionId);
+      await API.lists.addQuestion(questionListId, questionId);
     } catch (error) {
       logger.error('[listsApi.addQuestionToList] Erro ao adicionar questão', { error });
       throw error;
     }
   },
 
-  async removeQuestionFromList(listId: string, questionId: string): Promise<void> {
+  async removeQuestionFromList(questionListId: string, questionId: string): Promise<void> {
     try {
-      await API.lists.removeQuestion(listId, questionId);
+      await API.lists.removeQuestion(questionListId, questionId);
     } catch (error) {
       logger.error('[listsApi.removeQuestionFromList] Erro ao remover questão', { error });
       throw error;

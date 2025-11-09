@@ -2,6 +2,7 @@ import { useState } from "react";
 import { QuestionList } from "@/types";
 import { createBrazilianDate } from "@/utils";
 import { listsApi } from "@/services/lists";
+import { useToast } from "./use-toast";
 
 interface UseListsActionsProps {
   createList: (listData: any) => Promise<any>;
@@ -16,6 +17,7 @@ export function useListsActions({
   deleteList,
   duplicateList
 }: UseListsActionsProps) {
+  const { toast } = useToast();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -25,6 +27,10 @@ export function useListsActions({
   const handleCreateList = async (listData: any) => {
     try {
       await createList(listData);
+      toast({
+        description: "Lista criada com sucesso!",
+        variant: "success",
+      });
       setShowCreateModal(false);
     } catch (error) {
       console.error('Erro ao criar lista:', error);
@@ -37,6 +43,10 @@ export function useListsActions({
       if (!editingList) return;
       
       await updateList(editingList.id, listData);
+      toast({
+        description: "Lista atualizada com sucesso!",
+        variant: "success",
+      });
       setShowEditModal(false);
       setEditingList(null);
     } catch (error) {
@@ -50,6 +60,10 @@ export function useListsActions({
       if (!deletingList) return;
       
       await deleteList(deletingList.id);
+      toast({
+        description: "Lista deletada com sucesso!",
+        variant: "success",
+      });
       setShowDeleteModal(false);
       setDeletingList(null);
     } catch (error) {
@@ -61,6 +75,10 @@ export function useListsActions({
   const handleDuplicateList = async (list: QuestionList) => {
     try {
       await duplicateList(list.id);
+      toast({
+        description: "Lista duplicada com sucesso!",
+        variant: "success",
+      });
     } catch (error) {
       console.error('Erro ao duplicar lista:', error);
       throw error;

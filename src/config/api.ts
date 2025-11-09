@@ -303,7 +303,7 @@ export const API = {
   lists: {
     list: (params?: Record<string, string>) => {
       const query = params ? `?${new URLSearchParams(params).toString()}` : '';
-      return get<{ lists: QuestionListResponseDTO[]; count: number }>(`/lists${query}`);
+      return get<{ questionLists: QuestionListResponseDTO[]; count: number }>(`/lists${query}`);
     },
     get: (id: string) => get<QuestionListResponseDTO>(`/lists/${id}`),
     create: (data: Partial<QuestionListResponseDTO>) => post<QuestionListResponseDTO>('/lists', data),
@@ -313,8 +313,8 @@ export const API = {
     delete: (id: string) => del<null>(`/lists/${id}`),
     publish: (id: string) => post<QuestionListResponseDTO>(`/lists/${id}/publish`),
     unpublish: (id: string) => post<QuestionListResponseDTO>(`/lists/${id}/unpublish`),
-    addQuestion: (listId: string, questionId: string) => post<null>(`/lists/${listId}/questions`, { questionId }),
-    removeQuestion: (listId: string, questionId: string) => del<null>(`/lists/${listId}/questions/${questionId}`),
+    addQuestion: (questionListId: string, questionId: string) => post<null>(`/lists/${questionListId}/questions`, { questionId }),
+    removeQuestion: (questionListId: string, questionId: string) => del<null>(`/lists/${questionListId}/questions/${questionId}`),
   },
 
   questions: {
@@ -374,8 +374,8 @@ export const API = {
     getAllowedIps: () => get<{ allowedIPs: Array<{ id: string; ip: string; description: string; active: boolean; createdAt: string }> }>(
       '/config/allowed-ips'
     ),
-    checkAllowedIp: (listId?: string) => {
-      const query = listId ? `?listId=${listId}` : '';
+    checkAllowedIp: (questionListId?: string) => {
+      const query = questionListId ? `?questionListId=${questionListId}` : '';
       return get<{ allowed: boolean }>(`/config/allowed-ips/check${query}`);
     },
     toggleAllowedIp: (id: string) => put<null>(`/config/allowed-ips/${id}/toggle`),

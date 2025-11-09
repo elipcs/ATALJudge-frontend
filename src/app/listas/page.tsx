@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 
 import { Button } from "@/components/ui/button";
 import PageHeader from "@/components/PageHeader";
@@ -18,8 +18,15 @@ import { useListsData } from "@/hooks/useListsData";
 import { useListsActions } from "@/hooks/useListsActions";
 import PageLoading from "@/components/PageLoading";
 
+import { QuestionList } from "@/types";
+
 export default function ListsPage() {
   const [search, setSearch] = useState('');
+  const [serverSearch, setServerSearch] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+  const [localLists, setLocalLists] = useState<QuestionList[]>([]);
+  const searchTimeout = useRef<NodeJS.Timeout | null>(null);
+  const isInitialLoad = useRef(true);
   
   const { userRole } = useUserRole();
   const { data: currentUser } = useCurrentUser();
@@ -62,6 +69,9 @@ export default function ListsPage() {
 
   const handleCreateList = async (listData: any) => {
     await baseHandleCreateList(listData);
+    // Limpa o filtro de busca para mostrar a lista recém-criada
+    setSearch('');
+    setServerSearch('');
     await refreshLists();
   };
 
@@ -80,28 +90,56 @@ export default function ListsPage() {
     await refreshLists();
   };
 
+  useEffect(() => {
+    if (isInitialLoad.current) {
+      isInitialLoad.current = false;
+      return;
+    }
+
+    if (searchTimeout.current) {
+      clearTimeout(searchTimeout.current);
+    }
+    
+    setIsSearching(true);
+    searchTimeout.current = setTimeout(() => {
+      setServerSearch(search);
+      setIsSearching(false);
+    }, 500);
+
+    return () => {
+      if (searchTimeout.current) {
+        clearTimeout(searchTimeout.current);
+      }
+    };
+  }, [search]);
+
   useMemo(() => {
     const filters = {
-      search: search || undefined
+      search: serverSearch || undefined
     };
     setFilters(filters);
-  }, [search, setFilters]);
+  }, [serverSearch, setFilters]);
+
+  useEffect(() => {
+    setLocalLists(lists);
+  }, [lists]);
 
   const filteredLists = useMemo(() => {
-    return lists.filter(list => {
+    if (!search) return localLists;
+    
+    return localLists.filter(list => {
       if (!list || !list.id) {
         return false;
       }
       
-      const matchSearch = search === '' || 
-        list.title.toLowerCase().includes(search.toLowerCase()) ||
-        list.description?.toLowerCase().includes(search.toLowerCase());
-      
-      return matchSearch;
+      const searchLower = search.toLowerCase();
+      return list.title.toLowerCase().includes(searchLower) ||
+             (list.description?.toLowerCase() || '').includes(searchLower);
     });
-  }, [lists, search]);
+  }, [localLists, search]);
 
-  if (loading && lists.length === 0) {
+  // Mostra loading apenas no carregamento inicial
+  if ((loading && localLists.length === 0) || isInitialLoad.current) {
     return <PageLoading message="Carregando listas..." description="Preparando as listas de exercícios" />;
   }
 
@@ -117,6 +155,7 @@ export default function ListsPage() {
 
   const handleClearFilters = () => {
     setSearch('');
+    setServerSearch('');
     clearFilters();
   };
 
@@ -154,6 +193,7 @@ export default function ListsPage() {
         userRole={userRole}
         onSearchChange={setSearch}
         onClearFilters={handleClearFilters}
+        isSearching={isSearching}
       />
 
       {}

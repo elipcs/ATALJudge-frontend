@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { submissionsApi, SubmissionDetailsResponse } from "@/services/submissions";
 import { logger } from "@/utils/logger";
+import { getVerdictColor } from "@/utils/statusUtils";
 
 interface SubmissionStatusModalProps {
   isOpen: boolean;
@@ -22,7 +23,7 @@ interface SubmissionStatusModalProps {
   code?: string;
   questionName?: string;
   userName?: string;
-  listName?: string;
+  questionListTitle?: string;
 }
 
 export default function SubmissionStatusModal({
@@ -35,7 +36,7 @@ export default function SubmissionStatusModal({
   code = "",
   questionName: initialQuestionName = "",
   userName: initialUserName = "",
-  listName: initialListName = "",
+  questionListTitle: initialquestionListTitle= "",
 }: SubmissionStatusModalProps) {
   const [status, setStatus] = useState(initialStatus.toLowerCase());
   const [language, setLanguage] = useState(initialLanguage);
@@ -45,7 +46,7 @@ export default function SubmissionStatusModal({
   const [verdict, setVerdict] = useState<string | undefined>(initialVerdict);
   const [questionName, setQuestionName] = useState<string>(initialQuestionName);
   const [userName, setUserName] = useState<string>(initialUserName);
-  const [listName, setListName] = useState<string>(initialListName);
+  const [questionListTitle, setquestionListTitle] = useState<string>(initialquestionListTitle);
 
   useEffect(() => {
     if (!isOpen || !submissionId) return;
@@ -89,7 +90,7 @@ export default function SubmissionStatusModal({
         setVerdict(submission.verdict);
         setQuestionName(submission.questionName || "");
         setUserName(submission.userName || "");
-        setListName(submission.listName || submission.listTitle || "");
+        setquestionListTitle(submission.questionListTitle|| submission.questionListTitle|| "");
 
         if (newStatus === "completed") {
           try {
@@ -122,6 +123,25 @@ export default function SubmissionStatusModal({
     onClose();
   };
 
+  const getVerdictDotColor = (verdict?: string): string => {
+    if (!verdict) return "bg-green-500";
+    
+    switch (verdict) {
+      case "Accepted":
+        return "bg-green-500";
+      case "Wrong Answer":
+        return "bg-orange-500";
+      case "Runtime Error":
+      case "Compilation Error":
+      case "Presentation Error":
+      case "Time Limit Exceeded":
+      case "Memory Limit Exceeded":
+        return "bg-red-500";
+      default:
+        return "bg-green-500";
+    }
+  };
+
   const getStatusInfo = () => {
     switch (status) {
       case "completed":
@@ -134,7 +154,7 @@ export default function SubmissionStatusModal({
           title: "Submissão Concluída!",
           titleColor: "text-green-600",
           description: "Seu código foi avaliado com sucesso!",
-          dotColor: "bg-green-500",
+          dotColor: getVerdictDotColor(verdict),
           statusText: "Concluído",
         };
       case "failed":
@@ -194,7 +214,7 @@ export default function SubmissionStatusModal({
 
         <div className="space-y-4 py-4">
           {/* Informações principais da submissão */}
-          {(questionName || userName || listName) && (
+          {(questionName || userName || questionListTitle) && (
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {questionName && (
@@ -209,10 +229,10 @@ export default function SubmissionStatusModal({
                     <p className="text-sm text-slate-900 font-medium">{userName}</p>
                   </div>
                 )}
-                {listName && (
+                {questionListTitle&& (
                   <div>
                     <p className="text-xs font-semibold text-slate-600 mb-1">Lista:</p>
-                    <p className="text-sm text-slate-900 font-medium">{listName}</p>
+                    <p className="text-sm text-slate-900 font-medium">{questionListTitle}</p>
                   </div>
                 )}
               </div>

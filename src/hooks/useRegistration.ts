@@ -45,7 +45,7 @@ export function useRegistration() {
 
   const validatePassword = (password: string): PasswordValidation => {
     return {
-      minLength: password.length >= 12,
+      minLength: password.length >= 8,
       hasLetters: /[a-zA-Z]/.test(password),
       hasNumbers: /[0-9]/.test(password),
       hasUppercase: /[A-Z]/.test(password),
@@ -76,7 +76,7 @@ export function useRegistration() {
     
     const isPasswordValid = validatePassword(formData.password);
     if (!isPasswordValid.minLength) {
-      return "Senha deve ter pelo menos 12 caracteres";
+      return "Senha deve ter pelo menos 8 caracteres";
     }
     if (!isPasswordValid.hasLetters) {
       return "Senha deve conter letras";

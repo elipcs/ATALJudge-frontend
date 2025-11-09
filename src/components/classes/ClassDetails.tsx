@@ -60,8 +60,11 @@ export default function ClassDetails({
   }, [questionLists]);
 
   const exportToCSV = () => {
+    // Filtrar apenas listas que contam para a nota
+    const listsForGrade = questionLists.filter((list: QuestionList) => list.countTowardScore !== false);
+    
     const headers = ['Nome', 'Email', 'Matrícula', 'Média Geral'];
-    questionLists.forEach(list => {
+    listsForGrade.forEach(list => {
       headers.push(list.title);
     });
     headers.push('Data de Matrícula');
@@ -76,8 +79,8 @@ export default function ClassDetails({
           calculateAverageGrade(student.grades).toFixed(1)
         ];
         
-        questionLists.forEach(list => {
-          const gradeObj = student.grades?.find(g => g.listId === list.id);
+        listsForGrade.forEach(list => {
+          const gradeObj = student.grades?.find(g => g.questionListId === list.id);
           const grade = gradeObj ? parseFloat(String(gradeObj.score)) : 0;
           row.push(grade.toFixed(1));
         });
@@ -102,10 +105,18 @@ export default function ClassDetails({
     return <InlineLoading message="Carregando detalhes..." />;
   }
 
-  const calculateAverageGrade = (grades: { id: string; listId: string; score: string | number; createdAt: string; updatedAt: string }[] = []) => {
+  const calculateAverageGrade = (grades: { id: string; questionListId: string; score: string | number; createdAt: string; updatedAt: string }[] = []) => {
     if (grades.length === 0) return 0;
-    const sum = grades.reduce((acc, grade) => acc + parseFloat(String(grade.score)), 0);
-    return sum / grades.length;
+    
+    // Filtrar apenas notas de listas que contam para a nota
+    const gradesForScore = grades.filter(grade => {
+      const list = questionLists.find((l: QuestionList) => l.id === grade.questionListId);
+      return list && list.countTowardScore !== false; // Se countTowardScore for undefined ou true, conta
+    });
+    
+    if (gradesForScore.length === 0) return 0;
+    const sum = gradesForScore.reduce((acc, grade) => acc + parseFloat(String(grade.score)), 0);
+    return sum / gradesForScore.length;
   };
 
   return (
@@ -141,11 +152,11 @@ export default function ClassDetails({
             {questionLists.length > 0 ? (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mb-4">
                 {questionLists.map((list) => {
-                  const gradeObj = currentStudent.grades?.find(g => g.listId === list.id);
+                  const gradeObj = currentStudent.grades?.find(g => g.questionListId === list.id);
                   const gradeValue = gradeObj ? parseFloat(String(gradeObj.score)) : 0;
                   const hasGrade = gradeValue > 0;
                   
-                  console.log('Renderizando nota para lista:', list.title, 'listId:', list.id);
+                  console.log('Renderizando nota para lista:', list.title, 'questionListId:', list.id);
                   console.log('gradeObj encontrado:', gradeObj);
                   console.log('gradeValue:', gradeValue);
                   
@@ -299,7 +310,7 @@ export default function ClassDetails({
                       {userRole !== 'student' && (
                         <>
                           {questionLists.map((list) => {
-                            const gradeObj = student.grades?.find(g => g.listId === list.id);
+                            const gradeObj = student.grades?.find(g => g.questionListId === list.id);
                             const gradeValue = gradeObj ? parseFloat(String(gradeObj.score)) : 0;
                             return (
                               <td key={list.id} className="py-4 px-6">

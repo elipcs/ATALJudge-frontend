@@ -104,7 +104,7 @@ export function RegistrationForm({ onSubmit, loading = false, tokenInfo }: Regis
               required
               autoComplete="new-password"
             />
-            <PasswordValidation password={formData.password} />
+            <PasswordValidation password={formData.password} minLength={8} />
           </div>
 
           <AuthInput

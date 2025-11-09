@@ -1,6 +1,7 @@
 import React from 'react';
 
 import { Question } from '../../types';
+import TextEditorWithLatex from '../questions/TextEditorWithLatex';
 
 interface QuestionFormData {
   title: string;
@@ -33,6 +34,8 @@ export default function QuestionModal({
   question,
   title
 }: QuestionModalProps) {
+  const [showPreviewMode, setShowPreviewMode] = React.useState(false);
+  
   const [formData, setFormData] = React.useState({
     title: question?.title || '',
     statement: question?.statement || '',
@@ -113,13 +116,41 @@ export default function QuestionModal({
   return (
     <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 p-4 overflow-y-auto">
       <div className="bg-white rounded-3xl shadow-xl p-8 w-full max-w-4xl mx-4 my-8">
-        <div className="flex items-center gap-3 mb-6">
+        <div className="flex items-center gap-3 mb-8">
           <div className="p-3 bg-blue-100 rounded-xl">
             <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold text-slate-900">{title}</h2>
+          <h2 className="text-4xl font-bold text-slate-900">{title}</h2>
+        </div>
+
+        {/* Abas */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-2 mb-6">
+          <nav className="flex space-x-2">
+            <button
+              type="button"
+              onClick={() => setShowPreviewMode(false)}
+              className={`px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-200 ${
+                !showPreviewMode
+                  ? 'shadow-sm border bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 border-blue-200'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+              }`}
+            >
+              Editor
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowPreviewMode(true)}
+              className={`px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-200 ${
+                showPreviewMode
+                  ? 'shadow-sm border bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 border-blue-200'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+              }`}
+            >
+              Preview
+            </button>
+          </nav>
         </div>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -144,58 +175,59 @@ export default function QuestionModal({
               />
             </div>
           </div>
+          
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Enunciado</label>
-            <textarea 
-              name="statement" 
-              value={formData.statement} 
-              onChange={handleChange} 
-              className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 bg-white text-slate-900 placeholder:text-slate-500 h-32" 
-              required 
+            <label className="block text-lg font-medium text-slate-700 mb-2">Enunciado</label>
+            <TextEditorWithLatex
+              value={formData.statement}
+              onChange={(value: string) => setFormData({ ...formData, statement: value })}
+              placeholder=""
+              className="h-32"
+              showPreview={showPreviewMode}
             />
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Formato de Entrada</label>
-              <textarea 
-                name="inputFormat" 
-                value={formData.inputFormat} 
-                onChange={handleChange} 
-                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 bg-white text-slate-900 placeholder:text-slate-500 h-20" 
-                placeholder="Descreva o formato de entrada..."
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Formato de Saída</label>
-              <textarea 
-                name="outputFormat" 
-                value={formData.outputFormat} 
-                onChange={handleChange} 
-                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 bg-white text-slate-900 placeholder:text-slate-500 h-20" 
-                placeholder="Descreva o formato de saída..."
-              />
-            </div>
-          </div>
-
+          
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Restrições</label>
-            <textarea 
-              name="constraints" 
-              value={formData.constraints} 
-              onChange={handleChange} 
-              className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 bg-white text-slate-900 placeholder:text-slate-500 h-24" 
-              placeholder="Ex: 1 ≤ N ≤ 10^5, tempo de execução menor que 1 segundo..."
+            <label className="block text-lg font-medium text-slate-700 mb-2">Formato de Entrada</label>
+            <TextEditorWithLatex
+              value={formData.inputFormat}
+              onChange={(value: string) => setFormData({ ...formData, inputFormat: value })}
+              placeholder=""
+              className="h-20"
+              showPreview={showPreviewMode}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Observações</label>
-            <textarea 
-              name="notes" 
-              value={formData.notes} 
-              onChange={handleChange} 
-              className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 bg-white text-slate-900 placeholder:text-slate-500 h-24" 
-              placeholder="Notas adicionais, dicas ou informações relevantes sobre a questão..."
+            <label className="block text-lg font-medium text-slate-700 mb-2">Formato de Saída</label>
+            <TextEditorWithLatex
+              value={formData.outputFormat}
+              onChange={(value: string) => setFormData({ ...formData, outputFormat: value })}
+              placeholder=""
+              className="h-20"
+              showPreview={showPreviewMode}
+            />
+          </div>
+
+          <div>
+            <label className="block text-lg font-medium text-slate-700 mb-2">Restrições</label>
+            <TextEditorWithLatex
+              value={formData.constraints || ''}
+              onChange={(value: string) => setFormData({ ...formData, constraints: value })}
+              placeholder=""
+              className="h-24"
+              showPreview={showPreviewMode}
+            />
+          </div>
+
+          <div>
+            <label className="block text-lg font-medium text-slate-700 mb-2">Observações</label>
+            <TextEditorWithLatex
+              value={formData.notes || ''}
+              onChange={(value: string) => setFormData({ ...formData, notes: value })}
+              placeholder=""
+              className="h-24"
+              showPreview={showPreviewMode}
             />
           </div>
 

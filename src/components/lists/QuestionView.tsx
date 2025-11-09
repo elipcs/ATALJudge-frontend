@@ -1,6 +1,7 @@
 import React from 'react';
 
 import { Question } from '../../types';
+import MarkdownRenderer from '../MarkdownRenderer';
 
 interface SubmissionResult {
   status: 'pending' | 'accepted' | 'error' | 'timeout';
@@ -61,7 +62,9 @@ export default function QuestionView({
       {}
       <div className="bg-white/70 p-6 rounded shadow border border-slate-200">
         <h2 className="text-xl font-bold mb-2 text-blue-800">{question.title}</h2>
-        <p className="mb-2 text-slate-800 whitespace-pre-line">{question.statement}</p>
+        <div className="text-slate-800">
+          <MarkdownRenderer content={question.statement} />
+        </div>
         <div className="flex gap-2 mt-2">
           <button
             className="text-xs text-blue-700 underline"

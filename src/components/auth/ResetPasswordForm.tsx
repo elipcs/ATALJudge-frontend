@@ -42,7 +42,7 @@ export function ResetPasswordForm({ token, resetPasswordHook }: ResetPasswordFor
             required
             autoComplete="new-password"
           />
-          <PasswordValidation password={password} />
+          <PasswordValidation password={password} minLength={8} />
         </div>
         
         <AuthInput

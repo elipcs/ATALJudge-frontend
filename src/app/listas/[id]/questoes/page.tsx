@@ -7,6 +7,7 @@ import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import PageLoading from "@/components/PageLoading";
+import MarkdownRenderer from "@/components/MarkdownRenderer";
 import { useListPage } from "@/hooks/useListPage";
 import ListTabs from "@/components/lists/ListTabs";
 import QuestionTabs from "@/components/questions/QuestionTabs";
@@ -291,8 +292,8 @@ export default function QuestionsPage() {
             {activeQuestion.statement && (
               <div className="mb-6">
                 <h3 className="text-lg font-semibold text-slate-800 mb-2">Enunciado</h3>
-                <div className="text-slate-700 text-base leading-relaxed bg-slate-50 rounded-xl p-4">
-                  {activeQuestion.statement}
+                <div className="bg-slate-50 rounded-xl p-4">
+                  <MarkdownRenderer content={activeQuestion.statement} />
                 </div>
               </div>
             )}
@@ -301,8 +302,8 @@ export default function QuestionsPage() {
           {activeQuestion.inputFormat && (
             <div className="mb-6">
               <h3 className="text-lg font-semibold text-slate-800 mb-2">Entrada</h3>
-              <div className="text-slate-700 text-base leading-relaxed bg-slate-50 rounded-xl p-4">
-                {activeQuestion.inputFormat}
+              <div className="bg-slate-50 rounded-xl p-4">
+                <MarkdownRenderer content={activeQuestion.inputFormat} />
               </div>
             </div>
           )}
@@ -311,8 +312,8 @@ export default function QuestionsPage() {
           {activeQuestion.outputFormat && (
             <div className="mb-6">
               <h3 className="text-lg font-semibold text-slate-800 mb-2">Saída</h3>
-              <div className="text-slate-700 text-base leading-relaxed bg-slate-50 rounded-xl p-4">
-                {activeQuestion.outputFormat}
+              <div className="bg-slate-50 rounded-xl p-4">
+                <MarkdownRenderer content={activeQuestion.outputFormat} />
               </div>
             </div>
           )}
@@ -321,8 +322,8 @@ export default function QuestionsPage() {
           {activeQuestion.constraints && (
             <div className="mb-6">
               <h3 className="text-lg font-semibold text-slate-800 mb-2">Restrições</h3>
-              <div className="text-slate-700 text-base leading-relaxed bg-slate-50 rounded-xl p-4">
-                {activeQuestion.constraints}
+              <div className="bg-slate-50 rounded-xl p-4">
+                <MarkdownRenderer content={activeQuestion.constraints} />
               </div>
             </div>
           )}
@@ -359,8 +360,8 @@ export default function QuestionsPage() {
           {activeQuestion.notes && (
             <div className="mb-6">
               <h3 className="text-lg font-semibold text-slate-800 mb-2">Observações</h3>
-              <div className="text-slate-700 text-base leading-relaxed bg-amber-50 rounded-xl p-4 border border-amber-200">
-                {activeQuestion.notes}
+              <div className="bg-amber-50 rounded-xl p-4 border border-amber-200">
+                <MarkdownRenderer content={activeQuestion.notes} />
               </div>
             </div>
           )}
@@ -372,10 +373,10 @@ export default function QuestionsPage() {
       {!(userRole === 'student' && !isListStarted()) && !(userRole === 'student' && isListEnded()) && (
         <CodeSubmission
           questionId={activeQuestion.id}
-          listId={id}
+          questionListId={id}
           userRole={userRole}
           questionName={activeQuestion.title}
-          listName={list?.title}
+          questionListTitle={list?.title}
           onSubmit={(code, language) => {
             logger.info('Código submetido', { language, questionId: activeQuestion.id });
           }}

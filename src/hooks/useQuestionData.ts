@@ -12,7 +12,7 @@ export const useQuestionData = () => {
   const params = useParams();
   const router = useRouter();
 
-  const listId = params.id as string;
+  const questionListId = params.id as string;
   const questionIndex = params.questionIndex ? parseInt(params.questionIndex as string) : 0;
 
   const [question, setQuestion] = useState<Question | null>(null);
@@ -23,9 +23,9 @@ export const useQuestionData = () => {
   const [submitting, setSubmitting] = useState(false);
   const { userRole } = useUserRole();
 
-  const loadList = useCallback(async (listId: string): Promise<QuestionList | null> => {
+  const loadList = useCallback(async (questionListId: string): Promise<QuestionList | null> => {
     try {
-      const response = await listsApi.getById(listId);
+      const response = await listsApi.getById(questionListId);
       return response;
     } catch (error) {
       console.error('Error loading list:', error);
@@ -33,9 +33,9 @@ export const useQuestionData = () => {
     }
   }, []);
 
-  const loadSubmissions = useCallback(async (questionId: string, listId: string): Promise<Submission[]> => {
+  const loadSubmissions = useCallback(async (questionId: string, questionListId: string): Promise<Submission[]> => {
     try {
-      const response = await submissionsApi.getSubmissions({ questionId, listId });
+      const response = await submissionsApi.getSubmissions({ questionId, questionListId });
       return response as any;
     } catch (error) {
       console.error('Error loading submissions:', error);
@@ -44,11 +44,11 @@ export const useQuestionData = () => {
   }, []);
 
   const fetchData = useCallback(async () => {
-    if (!listId) return;
+    if (!questionListId) return;
 
     setLoading(true);
     try {
-      const listData = await loadList(listId);
+      const listData = await loadList(questionListId);
       if (!listData) {
         setLoading(false);
         return;
@@ -63,7 +63,7 @@ export const useQuestionData = () => {
         setQuestion(currentQuestion);
 
         if (currentQuestion) {
-          const questionSubmissions = await loadSubmissions(currentQuestion.id, listId);
+          const questionSubmissions = await loadSubmissions(currentQuestion.id, questionListId);
           setSubmissions(questionSubmissions);
         }
       }
@@ -72,7 +72,7 @@ export const useQuestionData = () => {
     } finally {
       setLoading(false);
     }
-  }, [listId, questionIndex, loadList, loadSubmissions]);
+  }, [questionListId, questionIndex, loadList, loadSubmissions]);
 
   useEffect(() => {
     fetchData();
@@ -87,13 +87,13 @@ export const useQuestionData = () => {
     try {
       const response = await submissionsApi.submitCode({
         questionId: question.id,
-        listId: listId,
+        questionListId: questionListId,
         code,
         language: language as 'python' | 'java'
       });
 
       if (response) {
-        const updatedSubmissions = await loadSubmissions(question.id, listId);
+        const updatedSubmissions = await loadSubmissions(question.id, questionListId);
         setSubmissions(updatedSubmissions);
         
         return { 
@@ -114,7 +114,7 @@ export const useQuestionData = () => {
 
   const navigateToQuestion = (newIndex: number) => {
     if (newIndex >= 0 && newIndex < allQuestions.length) {
-      router.push(`/listas/${listId}/questoes?q=${newIndex}`);
+      router.push(`/listas/${questionListId}/questoes?q=${newIndex}`);
     }
   };
 
@@ -155,7 +155,7 @@ export const useQuestionData = () => {
     submitting,
     userRole,
     questionIndex,
-    listId,
+    questionListId,
     submitSolution,
     nextQuestion,
     previousQuestion,

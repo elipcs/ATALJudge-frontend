@@ -19,7 +19,7 @@ export interface Student {
   classId: string;
   grades: { 
     id: string;
-    listId: string; 
+    questionListId: string; 
     score: string | number;
     createdAt: string;
     updatedAt: string;
@@ -127,6 +127,7 @@ export interface QuestionList {
     percentage?: number;
   }>;
   isRestricted?: boolean;
+  countTowardScore?: boolean;
 }
 
 export interface QuickAction {

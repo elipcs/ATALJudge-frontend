@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "../ui/button";
 import { Card } from "../ui/card";
 import { Input } from "../ui/input";
+import { PasswordValidation } from "../auth";
 import { ProfileData, ChangePasswordData } from "../../services/profile";
 
 interface ChangePasswordFormProps {
@@ -25,7 +26,7 @@ export default function ChangePasswordForm({
 
   function validatePassword(password: string) {
     return {
-      minLength: password.length >= 12,
+      minLength: password.length >= 8,
       hasLetters: /[a-zA-Z]/.test(password),
       hasNumbers: /[0-9]/.test(password),
       hasUppercase: /[A-Z]/.test(password),
@@ -141,7 +142,7 @@ export default function ChangePasswordForm({
               placeholder="Digite sua nova senha"
               className="h-12 bg-white border-slate-200 focus:border-blue-400 focus:ring-blue-400/20 text-slate-900 placeholder:text-slate-500 rounded-xl"
             />
-            <p className="text-xs text-slate-500 mt-2">Mínimo de 12 caracteres, com letras maiúsculas e minúsculas, números e caractere especial</p>
+            <PasswordValidation password={formData.newPassword} minLength={8} />
           </div>
           
           <div className="bg-gradient-to-r from-slate-50 to-slate-100 rounded-2xl p-6">

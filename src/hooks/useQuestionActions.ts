@@ -3,7 +3,7 @@ import { questionsApi, CreateQuestionRequest } from '@/services/questions';
 import { listsApi } from '@/services/lists';
 import { logger } from '@/utils/logger';
 
-export function useQuestionActions(listId: string) {
+export function useQuestionActions(questionListId: string) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -14,7 +14,7 @@ export function useQuestionActions(listId: string) {
       
       const questionDataWithListId = {
         ...questionData,
-        listId: listId
+        questionListId: questionListId
       };
       
       logger.debug('Criando questão com dados', { questionData: questionDataWithListId });
@@ -59,7 +59,7 @@ export function useQuestionActions(listId: string) {
       setLoading(true);
       setError(null);
       
-      await listsApi.removeQuestionFromList(listId, questionId);
+      await listsApi.removeQuestionFromList(questionListId, questionId);
       
       return true;
     } catch (err) {

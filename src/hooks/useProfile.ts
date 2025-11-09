@@ -121,7 +121,7 @@ export function useProfile() {
 
     const isPasswordValid = validatePassword(changePasswordData.newPassword);
     if (!isPasswordValid.minLength) {
-      setError("Senha deve ter pelo menos 12 caracteres");
+      setError("Senha deve ter pelo menos 8 caracteres");
       return;
     }
     if (!isPasswordValid.hasLetters) {
@@ -180,7 +180,7 @@ export function useProfile() {
 
   function validatePassword(password: string) {
     return {
-      minLength: password.length >= 12,
+      minLength: password.length >= 8,
       hasLetters: /[a-zA-Z]/.test(password),
       hasNumbers: /[0-9]/.test(password),
       hasUppercase: /[A-Z]/.test(password),

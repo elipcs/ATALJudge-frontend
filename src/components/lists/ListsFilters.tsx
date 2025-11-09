@@ -7,13 +7,15 @@ interface ListsFiltersProps {
   userRole: string;
   onSearchChange: (value: string) => void;
   onClearFilters: () => void;
+  isSearching?: boolean;
 }
 
 export default function ListsFilters({
   search,
   userRole: _userRole,
   onSearchChange,
-  onClearFilters
+  onClearFilters,
+  isSearching = false
 }: ListsFiltersProps) {
   const hasActiveFilters = search;
 
@@ -34,12 +36,19 @@ export default function ListsFilters({
       </div>
       
       <div className="grid grid-cols-1 gap-4">
-        <Input
-          placeholder="Buscar listas..."
-          value={search}
-          onChange={(e) => onSearchChange(e.target.value)}
-          className="h-10 text-sm bg-white border-slate-200 focus:border-blue-400 focus:ring-blue-400/20 text-slate-900 placeholder:text-slate-500 rounded-xl"
-        />
+        <div className="relative">
+          <Input
+            placeholder="Buscar listas..."
+            value={search}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className={`h-10 text-sm bg-white border-slate-200 focus:border-blue-400 focus:ring-blue-400/20 text-slate-900 placeholder:text-slate-500 rounded-xl transition-all duration-200 ${isSearching ? 'pr-10' : ''}`}
+          />
+          {isSearching && (
+            <div className="absolute right-3 top-1/2 -translate-y-1/2">
+              <div className="animate-spin h-4 w-4 border-2 border-blue-600 rounded-full border-r-transparent"/>
+            </div>
+          )}
+        </div>
       </div>
     </Card>
   );

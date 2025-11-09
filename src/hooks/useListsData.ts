@@ -15,8 +15,8 @@ interface UseListsDataReturn {
   updateListScoring: (id: string, scoringData: UpdateListScoringRequest) => Promise<QuestionList>;
   deleteList: (id: string) => Promise<void>;
   duplicateList: (id: string, newTitle?: string) => Promise<QuestionList>;
-  addQuestionToList: (listId: string, questionId: string) => Promise<void>;
-  removeQuestionFromList: (listId: string, questionId: string) => Promise<void>;
+  addQuestionToList: (questionListId: string, questionId: string) => Promise<void>;
+  removeQuestionFromList: (questionListId: string, questionId: string) => Promise<void>;
   filters: ListFilters;
   setFilters: (filters: ListFilters) => void;
   clearFilters: () => void;
@@ -155,14 +155,14 @@ export function useListsData(userRole?: string, currentUser?: any): UseListsData
     }
   }, []);
 
-  const addQuestionToList = useCallback(async (listId: string, questionId: string): Promise<void> => {
+  const addQuestionToList = useCallback(async (questionListId: string, questionId: string): Promise<void> => {
     try {
       setError(null);
-      await listsApi.addQuestionToList(listId, questionId);
+      await listsApi.addQuestionToList(questionListId, questionId);
       
-      const updatedList = await listsApi.getById(listId);
+      const updatedList = await listsApi.getById(questionListId);
       if (updatedList) {
-        setLists(prev => prev.map(list => list.id === listId ? updatedList : list));
+        setLists(prev => prev.map(list => list.id === questionListId ? updatedList : list));
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao adicionar questão à lista';
@@ -171,14 +171,14 @@ export function useListsData(userRole?: string, currentUser?: any): UseListsData
     }
   }, []);
 
-  const removeQuestionFromList = useCallback(async (listId: string, questionId: string): Promise<void> => {
+  const removeQuestionFromList = useCallback(async (questionListId: string, questionId: string): Promise<void> => {
     try {
       setError(null);
-      await listsApi.removeQuestionFromList(listId, questionId);
+      await listsApi.removeQuestionFromList(questionListId, questionId);
       
-      const updatedList = await listsApi.getById(listId);
+      const updatedList = await listsApi.getById(questionListId);
       if (updatedList) {
-        setLists(prev => prev.map(list => list.id === listId ? updatedList : list));
+        setLists(prev => prev.map(list => list.id === questionListId ? updatedList : list));
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao remover questão da lista';

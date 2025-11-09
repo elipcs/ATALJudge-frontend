@@ -12,7 +12,7 @@ export function PasswordValidationDisplay({
   const validationItems = [
     {
       key: 'minLength',
-      label: 'Pelo menos 12 caracteres',
+      label: 'Pelo menos 8 caracteres',
       isValid: validation.minLength
     },
     {

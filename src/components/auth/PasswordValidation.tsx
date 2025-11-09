@@ -3,6 +3,7 @@
 interface PasswordValidationProps {
   password: string;
   className?: string;
+  minLength?: number;
 }
 
 interface ValidationRule {
@@ -11,10 +12,10 @@ interface ValidationRule {
   isValid: boolean;
 }
 
-export function PasswordValidation({ password, className = "" }: PasswordValidationProps) {
+export function PasswordValidation({ password, className = "", minLength = 12 }: PasswordValidationProps) {
   const validatePassword = (password: string) => {
     return {
-      minLength: password.length >= 12,
+      minLength: password.length >= minLength,
       hasLetters: /[a-zA-Z]/.test(password),
       hasNumbers: /[0-9]/.test(password),
       hasUppercase: /[A-Z]/.test(password),
@@ -28,7 +29,7 @@ export function PasswordValidation({ password, className = "" }: PasswordValidat
   const rules: ValidationRule[] = [
     {
       key: 'minLength',
-      label: 'Mínimo 12 caracteres',
+      label: `Mínimo ${minLength} caracteres`,
       isValid: validation.minLength
     },
     {

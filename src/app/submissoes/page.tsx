@@ -14,9 +14,10 @@ import { SubmissionResponseDTO } from "@/types/dtos";
 import PageHeader from "../../components/PageHeader";
 import PageLoading from "../../components/PageLoading";
 import SubmissionStatusModal from "../../components/submissions/SubmissionStatusModal";
-import { getSubmissionStatusColor, normalizeStatus } from "../../utils/statusUtils";
+import { getSubmissionStatusColor, normalizeStatus, getVerdictColor } from "../../utils/statusUtils";
 import { SUBMISSION_STATUS_OPTIONS } from "../../constants";
 import { logger } from '@/utils/logger';
+import { getVerdictBadgeColor } from "@/utils/statusUtils";
 
 interface SubmissionsPageState {
   submissions: SubmissionResponseDTO[];
@@ -60,15 +61,9 @@ export default function SubmissoesPage() {
         limit: state.itemsPerPage
       };
       
-      // Adiciona filtros de verdict se não for "all"
       if (state.selectedStatus !== "all") {
         filters.verdict = state.selectedStatus as any;
       }
-      
-      // O backend automaticamente filtra as submissões baseado no papel do usuário:
-      // - Estudantes: veem apenas suas próprias submissões
-      // - Professores/Monitores: veem todas as submissões
-      // (o filtro é feito pelo token JWT no backend)
       
       const response = await submissionsApi.getSubmissions(filters);
 
@@ -103,7 +98,6 @@ export default function SubmissoesPage() {
     return () => clearTimeout(id);
   }, [loadSubmissions]);
 
-  // Filtro local de busca por texto (não enviado ao backend)
   const displayedSubmissions = state.searchTerm.trim()
     ? state.submissions.filter(submission => {
         const searchLower = state.searchTerm.toLowerCase();
@@ -112,15 +106,13 @@ export default function SubmissoesPage() {
           submission.questionName?.toLowerCase().includes(searchLower) ||
           submission.userId.toLowerCase().includes(searchLower) ||
           submission.userName?.toLowerCase().includes(searchLower) ||
-          submission.listName?.toLowerCase().includes(searchLower) ||
-          submission.listTitle?.toLowerCase().includes(searchLower) ||
+          submission.questionListTitle?.toLowerCase().includes(searchLower) ||
           submission.language.toLowerCase().includes(searchLower)
         );
       })
     : state.submissions;
 
   useEffect(() => {
-    // Atualiza os submissions filtrados quando mudar o termo de busca
     setState(prev => ({
       ...prev,
       filteredSubmissions: displayedSubmissions
@@ -295,24 +287,16 @@ export default function SubmissoesPage() {
                       >
                         <td className="py-3 px-4">
                           <div className="font-medium text-gray-900">
-                            {submission.questionName || `ID: ${submission.questionId.substring(0, 8)}...`}
+                            {submission.questionName || 'Questão desconhecida'}
                           </div>
                         </td>
                         <td className="py-3 px-4">
                           <div className="text-gray-600">
-                            {submission.listName || submission.listTitle ? (
-                              submission.listName || submission.listTitle
-                            ) : submission.listId ? (
-                              <span className="text-gray-400 text-xs">
-                                Lista sem nome
-                              </span>
-                            ) : (
-                              <span className="text-gray-400">-</span>
-                            )}
+                            {submission.questionListTitle || 'Lista desconhecida'}
                           </div>
                         </td>
                         <td className="py-3 px-4">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getSubmissionStatusColor(submission.status)}`}>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getVerdictBadgeColor(submission.verdict, submission.status)}`}>
                             {submission.verdict || SUBMISSION_STATUS_OPTIONS.find(opt => opt.value === normalizeStatus(submission.status))?.label || submission.status}
                           </span>
                         </td>
@@ -425,9 +409,8 @@ export default function SubmissoesPage() {
           userName={
             state.submissions.find(s => s.id === state.selectedSubmissionId)?.userName || ''
           }
-          listName={
-            state.submissions.find(s => s.id === state.selectedSubmissionId)?.listName || 
-            state.submissions.find(s => s.id === state.selectedSubmissionId)?.listTitle || ''
+          questionListTitle={
+            state.submissions.find(s => s.id === state.selectedSubmissionId)?.questionListTitle|| ''
           }
           code={
             state.submissions.find(s => s.id === state.selectedSubmissionId)?.code || ''

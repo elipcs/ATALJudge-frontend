@@ -9,18 +9,18 @@ export interface PasswordValidation {
   hasSpecialChar: boolean;
 }
 
-export function usePasswordValidation() {
+export function usePasswordValidation(minLength: number = 8) {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
   const validation = useMemo((): PasswordValidation => ({
-    minLength: password.length >= 12,
+    minLength: password.length >= minLength,
     hasLetters: /[a-zA-Z]/.test(password),
     hasNumbers: /[0-9]/.test(password),
     hasUppercase: /[A-Z]/.test(password),
     hasLowercase: /[a-z]/.test(password),
     hasSpecialChar: /[!@#$%^&*(),.?":{}|<>]/.test(password),
-  }), [password]);
+  }), [password, minLength]);
 
   const isValid = useMemo(() => {
     return validation.minLength && 
@@ -34,7 +34,7 @@ export function usePasswordValidation() {
 
   const getValidationError = (): string | null => {
     if (!validation.minLength) {
-      return "Senha deve ter pelo menos 12 caracteres";
+      return `Senha deve ter pelo menos ${minLength} caracteres`;
     }
     if (!validation.hasLetters) {
       return "Senha deve conter letras";

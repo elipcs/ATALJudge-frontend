@@ -129,7 +129,7 @@ export const homeApi = {
 
         if (!data) return [];
 
-        const lists = data.data?.lists || data.lists || data;
+        const lists = data.questionLists || data.data?.questionLists || data.questionLists || data;
         const listsArray = Array.isArray(lists) ? lists : [];
 
         return listsArray.map((list: any) => {

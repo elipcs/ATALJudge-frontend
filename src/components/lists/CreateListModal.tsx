@@ -19,27 +19,16 @@ export default function CreateListModal({ isOpen, onClose, onSubmit, classes }: 
     description: '',
     startDate: '',
     endDate: '',
-    classIds: [] as string[]
+    classIds: [] as string[],
+    countTowardScore: false,
+    isRestricted: false
   });
   const [loading, setLoading] = useState(false);
-  const [classSearch, setClassSearch] = useState('');
   const [errors, setErrors] = useState({
     startDate: '',
     endDate: '',
     dateRange: ''
   });
-
-  const filteredClasses = Array.isArray(classes) ? classes.filter(cls => 
-    cls.name.toLowerCase().includes(classSearch.toLowerCase()) ||
-    cls.id.toLowerCase().includes(classSearch.toLowerCase())
-  ) : [];
-
-  useEffect(() => {
-    if (isOpen && Array.isArray(classes) && classes.length > 0 && form.classIds.length === 0) {
-      const defaultClassIds = classes.map(c => c.id);
-      setForm(prev => ({ ...prev, classIds: defaultClassIds }));
-    }
-  }, [isOpen, classes, form.classIds.length]);
 
   useEffect(() => {
     if (form.startDate || form.endDate) {
@@ -113,6 +102,8 @@ export default function CreateListModal({ isOpen, onClose, onSubmit, classes }: 
   const isFormValid = () => {
     if (!form.title.trim()) return false;
     
+    if (form.classIds.length === 0) return false;
+    
     const tempErrors = {
       startDate: '',
       endDate: '',
@@ -161,7 +152,9 @@ export default function CreateListModal({ isOpen, onClose, onSubmit, classes }: 
         description: form.description,
         startDate: form.startDate ? fromBrazilianDateTimeLocal(form.startDate) : now.toISOString(),
         endDate: form.endDate ? fromBrazilianDateTimeLocal(form.endDate) : defaultEndDate.toISOString(),
-        classIds: form.classIds.length > 0 ? form.classIds : [classes[0]?.id || '']
+        classIds: form.classIds,
+        countTowardScore: form.countTowardScore,
+        isRestricted: form.isRestricted
       };
 
       await onSubmit(listData);
@@ -171,7 +164,9 @@ export default function CreateListModal({ isOpen, onClose, onSubmit, classes }: 
         description: '',
         startDate: '',
         endDate: '',
-        classIds: []
+        classIds: [] as string[],
+        countTowardScore: false,
+        isRestricted: false
       });
       
       onClose();
@@ -189,7 +184,9 @@ export default function CreateListModal({ isOpen, onClose, onSubmit, classes }: 
         description: '',
         startDate: '',
         endDate: '',
-        classIds: []
+        classIds: [] as string[],
+        countTowardScore: false,
+        isRestricted: false
       });
       setErrors({
         startDate: '',
@@ -296,60 +293,36 @@ export default function CreateListModal({ isOpen, onClose, onSubmit, classes }: 
                 <button
                   type="button"
                   onClick={() => {
-                    if (classSearch) {
-                      const filteredIds = filteredClasses.map(c => c.id);
-                      const newIds = [...new Set([...form.classIds, ...filteredIds])];
-                      setForm(prev => ({ ...prev, classIds: newIds }));
-                    } else {
-                      setForm(prev => ({ ...prev, classIds: classes.map(c => c.id) }));
-                    }
+                    const allIds = Array.isArray(classes) ? classes.map(c => c.id) : [];
+                    setForm(prev => ({ ...prev, classIds: allIds }));
                   }}
                   disabled={loading}
                   className="text-xs text-blue-600 hover:text-blue-800 font-medium px-2 py-1 rounded-lg hover:bg-blue-50 transition-colors"
                 >
-                  {classSearch ? 'Selecionar Filtradas' : 'Selecionar Todas'}
+                  Selecionar Todas
                 </button>
                 <button
                   type="button"
                   onClick={() => {
-                    if (classSearch) {
-                      const filteredIds = filteredClasses.map(c => c.id);
-                      setForm(prev => ({ ...prev, classIds: prev.classIds.filter(id => !filteredIds.includes(id)) }));
-                    } else {
-                      setForm(prev => ({ ...prev, classIds: [] }));
-                    }
+                    setForm(prev => ({ ...prev, classIds: [] }));
                   }}
                   disabled={loading}
                   className="text-xs text-slate-600 hover:text-slate-800 font-medium px-2 py-1 rounded-lg hover:bg-slate-50 transition-colors"
                 >
-                  {classSearch ? 'Remover Filtradas' : 'Limpar'}
+                  Limpar
                 </button>
               </div>
             </div>
             
-            <div className="mb-3">
-              <Input
-                type="text"
-                placeholder="Buscar turmas..."
-                value={classSearch}
-                onChange={(e) => setClassSearch(e.target.value)}
-                disabled={loading}
-                className="w-full h-10 text-sm bg-white border-slate-200 focus:border-blue-400 focus:ring-blue-400/20 text-slate-900 placeholder:text-slate-500 rounded-xl"
-              />
-            </div>
             
             <div className="border border-slate-200 rounded-xl p-4 max-h-40 overflow-y-auto bg-slate-50">
               {classes.length === 0 ? (
                 <div className="text-center py-4 text-slate-500 text-sm">
                   Nenhuma turma disponível
                 </div>
-              ) : filteredClasses.length === 0 ? (
-                <div className="text-center py-4 text-slate-500 text-sm">
-                  Nenhuma turma encontrada para &quot;{classSearch}&quot;
-                </div>
               ) : (
                 <div className="space-y-2">
-                  {filteredClasses.map((cls) => (
+                  {classes.map((cls) => (
                     <label key={cls.id} className="flex items-center p-3 hover:bg-white rounded-lg transition-colors cursor-pointer">
                       <Checkbox
                         checked={form.classIds.includes(cls.id)}
@@ -362,6 +335,7 @@ export default function CreateListModal({ isOpen, onClose, onSubmit, classes }: 
                         }}
                         disabled={loading}
                         className="mr-3"
+                        variant="text"
                       />
                       <div className="flex-1">
                         <span className="text-sm font-medium text-slate-900">{cls.name}</span>
@@ -372,6 +346,12 @@ export default function CreateListModal({ isOpen, onClose, onSubmit, classes }: 
               )}
             </div>
             
+            {form.classIds.length === 0 && (
+              <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-xl">
+                <p className="text-sm text-red-600 font-medium">⚠️ Selecione pelo menos uma turma</p>
+              </div>
+            )}
+
             {form.classIds.length > 0 && (
               <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-xl">
                 <div className="flex items-center gap-2">
@@ -390,6 +370,30 @@ export default function CreateListModal({ isOpen, onClose, onSubmit, classes }: 
                 </div>
               </div>
             )}
+            
+            {/* Campo: conta para a nota */}
+            <div className="mt-4 border-t pt-4 space-y-3">
+              <label className="flex items-center gap-3">
+                <Checkbox
+                  checked={form.countTowardScore}
+                  onChange={(e) => setForm(prev => ({ ...prev, countTowardScore: e.target.checked }))}
+                  className="mr-2"
+                  variant="text"
+                />
+                <span className="text-sm font-medium text-slate-700">Esta lista conta para a nota</span>
+              </label>
+              
+              {/* Campo: restringir por IP */}
+              <label className="flex items-center gap-3">
+                <Checkbox
+                  checked={form.isRestricted}
+                  onChange={(e) => setForm(prev => ({ ...prev, isRestricted: e.target.checked }))}
+                  className="mr-2"
+                  variant="text"
+                />
+                <span className="text-sm font-medium text-slate-700">Restringir acesso por IP</span>
+              </label>
+            </div>
           </div>
         </form>
         

@@ -21,7 +21,7 @@ interface LocalSubmission {
 export function useListPage() {
   const params = useParams();
   const router = useRouter();
-  const listId = params.id as string;
+  const questionListId = params.id as string;
   
   const [list, setList] = useState<QuestionList | null>(null);
   const [submissions, setSubmissions] = useState<LocalSubmission[]>([]);
@@ -45,14 +45,14 @@ export function useListPage() {
       setLoading(true);
       setError(null);
       
-      logger.debug('[useListPage] Carregando lista', { listId, userRole });
+      logger.debug('[useListPage] Carregando lista', { questionListId, userRole });
       
-      const listData = await listsApi.getById(listId);
+      const listData = await listsApi.getById(questionListId);
       logger.debug('[useListPage] Dados recebidos', { listData });
       
       if (!listData) {
-        logger.warn('[useListPage] Lista não encontrada', { listId });
-        setError(`Lista não encontrada (ID: ${listId})`);
+        logger.warn('[useListPage] Lista não encontrada', { questionListId });
+        setError(`Lista não encontrada (ID: ${questionListId})`);
         return;
       }
       
@@ -67,7 +67,7 @@ export function useListPage() {
 
       if (userRole === 'student') {
         if (listData.isRestricted) {
-          const allowed = await isCurrentIpAllowedForList(listId);
+          const allowed = await isCurrentIpAllowedForList(questionListId);
           if (!allowed) {
             setError('ipRestricted');
             setLoading(false);
@@ -83,7 +83,7 @@ export function useListPage() {
     } finally {
       setLoading(false);
     }
-  }, [listId, userRole]);
+  }, [questionListId, userRole]);
 
   const isListStarted = useCallback(() => {
     if (!list || userRole !== 'student') return true;
@@ -115,7 +115,7 @@ export function useListPage() {
     try {
       
       const submissionsPromises = listData.questions.map(question =>
-        submissionsApi.getSubmissions({ questionId: question.id, listId })
+        submissionsApi.getSubmissions({ questionId: question.id, questionListId })
           .then(response => ({
             question,
             submissions: response.submissions
@@ -145,7 +145,7 @@ export function useListPage() {
     } catch (err) {
       logger.error('Erro ao carregar submissões', { error: err });
     }
-  }, [listId]);
+  }, [questionListId]);
 
   const navigateToQuestion = useCallback((question: Question, index: number) => {
     setSelectedQuestion(question);
@@ -154,16 +154,16 @@ export function useListPage() {
     setCode('');
     setSubmissionResult(null);
     
-    router.push(`/listas/${listId}#questao-${question.id}`);
-  }, [listId, router]);
+    router.push(`/listas/${questionListId}#questao-${question.id}`);
+  }, [questionListId, router]);
 
   const goBack = useCallback(() => {
     setViewMode('list');
     setSelectedQuestion(null);
     setCode('');
     setSubmissionResult(null);
-    router.push(`/listas/${listId}`);
-  }, [listId, router]);
+    router.push(`/listas/${questionListId}`);
+  }, [questionListId, router]);
 
   const handleSubmit = useCallback(async () => {
     if (!selectedQuestion || !code.trim()) return;
@@ -174,7 +174,7 @@ export function useListPage() {
     try {
       const submission = await submissionsApi.submitCode({
         questionId: selectedQuestion.id,
-        listId: listId,
+        questionListId: questionListId,
         code: code.trim(),
         language: selectedLanguage
       });
@@ -213,7 +213,7 @@ export function useListPage() {
     } finally {
       setSubmitting(false);
     }
-  }, [selectedQuestion, code, selectedLanguage, listId, submissions]);
+  }, [selectedQuestion, code, selectedLanguage, questionListId, submissions]);
 
   const getQuestionSubmission = useCallback((questionId: string) => {
     return submissions

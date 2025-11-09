@@ -26,12 +26,12 @@ export interface ClassResponseDTO {
 export interface GradeResponseDTO {
   id: string;
   studentId: string;
-  listId: string;
+  questionListId: string;
   score: number;
   createdAt: string | Date;
   updatedAt: string | Date;
   studentName?: string;
-  listTitle?: string;
+  questionListTitle?: string;
 }
 
 export interface QuestionExampleDTO {
@@ -99,7 +99,7 @@ export interface SubmissionResponseDTO {
   id: string;
   userId: string;
   questionId: string;
-  listId?: string;
+  questionListId?: string;
   code: string;
   language: ProgrammingLanguage;
   status: SubmissionStatus;
@@ -112,12 +112,10 @@ export interface SubmissionResponseDTO {
   errorMessage?: string;
   createdAt: string | Date;
   updatedAt: string | Date;
-  // Campos expandidos opcionais
   userName?: string;
   userEmail?: string;
   questionName?: string;
-  listName?: string;
-  listTitle?: string; // Alias para listName (mantido para compatibilidade)
+  questionListTitle?: string;
 }
 
 export interface TestCaseResultDTO {

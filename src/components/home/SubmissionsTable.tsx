@@ -5,7 +5,7 @@ import Link from "next/link";
 
 import { Button } from "../ui/button";
 import { Submission } from "@/types";
-import { normalizeStatus, getSubmissionStatusColor } from "../../utils/statusUtils";
+import { normalizeStatus, getVerdictBadgeColor } from "../../utils/statusUtils";
 import { listsApi } from "@/services/lists";
 import SubmissionStatusModal from "../submissions/SubmissionStatusModal";
 
@@ -14,14 +14,14 @@ interface SubmissionsTableProps {
   showActions?: boolean;
 }
 
-function QuestionLink({ listId, questionId, questionTitle }: { listId: string; questionId: string; questionTitle: string }) {
+function QuestionLink({ questionListId, questionId, questionTitle }: { questionListId: string; questionId: string; questionTitle: string }) {
   const [questionIndex, setQuestionIndex] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchListAndFindIndex = async () => {
       try {
-        const list = await listsApi.getById(listId);
+        const list = await listsApi.getById(questionListId);
         if (list) {
           const questions = list.questions || [];
           const index = questions.findIndex((q: any) => q.id === questionId);
@@ -36,13 +36,13 @@ function QuestionLink({ listId, questionId, questionTitle }: { listId: string; q
     };
 
     fetchListAndFindIndex();
-  }, [listId, questionId]);
+  }, [questionListId, questionId]);
 
   if (loading) {
     return <span className="text-blue-600">{questionTitle}</span>;
   }
 
-  const href = questionIndex !== null ? `/listas/${listId}/questoes?q=${questionIndex}` : `/listas/${listId}`;
+  const href = questionIndex !== null ? `/listas/${questionListId}/questoes?q=${questionIndex}` : `/listas/${questionListId}`;
 
   return (
     <Link href={href} className="text-blue-600 hover:text-blue-800 hover:underline font-medium">
@@ -101,9 +101,9 @@ export default function SubmissionsTable({ submissions, showActions = false }: S
             {safeSubmissions.slice(0, 5).map((submission: any, index) => {
               // O backend retorna campos expandidos diretamente
               const studentName = submission.userName || submission.student?.name || 'Aluno';
-              const listTitle = submission.listName || submission.listTitle || submission.questionList?.name || 'Lista desconhecida';
+              const questionListTitle= submission.questionListTitle|| submission.questionList?.name || 'Lista desconhecida';
               const questionTitle = submission.questionName || submission.question?.name || 'Questão desconhecida';
-              const listId = submission.listId || submission.questionList?.id;
+              const questionListId = submission.questionListId || submission.questionList?.id;
               const questionId = submission.questionId || submission.question?.id;
               
               return (
@@ -115,19 +115,19 @@ export default function SubmissionsTable({ submissions, showActions = false }: S
                     )}
                   </td>
                   <td className="py-3 px-4 text-gray-900">
-                    {listId ? (
-                      <Link href={`/listas/${listId}`} className="text-blue-600 hover:text-blue-800 hover:underline font-medium">
-                        {listTitle}
+                    {questionListId ? (
+                      <Link href={`/listas/${questionListId}`} className="text-blue-600 hover:text-blue-800 hover:underline font-medium">
+                        {questionListTitle}
                       </Link>
-                    ) : listTitle}
+                    ) : questionListTitle}
                   </td>
                   <td className="py-3 px-4 text-gray-900">
-                    {listId && questionId ? (
-                      <QuestionLink listId={listId} questionId={questionId} questionTitle={questionTitle} />
+                    {questionListId && questionId ? (
+                      <QuestionLink questionListId={questionListId} questionId={questionId} questionTitle={questionTitle} />
                     ) : questionTitle}
                   </td>
                   <td className="py-3 px-4">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getSubmissionStatusColor((submission as any).verdict || submission.status)}`}>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getVerdictBadgeColor((submission as any).verdict, submission.status)}`}>
                       {(submission as any).verdict || normalizeStatus(submission.status)}
                     </span>
                   </td>
@@ -157,9 +157,10 @@ export default function SubmissionsTable({ submissions, showActions = false }: S
           submissionId={selectedSubmissionId}
           initialStatus={selectedSubmissionData.status}
           initialLanguage={selectedSubmissionData.language}
+          initialVerdict={selectedSubmissionData.verdict}
           code={selectedSubmissionData.code}
           questionName={selectedSubmissionData.questionName || selectedSubmissionData.question?.name}
-          listName={selectedSubmissionData.listName || selectedSubmissionData.listTitle || selectedSubmissionData.questionList?.name}
+          questionListTitle={selectedSubmissionData.questionListTitle|| selectedSubmissionData.questionList?.name}
         />
       )}
     </div>

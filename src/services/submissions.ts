@@ -7,7 +7,7 @@ export type SubmissionStatus = 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED';
 export interface Judge0Submission {
   id: string;
   questionId: string;
-  listId?: string;
+  questionListId?: string;
   userId: string;
   language: string;
   code: string;
@@ -79,14 +79,14 @@ export interface SubmissionResultsResponse {
 
 export interface SubmitCodeData {
   questionId: string;
-  listId?: string;
+  questionListId?: string;
   language: string;
   code: string;
 }
 
 export interface SubmissionFilters {
   questionId?: string;
-  listId?: string;
+  questionListId?: string;
   userId?: string;
   verdict?: 'pending' | 'accepted' | 'failed' | 'error' | 'timeout';
   page?: number;
@@ -98,7 +98,7 @@ export const submissionsApi = {
     try {
       const queryParams: Record<string, string> = {};
       if (filters?.questionId) queryParams.questionId = filters.questionId;
-      if (filters?.listId) queryParams.listId = filters.listId;
+      if (filters?.questionListId) queryParams.questionListId = filters.questionListId;
       if (filters?.userId) queryParams.userId = filters.userId;
       if (filters?.verdict) queryParams.verdict = filters.verdict;
       if (filters?.page) queryParams.page = String(filters.page);

@@ -1,5 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Question } from "@/types";
+import MarkdownRenderer from "@/components/MarkdownRenderer";
 
 interface QuestionProblemProps {
   question: Question;
@@ -11,10 +12,8 @@ export default function QuestionProblem({ question }: QuestionProblemProps) {
       {}
       <Card className="p-6">
         <h2 className="text-xl font-semibold mb-4">Problema</h2>
-        <div className="prose max-w-none">
-          <pre className="whitespace-pre-wrap text-sm text-gray-900 font-mono bg-gray-50 p-4 rounded-lg">
-            {question.statement}
-          </pre>
+        <div className="bg-slate-50 rounded-lg p-4">
+          <MarkdownRenderer content={question.statement} />
         </div>
       </Card>
 
