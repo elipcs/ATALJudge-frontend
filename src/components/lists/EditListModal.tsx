@@ -1,7 +1,5 @@
 import { useState, useEffect } from "react";
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { CreateListRequest } from "@/services/lists";
 import { createBrazilianDate, toBrazilianDateTimeLocal, fromBrazilianDateTimeLocal, validateNotPastDate, validateEndDateAfterStartDate } from "@/utils";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -267,317 +265,346 @@ export default function EditListModal({ isOpen, onClose, onSubmit, onRefresh, cl
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-white rounded-3xl shadow-xl p-8 w-full max-w-2xl mx-4 my-8">
-        <div className="flex items-center justify-between mb-6">
+    <div 
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-start justify-center z-50 p-4 overflow-y-auto animate-in fade-in duration-200"
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !loading) {
+          handleClose();
+        }
+      }}
+    >
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl mx-4 my-8 animate-in zoom-in-95 duration-200 overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-slate-200 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-2xl">
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-blue-100 rounded-xl">
-              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="p-2.5 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg">
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
               </svg>
             </div>
-            <h2 className="text-2xl font-bold text-slate-900">Editar Lista</h2>
+            <div>
+              <h2 className="text-2xl font-bold text-slate-900">Editar Lista</h2>
+              <p className="text-sm text-slate-600 mt-0.5">Atualize as informações da lista</p>
+            </div>
           </div>
-          <button
-            onClick={handleClose}
-            disabled={loading}
-            className="text-slate-400 hover:text-slate-600 transition-colors p-2 rounded-lg hover:bg-slate-100"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+          {!loading && (
+            <button
+              onClick={handleClose}
+              className="text-slate-400 hover:text-slate-600 transition-colors p-2 rounded-lg hover:bg-white/50"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
         </div>
 
-        {}
-        {showSuccessMessage && (
-          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+        {/* Content */}
+        <div className="p-6">
+          {/* Success Message */}
+          {showSuccessMessage && (
+            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl animate-in slide-in-from-top-2 duration-300">
+              <div className="flex items-center gap-2">
+                <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold text-green-800">Lista atualizada</h3>
-                <p className="text-sm text-green-600">Fechando automaticamente...</p>
+                <p className="text-sm text-green-800 font-semibold">Lista atualizada com sucesso!</p>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {}
-        {errorMessage && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-red-100 rounded-lg">
-                <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M18 10c0 4.418-3.582 8-8 8s-8-3.582-8-8 3.582-8 8-8 8 3.582 8 8zm-8-4a1 1 0 00-.993.883L9 7v4a1 1 0 001.993.117L11 11V7a1 1 0 00-1-1zm0 9a1.25 1.25 0 100-2.5 1.25 1.25 0 000 2.5z" clipRule="evenodd" />
+          {/* Error Message */}
+          {errorMessage && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl animate-in slide-in-from-top-2 duration-300">
+              <div className="flex items-start gap-2">
+                <svg className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold text-red-800">Erro</h3>
-                <p className="text-sm text-red-600">{errorMessage}</p>
+                <p className="text-sm text-red-800 flex-1">{errorMessage}</p>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {isClosed && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-red-100 rounded-lg">
-                <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M18 10c0 4.418-3.582 8-8 8s-8-3.582-8-8 3.582-8 8-8 8 3.582 8 8zm-8-4a1 1 0 00-.993.883L9 7v4a1 1 0 001.993.117L11 11V7a1 1 0 00-1-1zm0 9a1.25 1.25 0 100-2.5 1.25 1.25 0 000 2.5z" clipRule="evenodd" />
+          {/* Closed Warning */}
+          {isClosed && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
+              <div className="flex items-start gap-3">
+                <svg className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold text-red-800">Lista Fechada</h3>
-                <p className="text-sm text-red-600">
-                  Esta lista está fechada e não pode mais ser editada. Apenas visualização permitida.
-                </p>
+                <div>
+                  <p className="text-sm font-semibold text-red-900 mb-1">Lista Fechada</p>
+                  <p className="text-xs text-red-700">
+                    Esta lista está fechada e não pode mais ser editada. Apenas visualização permitida.
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              Título *
-            </label>
-            <Input
-              value={form.title}
-              onChange={(e) => setForm(prev => ({ ...prev, title: e.target.value }))}
-              placeholder="Digite o título da lista"
-              disabled={loading || isClosed}
-              required
-              className={`h-12 text-sm border-slate-200 focus:border-blue-400 focus:ring-blue-400/20 text-slate-900 placeholder:text-slate-500 rounded-xl ${
-                isClosed ? 'bg-slate-100 text-slate-500 cursor-not-allowed' : 'bg-white'
-              }`}
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              Descrição
-            </label>
-            <textarea
-              value={form.description}
-              onChange={(e) => setForm(prev => ({ ...prev, description: e.target.value }))}
-              placeholder="Digite a descrição da lista"
-              className={`w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-slate-900 placeholder:text-slate-500 ${
-                isClosed ? 'bg-slate-100 text-slate-500 cursor-not-allowed' : 'bg-white'
-              }`}
-              rows={3}
-              disabled={loading || isClosed}
-            />
-          </div>
-          
-          <div className="grid grid-cols-2 gap-4">
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Data de Início
+              <label className="block text-sm font-semibold text-slate-700 mb-2">
+                Título *
               </label>
-              <Input
-                type="datetime-local"
-                value={form.startDate}
-                onChange={(e) => handleDateChange('startDate', e.target.value)}
-                disabled={loading || hasStarted || isClosed}
-                className={`h-12 text-sm border-slate-200 focus:border-blue-400 focus:ring-blue-400/20 text-slate-900 rounded-xl ${
-                  errors.startDate ? 'border-red-300 focus:border-red-400 focus:ring-red-400/20' : ''
-                } ${hasStarted || isClosed ? 'bg-slate-100 text-slate-500 cursor-not-allowed' : 'bg-white'}`}
-              />
-              {errors.startDate && (
-                <p className="mt-1 text-sm text-red-600">{errors.startDate}</p>
-              )}
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Data de Fim
-              </label>
-              <Input
-                type="datetime-local"
-                value={form.endDate}
-                onChange={(e) => handleDateChange('endDate', e.target.value)}
+              <input
+                type="text"
+                value={form.title}
+                onChange={(e) => setForm(prev => ({ ...prev, title: e.target.value }))}
+                placeholder="Digite o título da lista"
                 disabled={loading || isClosed}
-                className={`h-12 text-sm border-slate-200 focus:border-blue-400 focus:ring-blue-400/20 text-slate-900 rounded-xl ${
-                  errors.endDate ? 'border-red-300 focus:border-red-400 focus:ring-red-400/20' : ''
-                } ${isClosed ? 'bg-slate-100 text-slate-500 cursor-not-allowed' : 'bg-white'}`}
+                required
+                className={`w-full h-12 px-4 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 placeholder:text-slate-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all ${
+                  isClosed ? 'bg-slate-100' : 'bg-white'
+                }`}
               />
-              {errors.endDate && (
-                <p className="mt-1 text-sm text-red-600">{errors.endDate}</p>
-              )}
             </div>
-          </div>
-
-          {errors.dateRange && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-xl">
-              <p className="text-sm text-red-600">{errors.dateRange}</p>
-            </div>
-          )}
-
-          {hasStarted && (
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl">
-              <div className="flex items-center gap-2">
-                <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <p className="text-sm text-blue-700">
-                  A data de início não pode ser editada porque a lista já foi iniciada. Apenas a data de fim pode ser alterada.
-                </p>
-              </div>
-            </div>
-          )}
-
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <label className="block text-sm font-medium text-slate-700">
-                Turmas
+            
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">
+                Descrição
               </label>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    const allIds = Array.isArray(classes) ? classes.map(c => c.id) : [];
-                    setForm(prev => ({ ...prev, classIds: allIds }));
-                  }}
-                  disabled={loading || hasStarted || isClosed}
-                  className="text-xs text-blue-600 hover:text-blue-800 font-medium px-2 py-1 rounded-lg hover:bg-blue-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Selecionar Todas
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setForm(prev => ({ ...prev, classIds: [] }));
-                  }}
-                  disabled={loading || hasStarted || isClosed}
-                  className="text-xs text-slate-600 hover:text-slate-800 font-medium px-2 py-1 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Limpar
-                </button>
-              </div>
+              <textarea
+                value={form.description}
+                onChange={(e) => setForm(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="Digite a descrição da lista"
+                className={`w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 placeholder:text-slate-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all resize-none ${
+                  isClosed ? 'bg-slate-100' : 'bg-white'
+                }`}
+                rows={3}
+                disabled={loading || isClosed}
+              />
             </div>
             
-            
-            <div className="border border-slate-200 rounded-xl p-4 max-h-40 overflow-y-auto bg-slate-50">
-              {classes.length === 0 ? (
-                <div className="text-center py-4 text-slate-500 text-sm">
-                  Nenhuma turma disponível
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {classes.map((cls) => (
-                    <label key={cls.id} className="flex items-center p-3 hover:bg-white rounded-lg transition-colors cursor-pointer">
-                      <Checkbox
-                        checked={form.classIds.includes(cls.id)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setForm(prev => ({ ...prev, classIds: [...prev.classIds, cls.id] }));
-                          } else {
-                            setForm(prev => ({ ...prev, classIds: prev.classIds.filter(id => id !== cls.id) }));
-                          }
-                        }}
-                        disabled={loading || hasStarted || isClosed}
-                        className="mr-3"
-                        variant="text"
-                      />
-                      <div className="flex-1">
-                        <span className="text-sm font-medium text-slate-900">{cls.name}</span>
-                      </div>
-                    </label>
-                  ))}
-                </div>
-              )}
-            </div>
-            
-            {hasStarted && (
-              <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-xl">
-                <p className="text-sm text-blue-700">As turmas não podem ser alteradas porque a lista já começou. Só é possível editar título, descrição e data de término.</p>
-              </div>
-            )}
-
-            {!hasStarted && form.classIds.length === 0 && (
-              <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-xl">
-                <p className="text-sm text-red-600 font-medium">⚠️ Selecione pelo menos uma turma</p>
-              </div>
-            )}
-
-            {form.classIds.length > 0 && (
-              <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-xl">
-                <div className="flex items-center gap-2">
-                  <svg className="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  <span className="text-sm font-medium text-blue-800">
-                    {form.classIds.length} turma{form.classIds.length !== 1 ? 's' : ''} selecionada{form.classIds.length !== 1 ? 's' : ''}
-                  </span>
-                </div>
-                <div className="mt-2 text-xs text-blue-600">
-                  {form.classIds.map(id => {
-                    const cls = classes.find(c => c.id === id);
-                    return cls?.name;
-                  }).filter(Boolean).join(', ')}
-                </div>
-              </div>
-            )}
-            
-            {/* Campo: conta para a nota */}
-            <div className="mt-4 border-t pt-4 space-y-3">
-              <label className="flex items-center gap-3">
-                <Checkbox
-                  checked={form.countTowardScore}
-                  onChange={(e) => setForm(prev => ({ ...prev, countTowardScore: e.target.checked }))}
-                  className="mr-2"
-                  disabled={loading || isClosed}
-                  variant="text"
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Data de Início
+                </label>
+                <input
+                  type="datetime-local"
+                  value={form.startDate}
+                  onChange={(e) => handleDateChange('startDate', e.target.value)}
+                  disabled={loading || hasStarted || isClosed}
+                  className={`w-full h-12 px-4 border rounded-xl focus:outline-none focus:ring-2 text-slate-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all ${
+                    errors.startDate 
+                      ? 'border-red-300 focus:border-red-400 focus:ring-red-400/20' 
+                      : 'border-slate-300 focus:border-blue-500 focus:ring-blue-500'
+                  } ${hasStarted || isClosed ? 'bg-slate-100' : 'bg-white'}`}
                 />
-                <span className={`text-sm font-medium ${isClosed ? 'text-slate-500' : 'text-slate-700'}`}>Esta lista conta para a nota</span>
-              </label>
+                {errors.startDate && (
+                  <p className="mt-1.5 text-xs text-red-600">{errors.startDate}</p>
+                )}
+              </div>
               
-              {/* Campo: restringir por IP */}
-              <label className="flex items-center gap-3">
-                <Checkbox
-                  checked={form.isRestricted}
-                  onChange={(e) => setForm(prev => ({ ...prev, isRestricted: e.target.checked }))}
-                  className="mr-2"
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Data de Fim
+                </label>
+                <input
+                  type="datetime-local"
+                  value={form.endDate}
+                  onChange={(e) => handleDateChange('endDate', e.target.value)}
                   disabled={loading || isClosed}
-                  variant="text"
+                  className={`w-full h-12 px-4 border rounded-xl focus:outline-none focus:ring-2 text-slate-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all ${
+                    errors.endDate 
+                      ? 'border-red-300 focus:border-red-400 focus:ring-red-400/20' 
+                      : 'border-slate-300 focus:border-blue-500 focus:ring-blue-500'
+                  } ${isClosed ? 'bg-slate-100' : 'bg-white'}`}
                 />
-                <span className={`text-sm font-medium ${isClosed ? 'text-slate-500' : 'text-slate-700'}`}>Restringir acesso por IP</span>
-              </label>
-            </div>
-          </div>
-        </form>
-
-        <div className="flex gap-3 mt-8 pt-6 border-t border-slate-200">
-          <Button 
-            variant="outline" 
-            onClick={handleClose} 
-            className="flex-1 h-12 border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold rounded-xl transition-all duration-200"
-            disabled={loading || showSuccessMessage}
-          >
-            Cancelar
-          </Button>
-          
-          <Button 
-            onClick={handleSubmit} 
-            className="flex-1 h-12 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={loading || !isFormValid() || showSuccessMessage || isClosed}
-          >
-            {loading ? (
-              <div className="flex items-center gap-2">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                Atualizando...
+                {errors.endDate && (
+                  <p className="mt-1.5 text-xs text-red-600">{errors.endDate}</p>
+                )}
               </div>
-            ) : isClosed ? (
-              'Lista Fechada - Não Pode Ser Editada'
-            ) : (
-              'Atualizar Lista'
+            </div>
+
+            {errors.dateRange && (
+              <div className="p-4 bg-red-50 border border-red-200 rounded-xl animate-in slide-in-from-top-2 duration-300">
+                <div className="flex items-start gap-2">
+                  <svg className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <p className="text-sm text-red-800 flex-1">{errors.dateRange}</p>
+                </div>
+              </div>
             )}
-          </Button>
+
+            {hasStarted && (
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                <div className="flex items-start gap-3">
+                  <svg className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <p className="text-sm text-blue-700">
+                    A data de início não pode ser editada porque a lista já foi iniciada. Apenas a data de fim pode ser alterada.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <label className="block text-sm font-semibold text-slate-700">
+                  Turmas
+                </label>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const allIds = Array.isArray(classes) ? classes.map(c => c.id) : [];
+                      setForm(prev => ({ ...prev, classIds: allIds }));
+                    }}
+                    disabled={loading || hasStarted || isClosed}
+                    className="text-xs text-blue-600 hover:text-blue-800 font-medium px-2 py-1 rounded-lg hover:bg-blue-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Selecionar Todas
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setForm(prev => ({ ...prev, classIds: [] }));
+                    }}
+                    disabled={loading || hasStarted || isClosed}
+                    className="text-xs text-slate-600 hover:text-slate-800 font-medium px-2 py-1 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Limpar
+                  </button>
+                </div>
+              </div>
+              
+              <div className="border border-slate-300 rounded-xl p-4 max-h-40 overflow-y-auto bg-slate-50">
+                {classes.length === 0 ? (
+                  <div className="text-center py-4 text-slate-500 text-sm">
+                    Nenhuma turma disponível
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {classes.map((cls) => (
+                      <label key={cls.id} className="flex items-center p-3 hover:bg-white rounded-lg transition-colors cursor-pointer">
+                        <Checkbox
+                          checked={form.classIds.includes(cls.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setForm(prev => ({ ...prev, classIds: [...prev.classIds, cls.id] }));
+                            } else {
+                              setForm(prev => ({ ...prev, classIds: prev.classIds.filter(id => id !== cls.id) }));
+                            }
+                          }}
+                          disabled={loading || hasStarted || isClosed}
+                          className="mr-3"
+                          variant="text"
+                        />
+                        <div className="flex-1">
+                          <span className="text-sm font-medium text-slate-900">{cls.name}</span>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+              
+              {hasStarted && (
+                <div className="mt-3 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                  <p className="text-sm text-blue-700">As turmas não podem ser alteradas porque a lista já começou. Só é possível editar título, descrição e data de término.</p>
+                </div>
+              )}
+
+              {!hasStarted && form.classIds.length === 0 && (
+                <div className="mt-3 p-4 bg-red-50 border border-red-200 rounded-xl">
+                  <div className="flex items-center gap-2">
+                    <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <p className="text-sm text-red-800 font-semibold">Selecione pelo menos uma turma</p>
+                  </div>
+                </div>
+              )}
+
+              {form.classIds.length > 0 && (
+                <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                  <div className="flex items-center gap-2">
+                    <svg className="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    <span className="text-sm font-semibold text-blue-800">
+                      {form.classIds.length} turma{form.classIds.length !== 1 ? 's' : ''} selecionada{form.classIds.length !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+                  <div className="mt-2 text-xs text-blue-700">
+                    {form.classIds.map(id => {
+                      const cls = classes.find(c => c.id === id);
+                      return cls?.name;
+                    }).filter(Boolean).join(', ')}
+                  </div>
+                </div>
+              )}
+              
+              {/* Campos de opções */}
+              <div className="mt-4 border-t border-slate-200 pt-4 space-y-3">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <Checkbox
+                    checked={form.countTowardScore}
+                    onChange={(e) => setForm(prev => ({ ...prev, countTowardScore: e.target.checked }))}
+                    disabled={loading || isClosed}
+                    className="mr-2"
+                    variant="text"
+                  />
+                  <span className={`text-sm font-medium ${isClosed ? 'text-slate-500' : 'text-slate-700'}`}>Esta lista conta para a nota</span>
+                </label>
+                
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <Checkbox
+                    checked={form.isRestricted}
+                    onChange={(e) => setForm(prev => ({ ...prev, isRestricted: e.target.checked }))}
+                    disabled={loading || isClosed}
+                    className="mr-2"
+                    variant="text"
+                  />
+                  <span className={`text-sm font-medium ${isClosed ? 'text-slate-500' : 'text-slate-700'}`}>Restringir acesso por IP</span>
+                </label>
+              </div>
+            </div>
+
+            {/* Footer Actions */}
+            <div className="flex gap-3 pt-6 border-t border-slate-200">
+              <button 
+                type="button"
+                onClick={handleClose} 
+                disabled={loading || showSuccessMessage}
+                className="flex-1 h-12 px-4 text-sm font-semibold text-slate-700 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Cancelar
+              </button>
+              
+              <button 
+                type="submit"
+                disabled={loading || !isFormValid() || showSuccessMessage || isClosed}
+                className={`flex-1 h-12 px-4 text-sm font-semibold text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all disabled:cursor-not-allowed ${
+                  showSuccessMessage
+                    ? "bg-green-500 hover:bg-green-600 focus:ring-green-500"
+                    : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:ring-blue-500 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 shadow-lg hover:shadow-xl"
+                }`}
+              >
+                {showSuccessMessage ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Atualizada com sucesso!
+                  </span>
+                ) : loading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                    Atualizando...
+                  </span>
+                ) : isClosed ? (
+                  'Lista Fechada - Não Pode Ser Editada'
+                ) : (
+                  'Atualizar Lista'
+                )}
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </div>

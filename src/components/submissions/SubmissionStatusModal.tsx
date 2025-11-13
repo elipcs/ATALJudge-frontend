@@ -1,17 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { submissionsApi, SubmissionDetailsResponse } from "@/services/submissions";
 import { logger } from "@/utils/logger";
 import { getVerdictColor } from "@/utils/statusUtils";
+import { formatLanguageName } from "@/utils/languageUtils";
 
 interface SubmissionStatusModalProps {
   isOpen: boolean;
@@ -198,228 +191,303 @@ export default function SubmissionStatusModal({
 
   const statusInfo = getStatusInfo();
 
+  if (!isOpen) return null;
+
+  // Determinar gradiente do header baseado no status
+  const getHeaderGradient = () => {
+    switch (status) {
+      case "completed":
+        return "bg-gradient-to-r from-green-50 to-emerald-50";
+      case "failed":
+        return "bg-gradient-to-r from-red-50 to-orange-50";
+      case "running":
+        return "bg-gradient-to-r from-blue-50 to-indigo-50";
+      default:
+        return "bg-gradient-to-r from-yellow-50 to-amber-50";
+    }
+  };
+
+  // Determinar cor do ícone do header
+  const getHeaderIconBg = () => {
+    switch (status) {
+      case "completed":
+        return "bg-gradient-to-br from-green-500 to-emerald-600";
+      case "failed":
+        return "bg-gradient-to-br from-red-500 to-orange-600";
+      case "running":
+        return "bg-gradient-to-br from-blue-500 to-indigo-600";
+      default:
+        return "bg-gradient-to-br from-yellow-500 to-amber-600";
+    }
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className={`text-xl font-bold flex items-center gap-2 ${statusInfo.titleColor}`}>
-            {statusInfo.icon}
-            <span>{statusInfo.title}</span>
-          </DialogTitle>
-          <DialogDescription>{statusInfo.description}</DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-4 py-4">
-          {/* Informações principais da submissão */}
-          {(questionName || userName || questionListTitle) && (
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                {questionName && (
-                  <div>
-                    <p className="text-xs font-semibold text-slate-600 mb-1">Questão:</p>
-                    <p className="text-sm text-slate-900 font-medium">{questionName}</p>
-                  </div>
-                )}
-                {userName && (
-                  <div>
-                    <p className="text-xs font-semibold text-slate-600 mb-1">Estudante:</p>
-                    <p className="text-sm text-slate-900 font-medium">{userName}</p>
-                  </div>
-                )}
-                {questionListTitle&& (
-                  <div>
-                    <p className="text-xs font-semibold text-slate-600 mb-1">Lista:</p>
-                    <p className="text-sm text-slate-900 font-medium">{questionListTitle}</p>
-                  </div>
-                )}
-              </div>
+    <div 
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200 overflow-y-auto"
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !isPolling) {
+          handleClose();
+        }
+      }}
+    >
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl mx-4 my-8 animate-in zoom-in-95 duration-200 overflow-hidden">
+        {/* Header */}
+        <div className={`flex items-center justify-between p-4 border-b border-slate-200 ${getHeaderGradient()} rounded-t-2xl`}>
+          <div className="flex items-center gap-2.5">
+            <div className={`p-2 ${getHeaderIconBg()} rounded-xl shadow-lg`}>
+              {statusInfo.icon}
             </div>
-          )}
-
-          {}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="bg-slate-50 p-3 rounded-lg">
-              <div className="flex items-center justify-between mb-1">
-                <p className="text-sm font-semibold text-slate-700">Status:</p>
-                {isPolling && (
-                  <div className="flex items-center gap-1 text-xs text-blue-600">
-                    <svg className="animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Atualizando...
-                  </div>
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                <span className={`inline-block w-2 h-2 rounded-full ${statusInfo.dotColor}`}></span>
-                <p className="text-sm text-slate-900 font-medium">
-                  {status === "completed" && verdict ? verdict : statusInfo.statusText}
-                </p>
-              </div>
-            </div>
-
-            <div className="bg-slate-50 p-3 rounded-lg">
-              <p className="text-sm font-semibold text-slate-700 mb-1">Linguagem:</p>
-              <p className="text-sm text-slate-900 font-medium uppercase">{language}</p>
+            <div>
+              <h2 className={`text-xl font-bold ${statusInfo.titleColor}`}>{statusInfo.title}</h2>
+              <p className="text-xs text-slate-600 mt-0.5">{statusInfo.description}</p>
             </div>
           </div>
+          {!isPolling && (
+            <button
+              onClick={handleClose}
+              className="text-slate-400 hover:text-slate-600 transition-colors p-2 rounded-lg hover:bg-white/50"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+        </div>
 
-          {}
-          {results && status === "completed" && (
-            <div className="space-y-3">
-              {}
-              <div
-                className={`p-4 rounded-lg border-2 ${
-                  results.passedTests === results.totalTests
-                    ? "bg-green-50 border-green-300"
-                    : "bg-yellow-50 border-yellow-300"
-                }`}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-lg font-bold text-slate-800">Resultado da Avaliação</h3>
-                  {results.passedTests === results.totalTests ? (
-                    <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  ) : (
-                    <svg className="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                    </svg>
+        {/* Content */}
+        <div className="p-4 max-h-[calc(85vh-100px)] overflow-y-auto">
+          <div className="space-y-4">
+            {/* Informações principais da submissão */}
+            {(questionName || userName || questionListTitle) && (
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-3 animate-in slide-in-from-top-2 duration-300">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  {questionName && (
+                    <div>
+                      <p className="text-xs font-semibold text-slate-600 mb-1">Questão:</p>
+                      <p className="text-sm text-slate-900 font-medium">{questionName}</p>
+                    </div>
+                  )}
+                  {userName && (
+                    <div>
+                      <p className="text-xs font-semibold text-slate-600 mb-1">Estudante:</p>
+                      <p className="text-sm text-slate-900 font-medium">{userName}</p>
+                    </div>
+                  )}
+                  {questionListTitle && (
+                    <div>
+                      <p className="text-xs font-semibold text-slate-600 mb-1">Lista:</p>
+                      <p className="text-sm text-slate-900 font-medium">{questionListTitle}</p>
+                    </div>
                   )}
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-slate-600">Casos de Teste</p>
-                    <p className="text-2xl font-bold text-slate-900">
-                      {results.passedTests}/{results.totalTests}
-                    </p>
-                    <p className="text-xs text-slate-500">casos passaram</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-slate-600">Pontuação</p>
-                    <p className="text-2xl font-bold text-slate-900">
-                      {results.score}/100
-                    </p>
-                    <p className="text-xs text-slate-500">pontos obtidos</p>
-                  </div>
+              </div>
+            )}
+
+            {/* Status e Linguagem */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="bg-slate-50 border border-slate-200 p-3 rounded-lg">
+                <div className="flex items-center justify-between mb-1.5">
+                  <p className="text-xs font-semibold text-slate-700">Status:</p>
+                  {isPolling && (
+                    <div className="flex items-center gap-1 text-xs text-blue-600 font-medium">
+                      <svg className="animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Atualizando...
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`inline-block w-2.5 h-2.5 rounded-full ${statusInfo.dotColor}`}></span>
+                  <p className="text-xs text-slate-900 font-semibold">
+                    {status === "completed" && verdict ? verdict : statusInfo.statusText}
+                  </p>
                 </div>
               </div>
 
-              {}
-              <div className="space-y-2">
-                <h4 className="text-sm font-semibold text-slate-700">Detalhes dos Casos de Teste:</h4>
-                
-                {/* Resumo visual */}
-                <div className="flex gap-2 mb-3">
-                  <div className="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-lg">
-                    <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    <span className="text-sm font-semibold text-green-700">
-                      {results.passedTests} Passaram
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 px-3 py-2 bg-red-50 border border-red-200 rounded-lg">
-                    <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                    <span className="text-sm font-semibold text-red-700">
-                      {results.totalTests - results.passedTests} Falharam
-                    </span>
-                  </div>
+              <div className="bg-slate-50 border border-slate-200 p-3 rounded-lg">
+                <p className="text-xs font-semibold text-slate-700 mb-1.5">Linguagem:</p>
+                <p className="text-xs text-slate-900 font-semibold">{formatLanguageName(language)}</p>
+              </div>
+            </div>
+
+            {/* Informações da Submissão */}
+            <details className="bg-slate-50 border border-slate-200 p-3 rounded-lg" open={!results}>
+              <summary className="text-xs font-semibold text-slate-700 cursor-pointer hover:text-slate-900 transition-colors">
+                Informações da Submissão
+              </summary>
+              <div className="mt-3 space-y-3">
+                <div>
+                  <p className="text-xs font-semibold text-slate-600 mb-1">ID da Submissão:</p>
+                  <p className="text-xs text-slate-900 font-mono break-all bg-white p-2 rounded border border-slate-200">
+                    {submissionId}
+                  </p>
                 </div>
-
-                <div className="max-h-96 overflow-y-auto space-y-2">
-                  {/* Exibir todos os casos de teste */}
-                  {(results.testResults || []).map((result, index) => (
-                    <div
-                      key={result.testCaseId || index}
-                      className={`p-3 rounded-lg border ${
-                        result.passed ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm font-semibold">
-                          Caso de Teste {index + 1}
-                        </span>
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={`text-xs font-bold px-2 py-1 rounded ${
-                              result.passed ? "bg-green-200 text-green-800" : "bg-red-200 text-red-800"
-                            }`}
-                          >
-                            {result.passed ? "✓ Passou" : "✗ Falhou"}
-                          </span>
-                          <span className="text-xs text-slate-600 font-medium">{result.verdict}</span>
-                        </div>
-                      </div>
-
-                      <div className="text-xs text-slate-600 mt-1 flex gap-3">
-                        {result.executionTimeMs !== undefined && <span>Tempo: {result.executionTimeMs}ms</span>}
-                        {result.memoryUsedKb !== undefined && <span>Memória: {(result.memoryUsedKb / 1024).toFixed(2)}MB</span>}
-                      </div>
-
-                      {result.actualOutput && (
-                        <div className="mt-2">
-                          <p className="text-xs font-semibold text-slate-700 mb-1">Sua Saída:</p>
-                          <pre className={`text-xs p-2 rounded font-mono overflow-x-auto max-h-20 ${
-                            result.passed ? "bg-green-100" : "bg-red-100"
-                          }`}>
-                            {result.actualOutput}
-                          </pre>
-                        </div>
-                      )}
-
-                      {result.errorMessage && (
-                        <div className="mt-2">
-                          <p className="text-xs font-semibold text-red-700 mb-1">Erro:</p>
-                          <pre className="text-xs bg-red-100 p-2 rounded font-mono overflow-x-auto max-h-24">
-                            {result.errorMessage}
-                          </pre>
-                        </div>
-                      )}
+                <div>
+                  <p className="text-xs font-semibold text-slate-600 mb-1">Criado em:</p>
+                  <p className="text-xs text-slate-900 font-medium">{new Date(createdAt).toLocaleString("pt-BR")}</p>
+                </div>
+                {code && (
+                  <div>
+                    <p className="text-xs font-semibold text-slate-600 mb-1.5">Código Submetido:</p>
+                    <div className="bg-slate-900 text-slate-100 p-3 rounded-lg overflow-x-auto max-h-48 border border-slate-700">
+                      <pre className="text-xs font-mono whitespace-pre-wrap break-words">{code}</pre>
                     </div>
-                  ))}
+                  </div>
+                )}
+              </div>
+            </details>
+
+            {/* Resultados da Avaliação */}
+            {results && status === "completed" && (
+              <div className="space-y-3 animate-in slide-in-from-bottom-2 duration-300">
+                {/* Resumo dos Resultados */}
+                <div
+                  className={`p-4 rounded-lg border-2 shadow-sm ${
+                    results.passedTests === results.totalTests
+                      ? "bg-gradient-to-br from-green-50 to-emerald-50 border-green-300"
+                      : "bg-gradient-to-br from-yellow-50 to-amber-50 border-yellow-300"
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-base font-bold text-slate-800">Resultado da Avaliação</h3>
+                    {results.passedTests === results.totalTests ? (
+                      <div className="p-1.5 bg-green-100 rounded-lg">
+                        <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                    ) : (
+                      <div className="p-1.5 bg-yellow-100 rounded-lg">
+                        <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs font-semibold text-slate-600 mb-0.5">Casos de Teste</p>
+                      <p className="text-2xl font-bold text-slate-900">
+                        {results.passedTests}/{results.totalTests}
+                      </p>
+                      <p className="text-xs text-slate-500">casos passaram</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-slate-600 mb-0.5">Pontuação</p>
+                      <p className="text-2xl font-bold text-slate-900">
+                        {results.score}/100
+                      </p>
+                      <p className="text-xs text-slate-500">pontos obtidos</p>
+                    </div>
+                  </div>
                 </div>
+
+                {/* Detalhes dos Casos de Teste */}
+                <div className="space-y-2">
+                  <h4 className="text-xs font-semibold text-slate-700">Detalhes dos Casos de Teste:</h4>
+                
+                  {/* Resumo visual */}
+                  <div className="flex gap-2 mb-3">
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 border border-green-200 rounded-lg shadow-sm">
+                      <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span className="text-xs font-semibold text-green-700">
+                        {results.passedTests} Passaram
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 border border-red-200 rounded-lg shadow-sm">
+                      <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                      <span className="text-xs font-semibold text-red-700">
+                        {results.totalTests - results.passedTests} Falharam
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="max-h-64 overflow-y-auto space-y-2">
+                    {/* Exibir todos os casos de teste */}
+                    {(results.testResults || []).map((result, index) => (
+                      <div
+                        key={result.testCaseId || index}
+                        className={`p-3 rounded-lg border shadow-sm ${
+                          result.passed 
+                            ? "bg-gradient-to-br from-green-50 to-emerald-50 border-green-200" 
+                            : "bg-gradient-to-br from-red-50 to-orange-50 border-red-200"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-xs font-bold text-slate-900">
+                            Caso de Teste {index + 1}
+                          </span>
+                          <div className="flex items-center gap-1.5">
+                            <span
+                              className={`text-xs font-bold px-2 py-0.5 rounded ${
+                                result.passed 
+                                  ? "bg-green-200 text-green-800 border border-green-300" 
+                                  : "bg-red-200 text-red-800 border border-red-300"
+                              }`}
+                            >
+                              {result.passed ? "✓ Passou" : "✗ Falhou"}
+                            </span>
+                            <span className="text-xs text-slate-600 font-semibold">{result.verdict}</span>
+                          </div>
+                        </div>
+
+                        <div className="text-xs text-slate-600 mt-1.5 flex gap-3 mb-1.5">
+                          {result.executionTimeMs !== undefined && (
+                            <span className="font-medium">Tempo: {result.executionTimeMs}ms</span>
+                          )}
+                          {result.memoryUsedKb !== undefined && (
+                            <span className="font-medium">Memória: {(result.memoryUsedKb / 1024).toFixed(2)}MB</span>
+                          )}
+                        </div>
+
+                        {result.actualOutput && (
+                          <div className="mt-2">
+                            <p className="text-xs font-semibold text-slate-700 mb-1">Sua Saída:</p>
+                            <pre className={`text-xs p-2 rounded font-mono overflow-x-auto max-h-20 border ${
+                              result.passed 
+                                ? "bg-green-100 border-green-200" 
+                                : "bg-red-100 border-red-200"
+                            }`}>
+                              {result.actualOutput}
+                            </pre>
+                          </div>
+                        )}
+
+                        {result.errorMessage && (
+                          <div className="mt-2">
+                            <p className="text-xs font-semibold text-red-700 mb-1">Erro:</p>
+                            <pre className="text-xs bg-red-100 border border-red-200 p-2 rounded font-mono overflow-x-auto max-h-24">
+                              {result.errorMessage}
+                            </pre>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
               </div>
             </div>
           )}
-
-          {}
-          <details className="bg-slate-50 p-3 rounded-lg" open={!results}>
-            <summary className="text-sm font-semibold text-slate-700 cursor-pointer">Informações da Submissão</summary>
-            <div className="mt-3 space-y-3">
-              <div>
-                <p className="text-xs text-slate-600 mb-1">ID da Submissão:</p>
-                <p className="text-xs text-slate-900 font-mono break-all">{submissionId}</p>
-              </div>
-              <div>
-                <p className="text-xs text-slate-600 mb-1">Criado em:</p>
-                <p className="text-xs text-slate-900">{new Date(createdAt).toLocaleString("pt-BR")}</p>
-              </div>
-              {code && (
-                <div>
-                  <p className="text-xs text-slate-600 mb-2">Código Submetido:</p>
-                  <div className="bg-slate-900 text-slate-100 p-3 rounded-md overflow-x-auto max-h-48">
-                    <pre className="text-xs font-mono whitespace-pre-wrap break-words">{code}</pre>
-                  </div>
-                </div>
-              )}
-            </div>
-          </details>
+          </div>
         </div>
 
-        <div className="flex justify-end gap-2 pt-2 border-t">
-          <Button
+        {/* Footer */}
+        <div className="flex justify-end gap-3 p-4 border-t border-slate-200 bg-slate-50 rounded-b-2xl">
+          <button
             onClick={handleClose}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold transition-all duration-200"
+            disabled={isPolling}
+            className="h-10 px-5 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]"
           >
             Fechar
-          </Button>
+          </button>
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   );
 }
 

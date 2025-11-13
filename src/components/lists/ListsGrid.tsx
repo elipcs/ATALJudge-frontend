@@ -8,7 +8,6 @@ interface ListsGridProps {
   userRole: string;
   onEdit: (list: QuestionList) => void;
   onDelete: (list: QuestionList) => void;
-  onDuplicate: (list: QuestionList) => void;
   onCreateList: () => void;
   classes: Class[];
 }
@@ -18,7 +17,6 @@ export default function ListsGrid({
   userRole,
   onEdit,
   onDelete,
-  onDuplicate,
   onCreateList,
   classes
 }: ListsGridProps) {
@@ -59,7 +57,6 @@ export default function ListsGrid({
           userRole={userRole}
           onEdit={onEdit}
           onDelete={onDelete}
-          onDuplicate={onDuplicate}
           classNames={list.classIds?.map(cid => classIdToName[cid]).filter(Boolean) || []}
         />
       ))}

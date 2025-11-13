@@ -18,6 +18,7 @@ import { getSubmissionStatusColor, normalizeStatus, getVerdictColor } from "../.
 import { SUBMISSION_STATUS_OPTIONS } from "../../constants";
 import { logger } from '@/utils/logger';
 import { getVerdictBadgeColor } from "@/utils/statusUtils";
+import { formatLanguageName } from "@/utils/languageUtils";
 import { API } from "@/config/api";
 
 interface SubmissionsPageState {
@@ -332,7 +333,7 @@ export default function SubmissoesPage() {
                         </td>
                         <td className="py-3 px-4">
                           <div className="text-gray-600">
-                            {submission.language}
+                            {formatLanguageName(submission.language)}
                           </div>
                         </td>
                         <td className="py-3 px-4">

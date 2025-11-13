@@ -26,6 +26,7 @@ export class ApiError extends Error {
 interface RequestConfig extends RequestInit {
   skipAuth?: boolean;
   timeout?: number;
+  signal?: AbortSignal;
 }
 
 export const API_BASE_URL = (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_API_BASE_URL) || 'http://localhost:5000/api';
@@ -66,15 +67,29 @@ async function apiClient<T>(
   };
 
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeout);
+    // Usar signal externo se fornecido, senão criar um novo
+    let controller: AbortController | null = null;
+    let timeoutId: NodeJS.Timeout | null = null;
+    
+    if (config.signal) {
+      // Se um signal externo foi fornecido, usar ele (não criar timeout interno)
+      // O timeout já está sendo gerenciado externamente
+    } else {
+      // Criar controller e timeout interno apenas se não houver signal externo
+      controller = new AbortController();
+      timeoutId = setTimeout(() => {
+        if (controller) controller.abort();
+      }, timeout);
+    }
+    
+    const signal = config.signal || controller?.signal;
 
     const response = await fetch(url, {
       ...requestConfig,
-      signal: controller.signal,
+      signal: signal,
     });
 
-    clearTimeout(timeoutId);
+    if (timeoutId) clearTimeout(timeoutId);
 
     const contentType = response.headers.get('content-type');
     const isJson = contentType?.includes('application/json');
@@ -138,7 +153,7 @@ async function apiClient<T>(
                 const retryResp = await fetch(url, {
                   ...requestConfig,
                   headers: retriedHeaders,
-                  signal: controller.signal,
+                  signal: controller?.signal || signal,
                 });
 
                 const retryContentType = retryResp.headers.get('content-type');
@@ -355,6 +370,7 @@ export const API = {
 
   testCases: {
     list: (questionId: string) => get<TestCaseResponseDTO[]>(`/questions/${questionId}/testcases`),
+    get: (testCaseId: string) => get<TestCaseResponseDTO>(`/testcases/${testCaseId}`),
     create: (questionId: string, data: Omit<TestCaseResponseDTO, 'id' | 'createdAt'>) => post<TestCaseResponseDTO>(`/questions/${questionId}/testcases`, data),
     update: (questionId: string, testCaseId: string, data: Partial<TestCaseResponseDTO>) => 
       post<TestCaseResponseDTO>(`/testcases/${testCaseId}`, data),

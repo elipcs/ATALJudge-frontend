@@ -96,6 +96,7 @@ export default function ListsComponent() {
       description: list.description,
       classIds: list.classIds.map(id => ({ $oid: id })),
       questions: list.questions,
+      questionCount: list.questionCount ?? list.questions?.length ?? 0,
       startDate: list.startDate,
       endDate: list.endDate,
       status,
@@ -151,7 +152,7 @@ export default function ListsComponent() {
                 <p className="text-gray-600 text-sm mb-2">{listWithStatus.description}</p>
                 <div className="space-y-2">
                   <div className="flex items-center gap-4 text-sm text-gray-500">
-                    <span>{listWithStatus.questionCount || 0} questões</span>
+                    <span>{listWithStatus.questionCount ?? listWithStatus.questions?.length ?? 0} questões</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

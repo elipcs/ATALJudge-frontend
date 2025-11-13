@@ -167,20 +167,6 @@ export function useListsData(userRole?: string, currentUser?: any): UseListsData
     }
   }, []);
 
-  const duplicateList = useCallback(async (id: string, newTitle?: string): Promise<QuestionList> => {
-    try {
-      setError(null);
-      const duplicatedList = await listsApi.duplicateList(id, newTitle);
-      
-      setLists(prev => [duplicatedList, ...prev]);
-
-      return duplicatedList;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao duplicar lista';
-      setError(errorMessage);
-      throw new Error(errorMessage);
-    }
-  }, []);
 
   const addQuestionToList = useCallback(async (questionListId: string, questionId: string): Promise<void> => {
     try {
@@ -224,7 +210,6 @@ export function useListsData(userRole?: string, currentUser?: any): UseListsData
     updateList,
     updateListScoring,
     deleteList,
-    duplicateList,
     addQuestionToList,
     removeQuestionFromList,
     filters,

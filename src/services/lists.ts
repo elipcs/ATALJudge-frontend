@@ -189,55 +189,6 @@ export const listsApi = {
     }
   },
 
-  async duplicateList(id: string, newTitle?: string): Promise<QuestionList> {
-    try {
-      const originalList = await this.getById(id);
-      if (!originalList) throw new Error('Lista não encontrada');
-
-      const title = newTitle || `${originalList.title} (Cópia)`;
-      
-      const newListData: CreateListRequest = {
-        title,
-        description: originalList.description,
-        startDate: originalList.startDate,
-        endDate: originalList.endDate,
-        classIds: originalList.classIds,
-        countTowardScore: (originalList as any).countTowardScore ?? false,
-        isRestricted: (originalList as any).isRestricted ?? false
-      };
-
-      const newList = await this.create(newListData);
-
-      if (originalList.scoringMode || originalList.maxScore || originalList.questionGroups) {
-        const scoringData: UpdateListScoringRequest = {
-          scoringMode: originalList.scoringMode,
-          maxScore: originalList.maxScore,
-          minQuestionsForMaxScore: originalList.minQuestionsForMaxScore,
-          questionGroups: originalList.questionGroups?.map(group => ({
-            id: group.id,
-            name: group.name,
-            questionIds: group.questionIds || [],
-            percentage: group.percentage
-          })),
-        };
-        await this.updateScoring(newList.id, scoringData);
-      }
-
-      if (originalList.questions && originalList.questions.length > 0) {
-        for (const question of originalList.questions) {
-          if (question && (question as any).id) {
-            await this.addQuestionToList(newList.id, (question as any).id);
-          }
-        }
-      }
-
-      return await this.getById(newList.id) as QuestionList;
-    } catch (error) {
-      logger.error('Erro ao duplicar lista', { error });
-      throw error;
-    }
-  },
-
   async addQuestionToList(questionListId: string, questionId: string): Promise<void> {
     try {
       await API.lists.addQuestion(questionListId, questionId);

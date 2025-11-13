@@ -8,14 +8,12 @@ interface UseListsActionsProps {
   createList: (listData: any) => Promise<any>;
   updateList: (id: string, listData: any) => Promise<any>;
   deleteList: (id: string) => Promise<any>;
-  duplicateList: (id: string) => Promise<any>;
 }
 
 export function useListsActions({
   createList,
   updateList,
-  deleteList,
-  duplicateList
+  deleteList
 }: UseListsActionsProps) {
   const { toast } = useToast();
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -72,19 +70,6 @@ export function useListsActions({
     }
   };
 
-  const handleDuplicateList = async (list: QuestionList) => {
-    try {
-      await duplicateList(list.id);
-      toast({
-        description: "Lista duplicada com sucesso!",
-        variant: "success",
-      });
-    } catch (error) {
-      console.error('Erro ao duplicar lista:', error);
-      throw error;
-    }
-  };
-
   const handleEditClick = (list: QuestionList) => {
     setEditingList(list);
     setShowEditModal(true);
@@ -114,7 +99,6 @@ export function useListsActions({
     handleCreateList,
     handleEditList,
     handleDeleteList,
-    handleDuplicateList,
     handleEditClick,
     handleDeleteClick,
     setShowCreateModal,

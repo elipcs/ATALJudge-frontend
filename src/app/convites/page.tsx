@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import PageHeader from "../../components/PageHeader";
-import { InviteForm, InviteList, FilterDropdown } from "../../components/invites";
+import { InviteList, FilterDropdown, CreateInviteModal } from "../../components/invites";
 import { Button } from "../../components/ui/button";
 import { useUserRole } from "../../hooks/useUserRole";
 import { useInvites } from "../../hooks/useInvites";
@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { logger } from '@/utils/logger';
 
 export default function InvitesPage() {
-  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const { userRole, isLoading } = useUserRole();
   const { filterRole, filterStatus, updateRoleFilter, updateStatusFilter } = useInviteFilters();
   const { 
@@ -42,7 +42,6 @@ export default function InvitesPage() {
 
   const handleInviteCreated = () => {
     loadInvites(filterRole, filterStatus);
-    setIsFormOpen(false);
   };
 
   if (isLoading) {
@@ -71,7 +70,7 @@ export default function InvitesPage() {
       >
         <Button
           variant="outline"
-          onClick={() => setIsFormOpen(!isFormOpen)}
+          onClick={() => setShowCreateModal(true)}
           className="border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold"
         >
           <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -82,25 +81,6 @@ export default function InvitesPage() {
       </PageHeader>
 
       <div className="space-y-6">
-        {/* Painel Deslizante do Formulário */}
-        <div
-          className={`transform transition-all duration-300 ease-out ${
-            isFormOpen ? 'max-h-[1000px] opacity-100 overflow-visible' : 'max-h-0 opacity-0 overflow-hidden'
-          }`}
-        >
-          <div className="flex items-center justify-end mb-4">
-            <button
-              onClick={() => setIsFormOpen(false)}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              title="Fechar"
-            >
-              <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-          <InviteForm onInviteCreated={handleInviteCreated} />
-        </div>
 
         <div className="p-6 bg-white rounded-lg border border-gray-200 shadow-sm">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -172,6 +152,13 @@ export default function InvitesPage() {
           onReload={() => loadInvites(filterRole, filterStatus)}
         />
       </div>
+
+      {/* Modal de Criar Convite */}
+      <CreateInviteModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onInviteCreated={handleInviteCreated}
+      />
     </div>
   );
 }

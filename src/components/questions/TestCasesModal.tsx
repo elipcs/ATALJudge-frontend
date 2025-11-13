@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import * as testCasesService from "@/services/testCases";
 import { logger } from "@/utils/logger";
 import { API } from "@/config/api";
-import { generateTestCases, GenerateTestCasesRequest, GeneratedTestCase } from "@/services/testCases";
+import GenerateTestCasesModal from "./GenerateTestCasesModal";
 
 interface TestCase {
   id: string;
@@ -29,15 +29,7 @@ export default function TestCasesModal({
   onSave,
 }: TestCasesModalProps) {
   const [submissionType, setSubmissionType] = useState<"local" | "codeforces">("local");
-  const [testCases, setTestCases] = useState<TestCase[]>([
-    {
-      id: "1",
-      input: "",
-      expectedOutput: "",
-      isSample: true,
-      weight: 10,
-    },
-  ]);
+  const [testCases, setTestCases] = useState<TestCase[]>([]);
   const [codeforcesContestId, setCodeforcesContestId] = useState("");
   const [codeforcesProblemIndex, setCodeforcesProblemIndex] = useState("");
   const [isSaving, setIsSaving] = useState(false);
@@ -55,85 +47,159 @@ export default function TestCasesModal({
   });
   const [deleteAllConfirm, setDeleteAllConfirm] = useState(false);
   const [isDeletingAll, setIsDeletingAll] = useState(false);
+  const [showGenerateModal, setShowGenerateModal] = useState(false);
 
-  // Estados para geração automática
-  const [showGenerator, setShowGenerator] = useState(false);
-  const [oracleCode, setOracleCode] = useState("");
-  const [oracleLanguage, setOracleLanguage] = useState<'python' | 'java'>('python');
-  const [testCaseCount, setTestCaseCount] = useState(10);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [generatedTestCases, setGeneratedTestCases] = useState<GeneratedTestCase[]>([]);
-  const [generationError, setGenerationError] = useState<string | null>(null);
+  // Refs para armazenar timeouts e permitir cleanup
+  const timeoutRefs = useRef<NodeJS.Timeout[]>([]);
+
+  // Função helper para adicionar timeout com cleanup automático
+  const addTimeout = useCallback((callback: () => void, delay: number) => {
+    const timeoutId = setTimeout(() => {
+      callback();
+      timeoutRefs.current = timeoutRefs.current.filter(id => id !== timeoutId);
+    }, delay);
+    timeoutRefs.current.push(timeoutId);
+    return timeoutId;
+  }, []);
+
+  // Cleanup de todos os timeouts
+  const clearAllTimeouts = useCallback(() => {
+    timeoutRefs.current.forEach(timeoutId => clearTimeout(timeoutId));
+    timeoutRefs.current = [];
+  }, []);
+
+  // Cleanup quando o modal fechar ou componente desmontar
+  useEffect(() => {
+    if (!isOpen) {
+      clearAllTimeouts();
+    }
+    return () => {
+      clearAllTimeouts();
+    };
+  }, [isOpen, clearAllTimeouts]);
+
+  // Ref para controlar se já está carregando (evitar múltiplas chamadas)
+  const isLoadingRef = useRef(false);
+  const hasLoadedRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (isOpen) {
-      loadTestCases();
-      loadQuestionData();
+    if (!isOpen) {
+      // Resetar tudo quando o modal fecha
+      setTestCases([]);
+      setError(null);
       setSaveSuccess(false);
+      setIsLoading(false);
+      isLoadingRef.current = false;
+      hasLoadedRef.current = null;
+      return;
     }
-  }, [isOpen, questionId]);
 
-  const loadQuestionData = async () => {
-    try {
-      const result = await API.questions.get(questionId);
-      const question = result.data;
-      if (question) {
-        setSubmissionType(question.submissionType || 'local');
-        if (question.contestId) {
-          setCodeforcesContestId(question.contestId);
-        }
-        if (question.problemIndex) {
-          setCodeforcesProblemIndex(question.problemIndex);
-        }
-      }
-    } catch (error) {
-      logger.error('Erro ao carregar dados da questão', error);
-      // Se falhar, manter o padrão 'local'
+    if (!questionId) {
+      setIsLoading(false);
+      return;
     }
-  };
 
-  const loadTestCases = async () => {
+    // Se já carregou para este questionId, não carregar novamente
+    if (hasLoadedRef.current === questionId) {
+      setIsLoading(false);
+      return;
+    }
+
+    // Evitar múltiplas chamadas simultâneas
+    if (isLoadingRef.current) {
+      return;
+    }
+
+    let cancelled = false;
+    isLoadingRef.current = true;
     setIsLoading(true);
     setError(null);
-    try {
-      logger.debug('Carregando casos de teste', { questionId });
-      const cases = await testCasesService.getTestCases(questionId);
-      logger.debug('Casos de teste carregados', { 
-        count: cases?.length, 
-        isArray: Array.isArray(cases) 
-      });
+    
+    const loadData = async () => {
+      if (cancelled) return;
       
-      if (Array.isArray(cases) && cases.length > 0) {
-        logger.debug('Mapeando casos de teste', { count: cases.length });
-        setTestCases(
-          cases.map((tc, index) => ({
+      try {
+        // Carregar dados da questão
+        try {
+          const result = await API.questions.get(questionId);
+          const question = result.data;
+          if (question && !cancelled) {
+            setSubmissionType(question.submissionType || 'local');
+            if (question.contestId) {
+              setCodeforcesContestId(question.contestId);
+            }
+            if (question.problemIndex) {
+              setCodeforcesProblemIndex(question.problemIndex);
+            }
+          }
+        } catch (error) {
+          logger.error('Erro ao carregar dados da questão', error);
+        }
+        
+        if (cancelled) return;
+        
+        // Carregar casos de teste
+        const cases = await testCasesService.getTestCases(questionId);
+        
+        if (cancelled) return;
+        
+        if (Array.isArray(cases) && cases.length > 0) {
+          const mappedCases = cases.map((tc, index) => ({
             id: tc.id,
-            input: tc.input,
-            expectedOutput: tc.expectedOutput,  
-            isSample: tc.isSample,
-            weight: tc.weight,
+            input: tc.input || '',
+            expectedOutput: tc.expectedOutput || '',  
+            isSample: tc.isSample || false,
+            weight: tc.weight || 10,
             order: index,
-          }))
-        );
-      } else {
-        logger.info('Nenhum caso de teste encontrado, inicializando com caso vazio');
-        setTestCases([
-          {
-            id: "new-1",
-            input: "",
-            expectedOutput: "",
-            isSample: true,
-            weight: 10,
-          },
-        ]);
+          }));
+          setTestCases(mappedCases);
+        } else {
+          setTestCases([
+            {
+              id: "new-1",
+              input: "",
+              expectedOutput: "",
+              isSample: true,
+              weight: 10,
+            },
+          ]);
+        }
+        
+        hasLoadedRef.current = questionId;
+      } catch (err: any) {
+        if (!cancelled) {
+          logger.error('Erro ao carregar casos de teste', err);
+          const errorMessage = err?.response?.data?.message || err?.message || "Erro ao carregar casos de teste. Tente novamente.";
+          setError(errorMessage);
+          setTestCases([
+            {
+              id: "new-1",
+              input: "",
+              expectedOutput: "",
+              isSample: true,
+              weight: 10,
+            },
+          ]);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+          isLoadingRef.current = false;
+        }
       }
-    } catch (err) {
-      logger.error('Erro ao carregar casos de teste', err);
-      setError("Erro ao carregar casos de teste. Tente novamente.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    };
+    
+    loadData();
+    
+    return () => {
+      cancelled = true;
+      isLoadingRef.current = false;
+    };
+  }, [isOpen, questionId]); // Apenas isOpen e questionId como dependências
+
+  const totalPoints = useMemo(() => {
+    return testCases.reduce((sum, tc) => sum + tc.weight, 0);
+  }, [testCases]);
 
   if (!isOpen) return null;
 
@@ -155,7 +221,6 @@ export default function TestCasesModal({
       return;
     }
 
-    // IDs temporários (new- ou generated-) podem ser removidos diretamente
     if (id.startsWith("new-") || id.startsWith("generated-")) {
       setTestCases(testCases.filter((tc) => tc.id !== id));
       return;
@@ -172,9 +237,7 @@ export default function TestCasesModal({
     if (!deleteConfirm.testCaseId) return;
 
     try {
-      logger.debug('Deletando caso de teste', { testCaseId: deleteConfirm.testCaseId });
       await testCasesService.deleteTestCase(questionId, deleteConfirm.testCaseId);
-      logger.info('Caso de teste deletado com sucesso');
       
       setTestCases(testCases.filter((tc) => tc.id !== deleteConfirm.testCaseId));
       setDeleteConfirm({ isOpen: false, testCaseId: null, testCaseName: "" });
@@ -199,13 +262,11 @@ export default function TestCasesModal({
     setError(null);
 
     try {
-      // Separar casos salvos (que precisam ser deletados do backend)
       const savedCases = testCases.filter(tc => 
         !tc.id.startsWith("new-") && !tc.id.startsWith("generated-")
       );
 
       if (savedCases.length === 0) {
-        // Se não há casos salvos, apenas limpar os temporários
         setTestCases([
           {
             id: "new-1",
@@ -219,21 +280,17 @@ export default function TestCasesModal({
         return;
       }
 
-      // Deletar casos salvos do backend
       const deleteResults = await Promise.allSettled(
         savedCases.map(async (tc) => {
           try {
             await testCasesService.deleteTestCase(questionId, tc.id);
-            logger.debug('Caso de teste deletado', { testCaseId: tc.id });
             return { success: true, testCaseId: tc.id };
           } catch (error: any) {
-            logger.error('Erro ao deletar caso de teste', error, { testCaseId: tc.id });
             return { success: false, testCaseId: tc.id, error: error?.message || String(error) };
           }
         })
       );
 
-      // Verificar se houve erros
       const succeeded: any[] = [];
       const failed: any[] = [];
       
@@ -250,28 +307,47 @@ export default function TestCasesModal({
       });
 
       if (failed.length > 0) {
-        logger.warn('Alguns casos de teste não foram deletados', { 
-          total: savedCases.length,
-          succeeded: succeeded.length,
-          failed: failed.length 
-        });
         setError(`Alguns casos de teste não puderam ser removidos (${succeeded.length}/${savedCases.length} removidos). Tente novamente.`);
       }
 
-      // Recarregar casos de teste do servidor para garantir sincronização
-      await loadTestCases();
-
-      logger.info('Todos os casos de teste foram removidos', { 
-        total: savedCases.length,
-        succeeded: succeeded.length,
-        failed: failed.length 
-      });
+      // Recarregar casos de teste após remover
+      hasLoadedRef.current = null;
+      setIsLoading(true);
+      try {
+        const cases = await testCasesService.getTestCases(questionId);
+        if (Array.isArray(cases) && cases.length > 0) {
+          const mappedCases = cases.map((tc, index) => ({
+            id: tc.id,
+            input: tc.input || '',
+            expectedOutput: tc.expectedOutput || '',  
+            isSample: tc.isSample || false,
+            weight: tc.weight || 10,
+            order: index,
+          }));
+          setTestCases(mappedCases);
+        } else {
+          setTestCases([
+            {
+              id: "new-1",
+              input: "",
+              expectedOutput: "",
+              isSample: true,
+              weight: 10,
+            },
+          ]);
+        }
+        hasLoadedRef.current = questionId;
+      } catch (loadError: any) {
+        logger.error('Erro ao recarregar casos de teste', loadError);
+      } finally {
+        setIsLoading(false);
+      }
       
       setDeleteAllConfirm(false);
       
       if (failed.length === 0) {
         setSaveSuccess(true);
-        setTimeout(() => {
+        addTimeout(() => {
           setSaveSuccess(false);
         }, 2000);
       }
@@ -279,11 +355,37 @@ export default function TestCasesModal({
       logger.error('Erro ao remover todos os casos de teste', error);
       setError(error?.message || "Erro ao remover casos de teste. Tente novamente.");
       
-      // Tentar recarregar mesmo em caso de erro para ver o estado atual
+      // Tentar recarregar mesmo em caso de erro
+      hasLoadedRef.current = null;
+      setIsLoading(true);
       try {
-        await loadTestCases();
-      } catch (loadError) {
-        logger.error('Erro ao recarregar casos de teste após erro na deleção', loadError);
+        const cases = await testCasesService.getTestCases(questionId);
+        if (Array.isArray(cases) && cases.length > 0) {
+          const mappedCases = cases.map((tc, index) => ({
+            id: tc.id,
+            input: tc.input || '',
+            expectedOutput: tc.expectedOutput || '',  
+            isSample: tc.isSample || false,
+            weight: tc.weight || 10,
+            order: index,
+          }));
+          setTestCases(mappedCases);
+        } else {
+          setTestCases([
+            {
+              id: "new-1",
+              input: "",
+              expectedOutput: "",
+              isSample: true,
+              weight: 10,
+            },
+          ]);
+        }
+        hasLoadedRef.current = questionId;
+      } catch (loadError: any) {
+        // Silenciosamente ignorar erro de recarga
+      } finally {
+        setIsLoading(false);
       }
     } finally {
       setIsDeletingAll(false);
@@ -308,10 +410,7 @@ export default function TestCasesModal({
     setSaveSuccess(false);
     
     try {
-      // Lógica condicional baseada no tipo
       if (submissionType === 'local') {
-        // Submissão LOCAL: Atualizar tipo e salvar casos de teste
-        logger.debug('Atualizando tipo de submissão para local', { submissionType });
         await API.questions.update(questionId, {
           submissionType: submissionType
         });
@@ -326,17 +425,9 @@ export default function TestCasesModal({
           return;
         }
         
-        logger.debug('Salvando casos de teste', { 
-          total: testCases.length,
-          novos: testCases.filter((tc) => tc.id.startsWith("new-")).length,
-          existentes: testCases.filter((tc) => !tc.id.startsWith("new-")).length
-        });
-        
-        // Casos novos são aqueles que começam com "new-" ou "generated-"
         const newCases = testCases.filter((tc) => 
           tc.id.startsWith("new-") || tc.id.startsWith("generated-")
         );
-        // Casos existentes são aqueles com IDs reais do banco (UUIDs)
         const existingCases = testCases.filter((tc) => 
           !tc.id.startsWith("new-") && !tc.id.startsWith("generated-")
         );
@@ -345,7 +436,6 @@ export default function TestCasesModal({
 
         for (let i = 0; i < newCases.length; i++) {
           const tc = newCases[i];
-          logger.debug('Criando caso de teste');
           const created = await testCasesService.createTestCase(questionId, {
             questionId,
             input: tc.input,
@@ -355,12 +445,10 @@ export default function TestCasesModal({
             order: i,
           });
           createdIds.push(created.id);
-          logger.debug('Caso criado', { id: created.id });
         }
 
         for (let i = 0; i < existingCases.length; i++) {
           const tc = existingCases[i];
-          logger.debug('Atualizando caso de teste', { id: tc.id });
           await testCasesService.updateTestCase(questionId, tc.id, {
             input: tc.input,
             expectedOutput: tc.expectedOutput,
@@ -370,18 +458,35 @@ export default function TestCasesModal({
           });
         }
 
-        const allIds = [...createdIds, ...existingCases.map((tc) => tc.id)];
-
         if (onSave) {
           onSave(testCases);
         }
 
         setSaveSuccess(true);
-        await loadTestCases();
+        // Recarregar casos de teste após salvar
+        hasLoadedRef.current = null;
+        setIsLoading(true);
+        try {
+          const cases = await testCasesService.getTestCases(questionId);
+          if (Array.isArray(cases) && cases.length > 0) {
+            const mappedCases = cases.map((tc, index) => ({
+              id: tc.id,
+              input: tc.input || '',
+              expectedOutput: tc.expectedOutput || '',  
+              isSample: tc.isSample || false,
+              weight: tc.weight || 10,
+              order: index,
+            }));
+            setTestCases(mappedCases);
+          }
+          hasLoadedRef.current = questionId;
+        } catch (err: any) {
+          logger.error('Erro ao recarregar casos de teste', err);
+        } finally {
+          setIsLoading(false);
+        }
         
       } else if (submissionType === 'codeforces') {
-        // Submissão CODEFORCES: Validar e salvar campos
-        // O backend automaticamente muda o submissionType para 'codeforces'
         if (!codeforcesContestId || !codeforcesProblemIndex) {
           setError('ID do Contest e Índice do Problema são obrigatórios');
           setIsSaving(false);
@@ -400,8 +505,6 @@ export default function TestCasesModal({
           return;
         }
         
-        logger.debug('Salvando configuração do Codeforces (tipo atualizado automaticamente)');
-        // ✅ APENAS 1 CHAMADA: atualiza campos CF + muda tipo automaticamente
         await API.questions.updateCodeforces(questionId, {
           contestId: codeforcesContestId,
           problemIndex: codeforcesProblemIndex.toUpperCase()
@@ -410,8 +513,7 @@ export default function TestCasesModal({
         setSaveSuccess(true);
       }
       
-      // Fecha o modal após 1.5 segundos
-      setTimeout(() => {
+      addTimeout(() => {
         onClose();
       }, 1500);
       
@@ -423,517 +525,424 @@ export default function TestCasesModal({
     }
   };
 
-  const calculateTotalPoints = () => {
-    return testCases.reduce((sum, tc) => sum + tc.weight, 0);
-  };
-
-  const handleGenerateTestCases = async () => {
-    if (!oracleCode.trim()) {
-      setGenerationError('Por favor, insira o código oráculo');
-      return;
-    }
-
-    setIsGenerating(true);
-    setGenerationError(null);
-    setGeneratedTestCases([]);
-
+  const handleGenerateSuccess = async () => {
+    // Recarregar casos de teste após gerar
+    hasLoadedRef.current = null;
+    setIsLoading(true);
     try {
-      const request: GenerateTestCasesRequest = {
-        oracleCode,
-        language: oracleLanguage,
-        count: testCaseCount
-      };
-
-      const result = await generateTestCases(questionId, request);
-      
-      if (result.testCases.length === 0) {
-        setGenerationError('Nenhum caso de teste foi gerado. Verifique o código oráculo.');
-        setIsGenerating(false);
-        return;
+      const cases = await testCasesService.getTestCases(questionId);
+      if (Array.isArray(cases) && cases.length > 0) {
+        const mappedCases = cases.map((tc, index) => ({
+          id: tc.id,
+          input: tc.input || '',
+          expectedOutput: tc.expectedOutput || '',  
+          isSample: tc.isSample || false,
+          weight: tc.weight || 10,
+          order: index,
+        }));
+        setTestCases(mappedCases);
       }
-
-      // O backend já salva os casos automaticamente, apenas recarregar a lista
-      console.log('[TestCasesModal] Casos de teste gerados pelo backend', { 
-        count: result.totalGenerated,
-        questionId 
-      });
-      logger.info('Casos de teste gerados pelo backend', { 
-        totalGenerated: result.totalGenerated,
-        totalReturned: result.testCases.length
-      });
-
-      // Recarregar casos de teste do banco para atualizar a lista
-      console.log('[TestCasesModal] Recarregando casos de teste após geração');
-      await loadTestCases();
-      console.log('[TestCasesModal] Casos de teste recarregados');
-      
-      // Limpar o formulário de geração
-      setOracleCode('');
-      setShowGenerator(false);
-      setGeneratedTestCases([]);
-
-      // Mostrar mensagem de sucesso
-      if (result.totalGenerated > 0) {
-        const successMessage = `${result.totalGenerated} caso${result.totalGenerated > 1 ? 's' : ''} de teste gerado${result.totalGenerated > 1 ? 's' : ''} e salvo${result.totalGenerated > 1 ? 's' : ''} com sucesso`;
-        console.log('[TestCasesModal] Casos gerados com sucesso', { 
-          totalGenerated: result.totalGenerated 
-        });
-        setSaveSuccess(true);
-        setTimeout(() => {
-          setSaveSuccess(false);
-        }, 3000);
-      } else {
-        setGenerationError('Nenhum caso de teste foi gerado. Todos podem ter sido duplicados ou houve um erro.');
-      }
-
-      if (result.algorithmTypeDetected) {
-        logger.info('Tipo de algoritmo detectado', { type: result.algorithmTypeDetected });
-      }
-    } catch (error: any) {
-      logger.error('Erro ao gerar casos de teste', error);
-      
-      // Verificar se é um erro de timeout
-      if (error.name === 'AbortError' || error.message?.includes('Timeout') || error.message?.includes('timeout')) {
-        setGenerationError(
-          'A geração de casos de teste está demorando mais que o esperado. ' +
-          'Os casos podem estar sendo gerados em segundo plano. ' +
-          'Por favor, aguarde alguns instantes e recarregue a página para verificar se os casos foram criados.'
-        );
-        // Tentar recarregar os casos de teste após um delay para verificar se foram criados
-        setTimeout(async () => {
-          try {
-            await loadTestCases();
-            logger.info('Casos de teste recarregados após timeout');
-          } catch (reloadError) {
-            logger.error('Erro ao recarregar casos de teste após timeout', reloadError);
-          }
-        }, 5000);
-      } else {
-        setGenerationError(
-          error.response?.data?.message || 
-          error.message || 
-          'Erro ao gerar casos de teste. Verifique o código oráculo.'
-        );
-      }
+      hasLoadedRef.current = questionId;
+    } catch (err: any) {
+      logger.error('Erro ao recarregar casos de teste', err);
     } finally {
-      setIsGenerating(false);
+      setIsLoading(false);
     }
   };
-
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-white rounded-3xl shadow-xl p-8 w-full max-w-4xl mx-4 my-8">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-3 bg-blue-100 rounded-xl">
-            <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-            </svg>
-          </div>
-          <h2 className="text-2xl font-bold text-slate-900">Gerenciar Submissão</h2>
-        </div>
-
-        {/* Seletor de tipo de submissão */}
-        <div className="mb-8">
-          {/* Botão: Submissão Local */}
-          <button
-            type="button"
-            onClick={() => setSubmissionType('local')}
-            className={`w-full text-left border-2 rounded-xl p-4 cursor-pointer transition-all mb-3 ${
-              submissionType === 'local'
-                ? 'border-blue-500 bg-blue-50'
-                : 'border-slate-200 bg-white hover:border-slate-300'
-            }`}
-          >
-            <div className="flex items-start gap-3">
-              <div className={`mt-1 w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                submissionType === 'local'
-                  ? 'border-blue-500 bg-blue-500'
-                  : 'border-slate-300'
-              }`}>
-                {submissionType === 'local' && (
-                  <div className="w-2 h-2 rounded-full bg-white"></div>
-                )}
+    <>
+      <div 
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-start justify-center z-50 p-4 overflow-y-auto animate-in fade-in duration-200"
+        onClick={(e) => {
+          if (e.target === e.currentTarget && !isSaving) {
+            onClose();
+          }
+        }}
+      >
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl mx-4 my-8 animate-in zoom-in-95 duration-200 overflow-hidden">
+          {/* Header */}
+          <div className="flex items-center justify-between p-6 border-b border-slate-200 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-2xl">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                </svg>
               </div>
-              <div className="flex-1">
-                <div className="font-semibold text-slate-900">Submissão Local</div>
-                <div className="text-sm text-slate-600 mt-1">Configure casos de teste diretamente nesta plataforma</div>
-              </div>
-            </div>
-          </button>
-
-          {/* Botão: Codeforces */}
-          <button
-            type="button"
-            onClick={() => setSubmissionType('codeforces')}
-            className={`w-full text-left border-2 rounded-xl p-4 cursor-pointer transition-all ${
-              submissionType === 'codeforces'
-                ? 'border-blue-500 bg-blue-50'
-                : 'border-slate-200 bg-white hover:border-slate-300'
-            }`}
-          >
-            <div className="flex items-start gap-3">
-              <div className={`mt-1 w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                submissionType === 'codeforces'
-                  ? 'border-blue-500 bg-blue-500'
-                  : 'border-slate-300'
-              }`}>
-                {submissionType === 'codeforces' && (
-                  <div className="w-2 h-2 rounded-full bg-white"></div>
-                )}
-              </div>
-              <div className="flex-1">
-                <div className="font-semibold text-slate-900">Codeforces</div>
-                <div className="text-sm text-slate-600 mt-1">Integre com um problema existente do Codeforces</div>
-              </div>
-            </div>
-          </button>
-        </div>
-
-        {}
-        {isLoading && (
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-          </div>
-        )}
-
-        {saveSuccess && (
-          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl">
-            <div className="flex items-center gap-2">
-              <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              <p className="text-sm text-green-800 font-semibold">Casos de teste salvos com sucesso!</p>
-            </div>
-          </div>
-        )}
-
-        {!isLoading && (
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Seção: Submissão Local */}
-            {submissionType === 'local' && (
               <div>
-                {/* Seção: Gerador Automático de Casos de Teste */}
-                <div className="mb-6 p-4 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl border border-purple-200">
-                  <div className="flex items-center justify-between mb-3">
-                    <div>
-                      <h3 className="text-sm font-semibold text-slate-900">Gerar Casos de Teste Automaticamente</h3>
-                      <p className="text-xs text-slate-600 mt-1">
-                        Use um código oráculo (Python ou Java) para gerar casos de teste automaticamente
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setShowGenerator(!showGenerator)}
-                      className="px-3 py-1 text-sm font-medium text-purple-600 bg-white rounded-lg hover:bg-purple-50 transition-all duration-200 border border-purple-200"
-                    >
-                      {showGenerator ? 'Ocultar' : 'Mostrar'}
-                    </button>
-                  </div>
+                <h2 className="text-2xl font-bold text-slate-900">Gerenciar Casos de Teste</h2>
+                <p className="text-sm text-slate-600 mt-0.5">Configure os casos de teste para avaliação</p>
+              </div>
+            </div>
+            {!isSaving && (
+              <button
+                onClick={onClose}
+                className="text-slate-400 hover:text-slate-600 transition-colors p-2 rounded-lg hover:bg-white/50"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+          </div>
 
-                  {showGenerator && (
-                    <div className="space-y-4 mt-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Content */}
+          <div className="p-6">
+            {/* Seletor de tipo de submissão */}
+            <div className="mb-6">
+              <label className="block text-sm font-semibold text-slate-700 mb-3">Tipo de Submissão</label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setSubmissionType('local')}
+                  className={`text-left border-2 rounded-xl p-4 cursor-pointer transition-all ${
+                    submissionType === 'local'
+                      ? 'border-blue-500 bg-blue-50 shadow-md'
+                      : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm'
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className={`mt-1 w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                      submissionType === 'local'
+                        ? 'border-blue-500 bg-blue-500'
+                        : 'border-slate-300'
+                    }`}>
+                      {submissionType === 'local' && (
+                        <div className="w-2 h-2 rounded-full bg-white"></div>
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-semibold text-slate-900">Submissão Local</div>
+                      <div className="text-xs text-slate-600 mt-1">Configure casos de teste diretamente</div>
+                    </div>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setSubmissionType('codeforces')}
+                  className={`text-left border-2 rounded-xl p-4 cursor-pointer transition-all ${
+                    submissionType === 'codeforces'
+                      ? 'border-blue-500 bg-blue-50 shadow-md'
+                      : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm'
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className={`mt-1 w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                      submissionType === 'codeforces'
+                        ? 'border-blue-500 bg-blue-500'
+                        : 'border-slate-300'
+                    }`}>
+                      {submissionType === 'codeforces' && (
+                        <div className="w-2 h-2 rounded-full bg-white"></div>
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-semibold text-slate-900">Codeforces</div>
+                      <div className="text-xs text-slate-600 mt-1">Integre com problema do Codeforces</div>
+                    </div>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            {/* Loading State */}
+            {isLoading && (
+              <div className="flex items-center justify-center py-12">
+                <div className="flex flex-col items-center gap-3">
+                  <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-200 border-t-blue-600"></div>
+                  <p className="text-sm text-slate-600">Carregando casos de teste...</p>
+                </div>
+              </div>
+            )}
+
+            {/* Success Message */}
+            {saveSuccess && (
+              <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl animate-in slide-in-from-top-2 duration-300">
+                <div className="flex items-center gap-2">
+                  <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <p className="text-sm text-green-800 font-semibold">Casos de teste salvos com sucesso!</p>
+                </div>
+              </div>
+            )}
+
+            {/* Form Content */}
+            {!isLoading && (
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Seção: Submissão Local */}
+                {submissionType === 'local' && (
+                  <div className="space-y-6">
+                    {/* Botão de Gerar Casos */}
+                    <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl p-4 border border-purple-200">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-purple-500 rounded-lg">
+                            <svg className="w-5 h-5 text-white" fill="none" stroke="white" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                          </div>
+                          <div>
+                            <h3 className="text-sm font-semibold text-slate-900">Geração Automática</h3>
+                            <p className="text-xs text-slate-600">Use um código oráculo para gerar casos automaticamente</p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setShowGenerateModal(true)}
+                          disabled={isSaving}
+                          className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-purple-600 to-indigo-600 rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          Gerar Casos
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Lista de Casos de Teste */}
+                    <div>
+                      <div className="flex items-center justify-between mb-4">
                         <div>
-                          <label className="block text-xs font-medium text-slate-700 mb-1">
-                            Linguagem do Oráculo
-                          </label>
-                          <select
-                            value={oracleLanguage}
-                            onChange={(e) => setOracleLanguage(e.target.value as 'python' | 'java')}
-                            className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400 bg-white text-slate-900"
+                          <label className="block text-sm font-semibold text-slate-700">Casos de Teste</label>
+                          <p className="text-xs text-slate-500 mt-1">
+                            Configure os casos de teste que serão usados para avaliar as submissões
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {testCases.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => setDeleteAllConfirm(true)}
+                              disabled={isSaving || isDeletingAll}
+                              className="px-3 py-1.5 text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              Remover Todos
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={addTestCase}
+                            disabled={isSaving}
+                            className="px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
                           >
-                            <option value="python">Python</option>
-                            <option value="java">Java</option>
-                          </select>
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                            </svg>
+                            Adicionar
+                          </button>
                         </div>
+                      </div>
+                      
+                      <div className="space-y-4">
+                        {testCases.length === 0 && (
+                          <div className="text-center py-12 text-slate-500">
+                            <svg className="w-12 h-12 mx-auto mb-3 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                            </svg>
+                            <p className="text-sm">Nenhum caso de teste. Clique em "Adicionar" para criar um.</p>
+                          </div>
+                        )}
+                        {testCases.map((testCase, index) => (
+                          <div key={testCase.id} className="bg-slate-50 rounded-xl p-5 border border-slate-200 hover:border-slate-300 transition-all">
+                            <div className="flex items-center justify-between mb-4">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-semibold text-slate-700">Caso {index + 1}</span>
+                                {testCase.isSample && (
+                                  <span className="px-2 py-0.5 text-xs font-medium text-blue-700 bg-blue-100 rounded-full">
+                                    Exemplo
+                                  </span>
+                                )}
+                              </div>
+                              {testCases.length > 1 && (
+                                <button
+                                  type="button"
+                                  onClick={() => removeTestCase(testCase.id, `Caso de Teste ${index + 1}`)}
+                                  className="text-red-600 hover:text-red-700 text-sm font-medium flex items-center gap-1.5 transition-colors"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  </svg>
+                                  Remover
+                                </button>
+                              )}
+                            </div>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                              <div>
+                                <label className="block text-xs font-medium text-slate-600 mb-2">Entrada</label>
+                                <textarea
+                                  value={testCase.input}
+                                  onChange={(e) => updateTestCase(testCase.id, "input", e.target.value)}
+                                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-slate-900 placeholder:text-slate-400 h-24 text-sm font-mono resize-none"
+                                  placeholder="Digite a entrada do caso de teste..."
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-slate-600 mb-2">Saída Esperada</label>
+                                <textarea
+                                  value={testCase.expectedOutput}
+                                  onChange={(e) => updateTestCase(testCase.id, "expectedOutput", e.target.value)}
+                                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-slate-900 placeholder:text-slate-400 h-24 text-sm font-mono resize-none"
+                                  placeholder="Digite a saída esperada..."
+                                />
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div>
+                                <label className="block text-xs font-medium text-slate-600 mb-2">Pontuação</label>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  max="100"
+                                  value={testCase.weight}
+                                  onChange={(e) => updateTestCase(testCase.id, "weight", parseInt(e.target.value) || 0)}
+                                  className="w-full h-10 px-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-slate-900"
+                                />
+                              </div>
+                              <div className="flex items-end">
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    checked={testCase.isSample}
+                                    onChange={(e) => updateTestCase(testCase.id, "isSample", e.target.checked)}
+                                    className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
+                                  />
+                                  <span className="text-xs font-medium text-slate-600">Marcar como exemplo</span>
+                                </label>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Pontuação Total */}
+                    <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
+                      <div className="flex items-center gap-3">
+                        <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                        </svg>
                         <div>
-                          <label className="block text-xs font-medium text-slate-700 mb-1">
-                            Quantidade de Casos
-                          </label>
-                          <input
-                            type="number"
-                            min="1"
-                            max="200"
-                            value={testCaseCount}
-                            onChange={(e) => setTestCaseCount(parseInt(e.target.value) || 10)}
-                            className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400 bg-white text-slate-900"
-                          />
+                          <p className="text-sm font-semibold text-blue-900">
+                            Pontuação Total: {totalPoints} pontos
+                          </p>
+                          <p className="text-xs text-blue-700 mt-0.5">
+                            Distribuída entre {testCases.length} caso{testCases.length !== 1 ? 's' : ''} de teste
+                          </p>
                         </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Seção: Submissão Codeforces */}
+                {submissionType === 'codeforces' && (
+                  <div className="space-y-6">
+                    <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
+                      <div className="flex items-start gap-3">
+                        <svg className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <div>
+                          <p className="text-sm font-semibold text-blue-900 mb-1">Integração com Codeforces</p>
+                          <p className="text-xs text-blue-700">
+                            Configure esta questão para usar casos de teste do Codeforces automaticamente.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">
+                          ID do Contest
+                        </label>
+                        <input
+                          type="text"
+                          value={codeforcesContestId}
+                          onChange={(e) => setCodeforcesContestId(e.target.value)}
+                          placeholder="Ex: 1234"
+                          className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-slate-900 placeholder:text-slate-400"
+                        />
+                        <p className="text-xs text-slate-500 mt-1.5">Identificador único do contest no Codeforces</p>
                       </div>
 
                       <div>
-                        <label className="block text-xs font-medium text-slate-700 mb-1">
-                          Código Oráculo
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">
+                          Índice do Problema
                         </label>
-                        <textarea
-                          value={oracleCode}
-                          onChange={(e) => setOracleCode(e.target.value)}
-                          placeholder={oracleLanguage === 'python' 
-                            ? 'n = int(input())\narr = list(map(int, input().split()))\n# Seu código aqui\nprint(result)'
-                            : 'import java.util.*;\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // Seu código aqui\n    }\n}'
-                          }
-                          className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400 bg-white text-slate-900 placeholder:text-slate-500 h-32 text-sm font-mono"
+                        <input
+                          type="text"
+                          value={codeforcesProblemIndex}
+                          onChange={(e) => setCodeforcesProblemIndex(e.target.value)}
+                          placeholder="Ex: A, B, C..."
+                          className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-slate-900 placeholder:text-slate-400"
                         />
-                        <p className="text-xs text-slate-500 mt-1">
-                          O código deve ler da entrada padrão (stdin) e imprimir a saída esperada
-                        </p>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={handleGenerateTestCases}
-                        disabled={isGenerating || !oracleCode.trim()}
-                        className="w-full px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-indigo-600 rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {isGenerating ? (
-                          <span className="flex items-center justify-center gap-2">
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                            Gerando casos de teste... (pode demorar alguns minutos)
-                          </span>
-                        ) : (
-                          'Gerar Casos de Teste'
-                        )}
-                      </button>
-
-                      {generationError && (
-                        <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                          <p className="text-xs text-red-800">{generationError}</p>
-                        </div>
-                      )}
-
-                      {generatedTestCases.length > 0 && (
-                        <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
-                          <div className="flex items-center gap-2 mb-2">
-                            <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                            </svg>
-                            <p className="text-sm font-semibold text-green-800">
-                              {generatedTestCases.length} casos gerados e salvos automaticamente!
-                            </p>
-                          </div>
-                          <p className="text-xs text-green-700">
-                            Os casos de teste foram adicionados à lista abaixo. Você pode editá-los antes de salvar.
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700">Casos de Teste</label>
-                    <p className="text-xs text-slate-500 mt-1">
-                      Configure os casos de teste que serão usados para avaliar as submissões
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {testCases.length > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => setDeleteAllConfirm(true)}
-                        disabled={isSaving || isDeletingAll}
-                        className="px-3 py-1 text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        Remover Todos
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={addTestCase}
-                      disabled={isSaving}
-                      className="px-3 py-1 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      + Adicionar Caso
-                    </button>
-                  </div>
-                </div>
-                
-                <div className="space-y-4">
-                  {testCases.map((testCase, index) => (
-                    <div key={testCase.id} className="bg-slate-50 rounded-xl p-4 border border-slate-200">
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="text-sm font-semibold text-slate-700">Caso de Teste {index + 1}</span>
-                        {testCases.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => removeTestCase(testCase.id, `Caso de Teste ${index + 1}`)}
-                            className="text-red-600 hover:text-red-700 text-sm font-medium"
-                          >
-                            Remover
-                          </button>
-                        )}
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-                        <div>
-                          <label className="block text-xs font-medium text-slate-600 mb-1">Entrada</label>
-                          <textarea
-                            value={testCase.input}
-                            onChange={(e) => updateTestCase(testCase.id, "input", e.target.value)}
-                            className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 bg-white text-slate-900 placeholder:text-slate-500 h-20 text-sm font-mono"
-                            placeholder="Digite a entrada do caso de teste..."
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-slate-600 mb-1">Saída Esperada</label>
-                          <textarea
-                            value={testCase.expectedOutput}
-                            onChange={(e) => updateTestCase(testCase.id, "expectedOutput", e.target.value)}
-                            className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 bg-white text-slate-900 placeholder:text-slate-500 h-20 text-sm font-mono"
-                            placeholder="Digite a saída esperada..."
-                          />
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-xs font-medium text-slate-600 mb-1">Pontuação</label>
-                          <input
-                            type="number"
-                            min="0"
-                            max="100"
-                            value={testCase.weight}
-                            onChange={(e) => updateTestCase(testCase.id, "weight", parseInt(e.target.value) || 0)}
-                            className="w-full h-10 px-3 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 bg-white text-slate-900"
-                          />
-                        </div>
+                        <p className="text-xs text-slate-500 mt-1.5">Letra do problema (A, B, C, etc)</p>
                       </div>
                     </div>
-                  ))}
-                </div>
-
-                <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
-                  <div className="flex items-start gap-3">
-                    <svg className="w-5 h-5 text-blue-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <div className="flex-1">
-                      <p className="text-sm text-blue-800 font-semibold mb-1">
-                        Pontuação Total: {calculateTotalPoints()} pontos
-                      </p>
-                    </div>
                   </div>
-                </div>
+                )}
 
+                {/* Error Message */}
                 {error && (
-                  <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-xl">
+                  <div className="p-4 bg-red-50 border border-red-200 rounded-xl animate-in slide-in-from-top-2 duration-300">
                     <div className="flex items-start gap-2">
                       <svg className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      <p className="text-sm text-red-800">{error}</p>
+                      <p className="text-sm text-red-800 flex-1">{error}</p>
                     </div>
                   </div>
                 )}
-              </div>
+
+                {/* Footer Actions */}
+                <div className="flex gap-3 pt-6 border-t border-slate-200">
+                  <button 
+                    type="button" 
+                    onClick={onClose}
+                    disabled={isSaving}
+                    className="flex-1 h-12 px-4 text-sm font-semibold text-slate-700 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Cancelar
+                  </button>
+                  <button 
+                    type="submit"
+                    disabled={isSaving || saveSuccess}
+                    className={`flex-1 h-12 px-4 text-sm font-semibold text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all disabled:cursor-not-allowed ${
+                      saveSuccess
+                        ? "bg-green-500 hover:bg-green-600 focus:ring-green-500"
+                        : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:ring-blue-500 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 shadow-lg hover:shadow-xl"
+                    }`}
+                  >
+                    {saveSuccess ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        Salvos com sucesso!
+                      </span>
+                    ) : isSaving ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                        Salvando...
+                      </span>
+                    ) : (
+                      "Salvar"
+                    )}
+                  </button>
+                </div>
+              </form>
             )}
-
-          {/* Seção: Submissão Codeforces */}
-          {submissionType === 'codeforces' && (
-            <div className="space-y-6">
-              <div className="bg-blue-50 rounded-xl p-4 border border-blue-200 mb-6">
-                <div className="flex items-start gap-3">
-                  <svg className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <div>
-                    <p className="text-sm text-blue-800 font-semibold mb-1">Integração com Codeforces</p>
-                    <p className="text-xs text-blue-700">
-                      Configure esta questão para usar casos de teste do Codeforces.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">
-                    ID do Contest
-                  </label>
-                  <input
-                    type="text"
-                    value={codeforcesContestId}
-                    onChange={(e) => setCodeforcesContestId(e.target.value)}
-                    placeholder="Ex: 1234"
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 bg-white text-slate-900 placeholder:text-slate-500"
-                  />
-                  <p className="text-xs text-slate-500 mt-1">Identificador único do contest no Codeforces</p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">
-                    Índice do Problema
-                  </label>
-                  <input
-                    type="text"
-                    value={codeforcesProblemIndex}
-                    onChange={(e) => setCodeforcesProblemIndex(e.target.value)}
-                    placeholder="Ex: A, B, C..."
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 bg-white text-slate-900 placeholder:text-slate-500"
-                  />
-                  <p className="text-xs text-slate-500 mt-1">Letra do problema (A, B, C, etc)</p>
-                </div>
-              </div>
-
-
-              {error && (
-                <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-xl">
-                  <div className="flex items-start gap-2">
-                    <svg className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <p className="text-sm text-red-800">{error}</p>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          <div className="flex gap-3 mt-8 pt-6 border-t border-slate-200">
-            <button 
-              type="button" 
-              onClick={onClose}
-              disabled={isSaving}
-              className="flex-1 h-12 px-4 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition-all duration-200 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Cancelar
-            </button>
-            <button 
-              type="submit"
-              disabled={isSaving || saveSuccess}
-              className={`flex-1 h-12 px-4 text-sm font-medium text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 transform font-semibold disabled:cursor-not-allowed ${
-                saveSuccess
-                  ? "bg-green-500 hover:bg-green-600 focus:ring-green-500"
-                  : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:ring-blue-500 hover:scale-[1.02] disabled:opacity-50"
-              }`}
-            >
-              {saveSuccess ? (
-                <span className="flex items-center justify-center gap-2">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  Salvos com sucesso!
-                </span>
-              ) : isSaving ? (
-                <span className="flex items-center justify-center gap-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  Salvando...
-                </span>
-              ) : (
-                "Salvar"
-              )}
-            </button>
           </div>
-        </form>
-        )}
+        </div>
       </div>
 
-      {}
+      {/* Modal de Confirmação de Exclusão Individual */}
       {deleteConfirm.isOpen && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60]">
-          <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md mx-4 animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md mx-4 animate-in zoom-in-95 duration-200">
             <div className="flex items-start gap-4">
               <div className="flex-shrink-0 w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
                 <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -952,14 +961,14 @@ export default function TestCasesModal({
                   <button
                     type="button"
                     onClick={cancelDelete}
-                    className="flex-1 px-4 py-2.5 text-sm font-semibold text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors duration-200"
+                    className="flex-1 px-4 py-2.5 text-sm font-semibold text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors"
                   >
                     Cancelar
                   </button>
                   <button
                     type="button"
                     onClick={confirmDelete}
-                    className="flex-1 px-4 py-2.5 text-sm font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors duration-200"
+                    className="flex-1 px-4 py-2.5 text-sm font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
                   >
                     Sim, Remover
                   </button>
@@ -970,9 +979,10 @@ export default function TestCasesModal({
         </div>
       )}
 
+      {/* Modal de Confirmação de Exclusão de Todos */}
       {deleteAllConfirm && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60]">
-          <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md mx-4 animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md mx-4 animate-in zoom-in-95 duration-200">
             <div className="flex items-start gap-4">
               <div className="flex-shrink-0 w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
                 <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -992,7 +1002,7 @@ export default function TestCasesModal({
                     type="button"
                     onClick={() => setDeleteAllConfirm(false)}
                     disabled={isDeletingAll}
-                    className="flex-1 px-4 py-2.5 text-sm font-semibold text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 px-4 py-2.5 text-sm font-semibold text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Cancelar
                   </button>
@@ -1000,11 +1010,11 @@ export default function TestCasesModal({
                     type="button"
                     onClick={removeAllTestCases}
                     disabled={isDeletingAll}
-                    className="flex-1 px-4 py-2.5 text-sm font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 px-4 py-2.5 text-sm font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isDeletingAll ? (
                       <span className="flex items-center justify-center gap-2">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
                         Removendo...
                       </span>
                     ) : (
@@ -1017,6 +1027,14 @@ export default function TestCasesModal({
           </div>
         </div>
       )}
-    </div>
+
+      {/* Modal de Geração de Casos de Teste */}
+      <GenerateTestCasesModal
+        isOpen={showGenerateModal}
+        onClose={() => setShowGenerateModal(false)}
+        questionId={questionId}
+        onSuccess={handleGenerateSuccess}
+      />
+    </>
   );
 }

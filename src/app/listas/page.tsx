@@ -39,7 +39,6 @@ export default function ListsPage() {
     createList, 
     updateList, 
     deleteList, 
-    duplicateList,
     setFilters,
     clearFilters
   } = useListsData(userRole, currentUser);
@@ -53,7 +52,6 @@ export default function ListsPage() {
     handleCreateList: baseHandleCreateList,
     handleEditList: baseHandleEditList,
     handleDeleteList: baseHandleDeleteList,
-    handleDuplicateList: baseHandleDuplicateList,
     handleEditClick,
     handleDeleteClick,
     setShowCreateModal,
@@ -63,8 +61,7 @@ export default function ListsPage() {
   } = useListsActions({
     createList,
     updateList,
-    deleteList,
-    duplicateList
+    deleteList
   });
 
   const handleCreateList = async (listData: any) => {
@@ -81,11 +78,6 @@ export default function ListsPage() {
 
   const handleDeleteList = async () => {
     await baseHandleDeleteList();
-    await refreshLists();
-  };
-
-  const handleDuplicateList = async (list: any) => {
-    await baseHandleDuplicateList(list);
     await refreshLists();
   };
 
@@ -201,7 +193,6 @@ export default function ListsPage() {
         userRole={userRole}
         onEdit={handleEditClick}
         onDelete={handleDeleteClick}
-        onDuplicate={handleDuplicateList}
         onCreateList={() => setShowCreateModal(true)}
         classes={classes}
       />

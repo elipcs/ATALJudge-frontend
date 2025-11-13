@@ -101,7 +101,7 @@ export default function QuestionsPage() {
             </p>
             <div className="flex gap-4 justify-center">
               <Link href="/listas">
-                <Button className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-8 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl">
+                <Button className="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-slate-900 px-8 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl">
                   Voltar às Listas
                 </Button>
               </Link>
@@ -136,7 +136,7 @@ export default function QuestionsPage() {
               A lista solicitada não foi encontrada ou você não tem permissão para acessá-la.
             </p>
             <Link href="/listas">
-              <Button className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-8 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl">
+              <Button className="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-slate-900 px-8 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl">
                 Voltar às Listas
               </Button>
             </Link>
@@ -191,7 +191,7 @@ export default function QuestionsPage() {
               O acesso às questões será liberado automaticamente na data e hora de início.
             </p>
             <Link href="/listas">
-              <Button className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-8 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl">
+              <Button className="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-slate-900 px-8 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl">
                 Voltar às Listas
               </Button>
             </Link>

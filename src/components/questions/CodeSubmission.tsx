@@ -330,14 +330,16 @@ export default function CodeSubmission({
       </div>
 
       {}
-      <TestCasesModal
-        isOpen={isTestCasesModalOpen}
-        onClose={() => setIsTestCasesModalOpen(false)}
-        questionId={questionId}
-        onSave={() => {
-          logger.info('Casos de teste salvos');
-        }}
-      />
+      {isTestCasesModalOpen && (
+        <TestCasesModal
+          isOpen={isTestCasesModalOpen}
+          onClose={() => setIsTestCasesModalOpen(false)}
+          questionId={questionId}
+          onSave={() => {
+            logger.info('Casos de teste salvos');
+          }}
+        />
+      )}
 
       {/* Modal de Submissão Reutilizável */}
       {submissionId && (
