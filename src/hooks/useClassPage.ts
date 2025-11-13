@@ -17,7 +17,11 @@ export function useClassPage() {
   const [deleteClassModal, setDeleteClassModal] = useState(false);
   const [selectedClass, setSelectedClass] = useState<Class | null>(null);
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
-  const { classes, loading: classesLoading, error: classesError, refetch: refetchClasses } = useUserClasses(currentUser?.id || '', userRole || 'student');
+  const { classes, loading: classesLoading, error: classesError, refetch: refetchClasses } = useUserClasses(
+    currentUser?.id || '', 
+    userRole || 'student',
+    (currentUser as any)?.classId
+  );
   const { createClass, loading: createLoading, error: createError } = useCreateClass();
   const { editClass, loading: editLoading, error: _editError } = useEditClass();
   const { deleteClass, loading: deleteLoading, error: _deleteError } = useDeleteClass();
@@ -36,7 +40,6 @@ export function useClassPage() {
     if (userRole === 'student' && selectedClassId && !studentsLoading && classes.length > 0) {
       const classData = classes.find(cls => cls.id === selectedClassId);
       if (classData) {
-        // Usar sempre os students de classData pois já vêm com dados completos
         const studentsToUse = (classData.students || []).length > 0 ? (classData.students || []) : students;
         const id = setTimeout(() => {
           setClassDetails({
@@ -54,7 +57,6 @@ export function useClassPage() {
     if ((userRole === 'professor' || userRole === 'assistant') && selectedClassId && !studentsLoading && classes.length > 0) {
       const classData = classes.find(cls => cls.id === selectedClassId);
       if (classData) {
-        // Usar sempre os students de classData pois já vêm com dados completos
         const studentsToUse = (classData.students || []).length > 0 ? (classData.students || []) : students;
         const id = setTimeout(() => {
           setClassDetails({

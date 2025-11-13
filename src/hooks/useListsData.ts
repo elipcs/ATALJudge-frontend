@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 
 import { listsApi, CreateListRequest, ListFilters, UpdateListScoringRequest } from '@/services/lists';
 import { classesApi } from '@/services/classes';
@@ -28,16 +28,42 @@ export function useListsData(userRole?: string, currentUser?: any): UseListsData
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<ListFilters>({});
+  const isLoadingRef = useRef(false);
+  const lastFiltersRef = useRef<string>('');
+
+  // Memoizar apenas os campos necessários do currentUser para evitar re-renders desnecessários
+  const currentUserId = useMemo(() => currentUser?.id, [currentUser?.id]);
+  const currentUserClassId = useMemo(() => currentUser?.classId, [currentUser?.classId]);
 
   const loadData = useCallback(async () => {
+    // Evitar múltiplas chamadas simultâneas
+    if (isLoadingRef.current) {
+      return;
+    }
+
+    // Evitar chamadas quando os filtros não mudaram (apenas na primeira chamada)
+    const filtersKey = JSON.stringify(filters);
+    if (filtersKey === lastFiltersRef.current && lastFiltersRef.current !== '') {
+      return;
+    }
+    lastFiltersRef.current = filtersKey;
+
     try {
+      isLoadingRef.current = true;
       setLoading(true);
       setError(null);
 
+      const currentUserForApi = currentUserId || currentUserClassId ? {
+        id: currentUserId,
+        classId: currentUserClassId
+      } : undefined;
+
       const [listsData, classesData] = await Promise.all([
-        listsApi.getLists(filters, userRole, currentUser),
-        classesApi.getAll().then(classes => Array.isArray(classes) ? classes : []).catch(err => {
-          console.warn('⚠️ [useListsData] Erro ao carregar classes, continuando sem elas:', err);
+        listsApi.getLists(filters, userRole, currentUserForApi),
+        classesApi.getAll(false).then(classes => {
+          return Array.isArray(classes) ? classes : [];
+        }).catch(err => {
+          console.error('❌ [useListsData] Erro ao carregar classes:', err);
           return [];
         })
       ]);
@@ -54,8 +80,9 @@ export function useListsData(userRole?: string, currentUser?: any): UseListsData
       setError(err instanceof Error ? err.message : 'Erro desconhecido');
     } finally {
       setLoading(false);
+      isLoadingRef.current = false;
     }
-  }, [filters, userRole, currentUser]);
+  }, [filters, userRole, currentUserId, currentUserClassId]);
 
   useEffect(() => {
     loadData();

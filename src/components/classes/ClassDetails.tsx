@@ -32,12 +32,10 @@ export default function ClassDetails({
 }: ClassDetailsProps) {
   const { cls, students } = classDetails;
   
-  // Para alunos, encontrar seus próprios dados
   const currentStudent = userRole === 'student' && currentUserId 
     ? students.find(s => s.id === currentUserId)
     : null;
   
-  // Debug
   React.useEffect(() => {
     console.log('ClassDetails - Debug Info:');
     console.log('userRole:', userRole);
@@ -54,13 +52,11 @@ export default function ClassDetails({
     list.classIds && list.classIds.includes(cls.id)
   );
   
-  // Debug
   React.useEffect(() => {
     console.log('questionLists:', questionLists);
   }, [questionLists]);
 
   const exportToCSV = () => {
-    // Filtrar apenas listas que contam para a nota
     const listsForGrade = questionLists.filter((list: QuestionList) => list.countTowardScore !== false);
     
     const headers = ['Nome', 'Email', 'Matrícula', 'Média Geral'];
@@ -108,10 +104,9 @@ export default function ClassDetails({
   const calculateAverageGrade = (grades: { id: string; questionListId: string; score: string | number; createdAt: string; updatedAt: string }[] = []) => {
     if (grades.length === 0) return 0;
     
-    // Filtrar apenas notas de listas que contam para a nota
     const gradesForScore = grades.filter(grade => {
       const list = questionLists.find((l: QuestionList) => l.id === grade.questionListId);
-      return list && list.countTowardScore !== false; // Se countTowardScore for undefined ou true, conta
+      return list && list.countTowardScore !== false;
     });
     
     if (gradesForScore.length === 0) return 0;

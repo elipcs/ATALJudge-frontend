@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Class, Student } from '../types';
 import { classesApi } from '../services/classes';
 
-export const useUserClasses = (userId: string, userRole: string) => {
+export const useUserClasses = (userId: string, userRole: string, userClassId?: string) => {
   const [classes, setClasses] = useState<Class[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -18,7 +18,7 @@ export const useUserClasses = (userId: string, userRole: string) => {
     try {
       setLoading(true);
       setError(null);
-      const result = await classesApi.getUserClasses(userId, userRole, true);
+      const result = await classesApi.getUserClasses(userId, userRole, true, userClassId);
       setClasses(result);
     } catch (err) {
       console.error('Erro ao carregar turmas:', err);
@@ -26,7 +26,7 @@ export const useUserClasses = (userId: string, userRole: string) => {
     } finally {
       setLoading(false);
     }
-  }, [userId, userRole, isValidParams]);
+  }, [userId, userRole, userClassId, isValidParams]);
 
   useEffect(() => {
     if (isValidParams) {
@@ -118,7 +118,6 @@ export const useClassStudents = (classId: string) => {
         setLoading(true);
         setError(null);
         const result = await classesApi.getClassStudents(classId);
-        // Mapear para o tipo Student preservando os grades se existirem
         const mappedStudents: Student[] = result.map((s: any) => ({
           id: s.id,
           name: s.name,
@@ -126,7 +125,7 @@ export const useClassStudents = (classId: string) => {
           studentRegistration: s.studentRegistration || '',
           role: s.role,
           classId: classId,
-          grades: s.grades || [], // Preservar grades se existirem
+          grades: s.grades || [],
           createdAt: s.createdAt || new Date().toISOString(),
         }));
         setStudents(mappedStudents);

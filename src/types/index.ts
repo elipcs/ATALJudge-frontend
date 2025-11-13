@@ -49,16 +49,11 @@ export interface Question {
   title: string;
   points?: number;
   description?: string;
-  statement: string;
-  inputFormat?: string;
-  outputFormat?: string;
-  constraints?: string;
-  notes?: string;
+  text: string;
   examples: Array<{
     input: string;
     output: string;
   }>;
-  tags: string[];
   timeLimit: string;
   memoryLimit: string;
   referenceCode?: string;
@@ -69,9 +64,9 @@ export interface Question {
     isPublic: boolean;
   }>;
   judgeType?: JudgeType;
-  codeforcesContestId?: string;
-  codeforcesProblemIndex?: string;
-  codeforcesLink?: string;
+  submissionType?: 'local' | 'codeforces';
+  contestId?: string;
+  problemIndex?: string;
   group?: string;
 }
 

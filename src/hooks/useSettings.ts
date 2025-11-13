@@ -12,6 +12,7 @@ interface SystemReset {
   resetMonitors: boolean;
   resetProfessors: boolean;
   resetInvites: boolean;
+  resetAllowedIPs: boolean;
   confirmationText: string;
 }
 
@@ -49,6 +50,7 @@ export function useSettings() {
     resetMonitors: false,
     resetProfessors: false,
     resetInvites: false,
+    resetAllowedIPs: false,
     confirmationText: ''
   });
 
@@ -79,11 +81,9 @@ export function useSettings() {
       const response = await API.config.getStudents();
       let list = Array.isArray(response.data) ? response.data : [];
       
-      // Tentar enriquecer com dados das turmas
       try {
         const classes = await classesApi.getAll(true);
         
-        // Criar mapa de alunos por ID dentro das turmas
         const studentClassMap = new Map<string, { classId: string; className: string }>();
         classes.forEach(cls => {
           if (cls.students && Array.isArray(cls.students)) {
@@ -96,14 +96,12 @@ export function useSettings() {
           }
         });
         
-        // Enriquecer lista de alunos com informações de turma
         list = list.map(student => ({
           ...student,
           classId: student.classId || studentClassMap.get(student.id)?.classId,
           className: student.className || studentClassMap.get(student.id)?.className
         }));
       } catch (enrichError) {
-        // Se falhar ao enriquecer, continua com os dados que temos
         console.error('Erro ao enriquecer dados dos alunos:', enrichError);
       }
       
@@ -137,7 +135,16 @@ export function useSettings() {
       setSaving(true);
       setButtonSuccess(false);
       
-      await API.config.systemReset();
+      await API.config.systemReset({
+        resetSubmissions: systemReset.resetSubmissions,
+        resetStudents: systemReset.resetStudents,
+        resetClasses: systemReset.resetClasses,
+        resetLists: systemReset.resetLists,
+        resetMonitors: systemReset.resetMonitors,
+        resetProfessors: systemReset.resetProfessors,
+        resetInvites: systemReset.resetInvites,
+        resetAllowedIPs: systemReset.resetAllowedIPs,
+      });
 
       setButtonSuccess(true);
       setSuccess('Reset do sistema realizado com sucesso!');
@@ -149,6 +156,7 @@ export function useSettings() {
         resetMonitors: false,
         resetProfessors: false,
         resetInvites: false,
+        resetAllowedIPs: false,
         confirmationText: ''
       });
       
@@ -158,7 +166,7 @@ export function useSettings() {
     } finally {
       setSaving(false);
     }
-  }, [systemReset.confirmationText]);
+  }, [systemReset]);
 
   const addAllowedIP = useCallback(async () => {
     if (!newIP.ip || !newIP.description) {
@@ -256,6 +264,7 @@ export function useSettings() {
       resetMonitors: checked,
       resetProfessors: checked,
       resetInvites: checked,
+      resetAllowedIPs: checked,
     }));
   }, []);
 
@@ -269,6 +278,7 @@ export function useSettings() {
       resetMonitors: false,
       resetProfessors: false,
       resetInvites: false,
+      resetAllowedIPs: false,
     }));
   }, []);
 

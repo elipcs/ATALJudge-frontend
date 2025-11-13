@@ -84,8 +84,8 @@ export default function InvitesPage() {
       <div className="space-y-6">
         {/* Painel Deslizante do Formulário */}
         <div
-          className={`overflow-hidden transform transition-all duration-300 ease-out ${
-            isFormOpen ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'
+          className={`transform transition-all duration-300 ease-out ${
+            isFormOpen ? 'max-h-[1000px] opacity-100 overflow-visible' : 'max-h-0 opacity-0 overflow-hidden'
           }`}
         >
           <div className="flex items-center justify-end mb-4">

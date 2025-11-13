@@ -32,6 +32,7 @@ export default function ListCard({
   const hasStarted = startDate && now >= startDate;
   const notEnded = endDate ? now < endDate : true;
   const isOngoing = hasStarted && notEnded;
+  const isClosed = list.calculatedStatus === 'closed' || (!!endDate && now >= endDate);
 
   const handleActionClick = (e: React.MouseEvent, action: () => void) => {
     e.preventDefault();
@@ -109,8 +110,21 @@ export default function ListCard({
                   <Button 
                     variant="outline" 
                     size="sm"
-                    onClick={(e) => handleActionClick(e, () => onEdit(list))}
-                    className="border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold transition-all duration-200 rounded-xl"
+                    onClick={(e) => {
+                      if (isClosed) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        return;
+                      }
+                      handleActionClick(e, () => onEdit(list));
+                    }}
+                    disabled={isClosed}
+                    className={`border-slate-300 text-slate-700 font-semibold transition-all duration-200 rounded-xl ${
+                      isClosed 
+                        ? 'opacity-50 cursor-not-allowed bg-slate-100' 
+                        : 'hover:bg-slate-50'
+                    }`}
+                    title={isClosed ? 'Esta lista está fechada e não pode ser editada' : 'Editar lista'}
                   >
                     <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />

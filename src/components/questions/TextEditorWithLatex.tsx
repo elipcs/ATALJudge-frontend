@@ -14,13 +14,6 @@ interface TextEditorWithLatexProps {
   showPreview?: boolean;
 }
 
-/**
- * Editor WYSIWYG profissional usando TipTap
- * - Compatível com Google Docs/ChatGPT (cola preservando formatação)
- * - Listas, negrito, itálico automáticos
- * - Fórmulas matemáticas com suporte a LaTeX
- * - Conversão robusta com Markdown
- */
 export default function TextEditorWithLatex({
   value,
   onChange,
@@ -30,16 +23,11 @@ export default function TextEditorWithLatex({
 }: TextEditorWithLatexProps) {
   const shouldShowPreview = showPreview && value.length > 0;
 
-  /**
-   * Converter Markdown para HTML para renderizar no TipTap
-   * Versão simplificada e robusta
-   */
   const markdownToHtml = useCallback((markdown: string): string => {
     if (!markdown) return '';
 
     let html = markdown;
 
-    // Passo 1: Proteger fórmulas com placeholders
     const formulas: { [key: string]: string } = {};
     let formulaIndex = 0;
 
@@ -50,7 +38,11 @@ export default function TextEditorWithLatex({
       return placeholder;
     });
 
-    // Passo 2: Dividir em linhas
+    // Processar negrito e itálico primeiro (antes de processar títulos)
+    html = html.replace(/\*\*([^\*]+)\*\*/g, (match: string, content: string) => `<strong>${content}</strong>`);
+    html = html.replace(/\*([^\*]+)\*/g, (match: string, content: string) => `<em>${content}</em>`);
+    html = html.replace(/`([^`]+)`/g, (match: string, content: string) => `<code>${content}</code>`);
+
     const lines = html.split('\n');
     let result = '';
     let inList = false;
@@ -58,8 +50,36 @@ export default function TextEditorWithLatex({
     for (const line of lines) {
       const trimmed = line.trim();
 
-      // Detectar linhas de lista
-      if (trimmed.startsWith('- ')) {
+      // Processar títulos markdown (já com negrito/itálico processado)
+      if (trimmed.startsWith('#### ')) {
+        if (inList) {
+          result += '</ul>';
+          inList = false;
+        }
+        const content = trimmed.substring(5).trim();
+        result += `<h4>${content}</h4>`;
+      } else if (trimmed.startsWith('### ')) {
+        if (inList) {
+          result += '</ul>';
+          inList = false;
+        }
+        const content = trimmed.substring(4).trim();
+        result += `<h3>${content}</h3>`;
+      } else if (trimmed.startsWith('## ')) {
+        if (inList) {
+          result += '</ul>';
+          inList = false;
+        }
+        const content = trimmed.substring(3).trim();
+        result += `<h2>${content}</h2>`;
+      } else if (trimmed.startsWith('# ')) {
+        if (inList) {
+          result += '</ul>';
+          inList = false;
+        }
+        const content = trimmed.substring(2).trim();
+        result += `<h1>${content}</h1>`;
+      } else if (trimmed.startsWith('- ')) {
         if (!inList) {
           result += '<ul>';
           inList = true;
@@ -67,111 +87,111 @@ export default function TextEditorWithLatex({
         const content = trimmed.substring(2).trim();
         result += `<li><p>${content}</p></li>`;
       } else {
-        // Fechar lista se estava aberta
         if (inList) {
           result += '</ul>';
           inList = false;
         }
 
-        // Adicionar parágrafos não-vazios
         if (trimmed) {
           result += `<p>${trimmed}</p>`;
         }
       }
     }
 
-    // Fechar lista se ainda estiver aberta
     if (inList) result += '</ul>';
 
-    // Passo 3: Restaurar fórmulas com destaque
+    // Restaurar fórmulas após processar tudo
     Object.entries(formulas).forEach(([placeholder, formula]) => {
       const highlighted = `<mark style="background: #dbeafe; color: #1e40af; padding: 2px 6px; border-radius: 4px;">$${formula}$</mark>`;
       result = result.replace(new RegExp(placeholder, 'g'), highlighted);
     });
 
-    // Passo 4: Processarformatação inline
-    result = result.replace(/\*\*([^\*]+)\*\*/g, (match: string, content: string) => `<strong>${content}</strong>`);
-    result = result.replace(/\*([^\*]+)\*/g, (match: string, content: string) => `<em>${content}</em>`);
-    result = result.replace(/`([^`]+)`/g, (match: string, content: string) => `<code>${content}</code>`);
-
     return result;
   }, []);
 
-  /**
-   * Converter HTML do TipTap para Markdown
-   * Versão robusta usando métodos estruturados
-   */
   const htmlToMarkdown = useCallback((html: string): string => {
     if (!html) return '';
 
     let result = html;
 
-    // Passo 1: Converter formulas - mark com $ volta a $...$
+    // Primeiro, processar fórmulas
     result = result.replace(/<mark[^>]*>\$([^<]+)\$<\/mark>/g, (match: string, content: string) => {
       return `$${content}$`;
     });
 
-    // Passo 2: Converter listas - ANTES de parágrafos!
-    // Isso evita que <p> interfira com a conversão de <li>
+    // Processar strong e em dentro de elementos antes de processar títulos
+    result = result.replace(/<strong[^>]*>([\s\S]*?)<\/strong>/g, (match: string, content: string) => {
+      return `**${content.trim()}**`;
+    });
+    result = result.replace(/<b[^>]*>([\s\S]*?)<\/b>/g, (match: string, content: string) => {
+      return `**${content.trim()}**`;
+    });
+    result = result.replace(/<em[^>]*>([\s\S]*?)<\/em>/g, (match: string, content: string) => {
+      return `*${content.trim()}*`;
+    });
+    result = result.replace(/<i[^>]*>([\s\S]*?)<\/i>/g, (match: string, content: string) => {
+      return `*${content.trim()}*`;
+    });
+    result = result.replace(/<code[^>]*>([\s\S]*?)<\/code>/g, (match: string, content: string) => {
+      return `\`${content.trim()}\``;
+    });
+
+    // Processar títulos (já com strong/em processados)
+    result = result.replace(/<h1[^>]*>([\s\S]*?)<\/h1>/g, (match: string, content: string) => {
+      return `# ${content.trim()}\n`;
+    });
+    result = result.replace(/<h2[^>]*>([\s\S]*?)<\/h2>/g, (match: string, content: string) => {
+      return `## ${content.trim()}\n`;
+    });
+    result = result.replace(/<h3[^>]*>([\s\S]*?)<\/h3>/g, (match: string, content: string) => {
+      return `### ${content.trim()}\n`;
+    });
+    result = result.replace(/<h4[^>]*>([\s\S]*?)<\/h4>/g, (match: string, content: string) => {
+      return `#### ${content.trim()}\n`;
+    });
+
+    // Processar listas
     result = result.replace(/<ul[^>]*>([\s\S]*?)<\/ul>/g, (match: string, content: string) => {
-      // Converter cada <li> em uma linha com -
       let listContent = content.replace(/<li[^>]*>([\s\S]*?)<\/li>/g, (liMatch: string, liContent: string) => {
-        // Remover tags de parágrafo dentro de li
         let itemText = liContent.replace(/<p[^>]*>/g, '').replace(/<\/p>/g, '').trim();
         return `- ${itemText}\n`;
       });
       return listContent;
     });
 
-    // Passo 3: Converter parágrafos
+    // Processar parágrafos
     result = result.replace(/<p[^>]*>([\s\S]*?)<\/p>/g, (match: string, content: string) => {
       return `${content.trim()}\n`;
     });
 
-    // Passo 4: Remover tags HTML restantes
+    // Remover todas as outras tags HTML
     result = result.replace(/<[^>]+>/g, '');
 
-    // Passo 5: Converter formatação inline
-    // Nota: TipTap pode ter convertido para <strong>, <em>, etc
-    result = result.replace(/([*]{2}|<strong>|<b>)(.+?)([*]{2}|<\/strong>|<\/b>)/g, '**$2**');
-    result = result.replace(/([*]|<em>|<i>)(.+?)([*]|<\/em>|<\/i>)/g, '*$2*');
-    result = result.replace(/(<code>|`)(.+?)(<\/code>|`)/g, '`$2`');
-
-    // Passo 6: Limpar espaços em branco
     result = result.replace(/\n\n\n+/g, '\n\n');
     result = result.trim();
 
     return result;
   }, []);
 
-  /**
-   * Processar HTML colado do Google Docs/ChatGPT
-   * Remove estilos problemáticos e detecta fórmulas
-   */
+
   const transformPastedHTML = useCallback((html: string): string => {
     let processed = html;
 
-    // Remover atributos style
     processed = processed.replace(/\s+style="[^"]*"/g, '');
 
-    // Remover spans vazios
     processed = processed.replace(/<span[^>]*>\s*<\/span>/g, '');
     processed = processed.replace(/<span[^>]*>/g, '');
     processed = processed.replace(/<\/span>/g, '');
 
-    // Converter divs em parágrafos (exceto listas)
     if (!processed.includes('<li')) {
       processed = processed.replace(/<div[^>]*>/g, '<p>');
       processed = processed.replace(/<\/div>/g, '</p>');
     }
 
-    // Quebras de linha
     processed = processed.replace(/<br\s*\/?>/g, '\n');
 
-    // Limpar múltiplos espaços
     processed = processed.replace(/\s{2,}/g, ' ');
 
-    // Detectar linhas que parecem ser lista
     if (!processed.includes('<ul') && !processed.includes('<li')) {
       if (processed.includes('\n- ') || processed.includes('\n* ')) {
         const lines = processed.split('\n');
@@ -242,7 +262,6 @@ export default function TextEditorWithLatex({
     },
   });
 
-  // Sincronizar quando o valor externo muda
   useEffect(() => {
     if (editor && value) {
       const currentMarkdown = htmlToMarkdown(editor.getHTML());
@@ -297,6 +316,37 @@ export default function TextEditorWithLatex({
                 title="Código inline"
               >
                 {'</>'}
+              </button>
+              <div className="w-px h-6 bg-slate-300 mx-1" />
+              <button
+                type="button"
+                onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+                className={`px-2 py-1 text-xs rounded transition-colors ${
+                  editor.isActive('heading', { level: 1 }) ? 'bg-slate-200 text-slate-900' : 'text-slate-600 hover:bg-slate-100'
+                }`}
+                title="Título 1"
+              >
+                H1
+              </button>
+              <button
+                type="button"
+                onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+                className={`px-2 py-1 text-xs rounded transition-colors ${
+                  editor.isActive('heading', { level: 2 }) ? 'bg-slate-200 text-slate-900' : 'text-slate-600 hover:bg-slate-100'
+                }`}
+                title="Título 2"
+              >
+                H2
+              </button>
+              <button
+                type="button"
+                onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+                className={`px-2 py-1 text-xs rounded transition-colors ${
+                  editor.isActive('heading', { level: 3 }) ? 'bg-slate-200 text-slate-900' : 'text-slate-600 hover:bg-slate-100'
+                }`}
+                title="Título 3"
+              >
+                H3
               </button>
             </div>
           )}
@@ -364,6 +414,38 @@ export default function TextEditorWithLatex({
           color: #1e40af !important;
           padding: 2px 6px;
           border-radius: 4px;
+        }
+        .ProseMirror h1 {
+          font-size: 2rem;
+          font-weight: 700;
+          margin-top: 1.5rem;
+          margin-bottom: 0.75rem;
+          color: #0f172a;
+          line-height: 1.2;
+        }
+        .ProseMirror h2 {
+          font-size: 1.5rem;
+          font-weight: 700;
+          margin-top: 1.25rem;
+          margin-bottom: 0.5rem;
+          color: #1e293b;
+          line-height: 1.3;
+        }
+        .ProseMirror h3 {
+          font-size: 1.25rem;
+          font-weight: 700;
+          margin-top: 1rem;
+          margin-bottom: 0.5rem;
+          color: #1e293b;
+          line-height: 1.4;
+        }
+        .ProseMirror h4 {
+          font-size: 1rem;
+          font-weight: 700;
+          margin-top: 0.75rem;
+          margin-bottom: 0.5rem;
+          color: #1e293b;
+          line-height: 1.5;
         }
       `}</style>
     </div>

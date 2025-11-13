@@ -21,6 +21,7 @@ interface EditListModalProps {
     classIds: string[];
     isRestricted?: boolean;
     countTowardScore?: boolean;
+    calculatedStatus?: 'scheduled' | 'open' | 'closed';
   };
 }
 
@@ -80,6 +81,7 @@ export default function EditListModal({ isOpen, onClose, onSubmit, onRefresh, cl
   }, [form.startDate, form.endDate]);
 
   const hasStarted = listData ? !createBrazilianDate(listData.startDate) || new Date() >= createBrazilianDate(listData.startDate)! : false;
+  const isClosed = listData ? (listData.calculatedStatus === 'closed' || (!!listData.endDate && new Date() >= createBrazilianDate(listData.endDate)!)) : false;
 
   const validateDates = () => {
     const newErrors = {
@@ -321,6 +323,24 @@ export default function EditListModal({ isOpen, onClose, onSubmit, onRefresh, cl
           </div>
         )}
 
+        {isClosed && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-red-100 rounded-lg">
+                <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10c0 4.418-3.582 8-8 8s-8-3.582-8-8 3.582-8 8-8 8 3.582 8 8zm-8-4a1 1 0 00-.993.883L9 7v4a1 1 0 001.993.117L11 11V7a1 1 0 00-1-1zm0 9a1.25 1.25 0 100-2.5 1.25 1.25 0 000 2.5z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-red-800">Lista Fechada</h3>
+                <p className="text-sm text-red-600">
+                  Esta lista está fechada e não pode mais ser editada. Apenas visualização permitida.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -330,9 +350,11 @@ export default function EditListModal({ isOpen, onClose, onSubmit, onRefresh, cl
               value={form.title}
               onChange={(e) => setForm(prev => ({ ...prev, title: e.target.value }))}
               placeholder="Digite o título da lista"
-              disabled={loading}
+              disabled={loading || isClosed}
               required
-              className="h-12 text-sm bg-white border-slate-200 focus:border-blue-400 focus:ring-blue-400/20 text-slate-900 placeholder:text-slate-500 rounded-xl"
+              className={`h-12 text-sm border-slate-200 focus:border-blue-400 focus:ring-blue-400/20 text-slate-900 placeholder:text-slate-500 rounded-xl ${
+                isClosed ? 'bg-slate-100 text-slate-500 cursor-not-allowed' : 'bg-white'
+              }`}
             />
           </div>
           
@@ -344,9 +366,11 @@ export default function EditListModal({ isOpen, onClose, onSubmit, onRefresh, cl
               value={form.description}
               onChange={(e) => setForm(prev => ({ ...prev, description: e.target.value }))}
               placeholder="Digite a descrição da lista"
-              className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 bg-white text-slate-900 placeholder:text-slate-500"
+              className={`w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-slate-900 placeholder:text-slate-500 ${
+                isClosed ? 'bg-slate-100 text-slate-500 cursor-not-allowed' : 'bg-white'
+              }`}
               rows={3}
-              disabled={loading}
+              disabled={loading || isClosed}
             />
           </div>
           
@@ -359,10 +383,10 @@ export default function EditListModal({ isOpen, onClose, onSubmit, onRefresh, cl
                 type="datetime-local"
                 value={form.startDate}
                 onChange={(e) => handleDateChange('startDate', e.target.value)}
-                disabled={loading || hasStarted}
-                className={`h-12 text-sm bg-white border-slate-200 focus:border-blue-400 focus:ring-blue-400/20 text-slate-900 rounded-xl ${
+                disabled={loading || hasStarted || isClosed}
+                className={`h-12 text-sm border-slate-200 focus:border-blue-400 focus:ring-blue-400/20 text-slate-900 rounded-xl ${
                   errors.startDate ? 'border-red-300 focus:border-red-400 focus:ring-red-400/20' : ''
-                } ${hasStarted ? 'bg-slate-100 text-slate-500' : ''}`}
+                } ${hasStarted || isClosed ? 'bg-slate-100 text-slate-500 cursor-not-allowed' : 'bg-white'}`}
               />
               {errors.startDate && (
                 <p className="mt-1 text-sm text-red-600">{errors.startDate}</p>
@@ -377,10 +401,10 @@ export default function EditListModal({ isOpen, onClose, onSubmit, onRefresh, cl
                 type="datetime-local"
                 value={form.endDate}
                 onChange={(e) => handleDateChange('endDate', e.target.value)}
-                disabled={loading}
-                className={`h-12 text-sm bg-white border-slate-200 focus:border-blue-400 focus:ring-blue-400/20 text-slate-900 rounded-xl ${
+                disabled={loading || isClosed}
+                className={`h-12 text-sm border-slate-200 focus:border-blue-400 focus:ring-blue-400/20 text-slate-900 rounded-xl ${
                   errors.endDate ? 'border-red-300 focus:border-red-400 focus:ring-red-400/20' : ''
-                }`}
+                } ${isClosed ? 'bg-slate-100 text-slate-500 cursor-not-allowed' : 'bg-white'}`}
               />
               {errors.endDate && (
                 <p className="mt-1 text-sm text-red-600">{errors.endDate}</p>
@@ -419,8 +443,8 @@ export default function EditListModal({ isOpen, onClose, onSubmit, onRefresh, cl
                     const allIds = Array.isArray(classes) ? classes.map(c => c.id) : [];
                     setForm(prev => ({ ...prev, classIds: allIds }));
                   }}
-                  disabled={loading || hasStarted}
-                  className="text-xs text-blue-600 hover:text-blue-800 font-medium px-2 py-1 rounded-lg hover:bg-blue-50 transition-colors"
+                  disabled={loading || hasStarted || isClosed}
+                  className="text-xs text-blue-600 hover:text-blue-800 font-medium px-2 py-1 rounded-lg hover:bg-blue-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Selecionar Todas
                 </button>
@@ -429,8 +453,8 @@ export default function EditListModal({ isOpen, onClose, onSubmit, onRefresh, cl
                   onClick={() => {
                     setForm(prev => ({ ...prev, classIds: [] }));
                   }}
-                  disabled={loading || hasStarted}
-                  className="text-xs text-slate-600 hover:text-slate-800 font-medium px-2 py-1 rounded-lg hover:bg-slate-50 transition-colors"
+                  disabled={loading || hasStarted || isClosed}
+                  className="text-xs text-slate-600 hover:text-slate-800 font-medium px-2 py-1 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Limpar
                 </button>
@@ -456,7 +480,7 @@ export default function EditListModal({ isOpen, onClose, onSubmit, onRefresh, cl
                             setForm(prev => ({ ...prev, classIds: prev.classIds.filter(id => id !== cls.id) }));
                           }
                         }}
-                        disabled={loading || hasStarted}
+                        disabled={loading || hasStarted || isClosed}
                         className="mr-3"
                         variant="text"
                       />
@@ -507,10 +531,10 @@ export default function EditListModal({ isOpen, onClose, onSubmit, onRefresh, cl
                   checked={form.countTowardScore}
                   onChange={(e) => setForm(prev => ({ ...prev, countTowardScore: e.target.checked }))}
                   className="mr-2"
-                  disabled={loading}
+                  disabled={loading || isClosed}
                   variant="text"
                 />
-                <span className="text-sm font-medium text-slate-700">Esta lista conta para a nota</span>
+                <span className={`text-sm font-medium ${isClosed ? 'text-slate-500' : 'text-slate-700'}`}>Esta lista conta para a nota</span>
               </label>
               
               {/* Campo: restringir por IP */}
@@ -519,10 +543,10 @@ export default function EditListModal({ isOpen, onClose, onSubmit, onRefresh, cl
                   checked={form.isRestricted}
                   onChange={(e) => setForm(prev => ({ ...prev, isRestricted: e.target.checked }))}
                   className="mr-2"
-                  disabled={loading}
+                  disabled={loading || isClosed}
                   variant="text"
                 />
-                <span className="text-sm font-medium text-slate-700">Restringir acesso por IP</span>
+                <span className={`text-sm font-medium ${isClosed ? 'text-slate-500' : 'text-slate-700'}`}>Restringir acesso por IP</span>
               </label>
             </div>
           </div>
@@ -541,13 +565,15 @@ export default function EditListModal({ isOpen, onClose, onSubmit, onRefresh, cl
           <Button 
             onClick={handleSubmit} 
             className="flex-1 h-12 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={loading || !isFormValid() || showSuccessMessage}
+            disabled={loading || !isFormValid() || showSuccessMessage || isClosed}
           >
             {loading ? (
               <div className="flex items-center gap-2">
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                 Atualizando...
               </div>
+            ) : isClosed ? (
+              'Lista Fechada - Não Pode Ser Editada'
             ) : (
               'Atualizar Lista'
             )}

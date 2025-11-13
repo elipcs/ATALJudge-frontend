@@ -322,6 +322,8 @@ export const API = {
     get: (id: string) => get<QuestionResponseDTO>(`/questions/${id}`),
     create: (data: Partial<QuestionResponseDTO>) => post<QuestionResponseDTO>('/questions', data),
     update: (id: string, data: Partial<QuestionResponseDTO>) => put<QuestionResponseDTO>(`/questions/${id}`, data),
+    updateCodeforces: (id: string, data: { contestId: string; problemIndex: string }) => 
+      put<QuestionResponseDTO>(`/questions/${id}/codeforces`, data),
     delete: (id: string) => del<null>(`/questions/${id}`),
   },
 
@@ -348,17 +350,24 @@ export const API = {
     submit: (data: { questionId: string; code: string; language: string }) => post<SubmissionDetailDTO>(
       '/submissions/submit', data
     ),
+    resubmit: (id: string) => post<SubmissionResponseDTO>(`/submissions/${id}/resubmit`),
   },
 
   testCases: {
     list: (questionId: string) => get<TestCaseResponseDTO[]>(`/questions/${questionId}/testcases`),
     create: (questionId: string, data: Omit<TestCaseResponseDTO, 'id' | 'createdAt'>) => post<TestCaseResponseDTO>(`/questions/${questionId}/testcases`, data),
     update: (questionId: string, testCaseId: string, data: Partial<TestCaseResponseDTO>) => 
-      put<TestCaseResponseDTO>(`/questions/${questionId}/testcases/${testCaseId}`, data),
+      post<TestCaseResponseDTO>(`/testcases/${testCaseId}`, data),
     delete: (questionId: string, testCaseId: string) => 
-      del<null>(`/questions/${questionId}/testcases/${testCaseId}`),
+      del<null>(`/testcases/${testCaseId}`),
     reorder: (questionId: string, testCaseIds: string[]) => 
       post<null>(`/questions/${questionId}/testcases/reorder`, { testCaseIds }),
+    bulkUpdate: (questionId: string, data: { testCases: Array<{ id?: string; input: string; expectedOutput: string; isSample: boolean; weight: number }> }) =>
+      put<TestCaseResponseDTO[]>(`/questions/${questionId}/testcases/bulk`, data),
+    generate: (questionId: string, data: { oracleCode: string; language: string; count: number }, config?: RequestConfig) =>
+      post<{ testCases: Array<{ input: string; expectedOutput: string }>; totalGenerated: number; algorithmTypeDetected?: string }>(
+        `/questions/${questionId}/testcases/generate`, data, config
+      ),
   },
 
   password: {
@@ -386,7 +395,16 @@ export const API = {
     ),
     removeStudents: (studentIds: string[]) => 
       post<null>('/config/remove-students', { studentIds }),
-    systemReset: () => post<null>('/config/system-reset'),
+    systemReset: (resetOptions: {
+      resetSubmissions: boolean;
+      resetStudents: boolean;
+      resetClasses: boolean;
+      resetLists: boolean;
+      resetMonitors: boolean;
+      resetProfessors: boolean;
+      resetInvites: boolean;
+      resetAllowedIPs: boolean;
+    }) => post<null>('/config/system-reset', resetOptions),
   },
 
   execution: {

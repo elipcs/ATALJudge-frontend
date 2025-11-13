@@ -18,6 +18,7 @@ import { getSubmissionStatusColor, normalizeStatus, getVerdictColor } from "../.
 import { SUBMISSION_STATUS_OPTIONS } from "../../constants";
 import { logger } from '@/utils/logger';
 import { getVerdictBadgeColor } from "@/utils/statusUtils";
+import { API } from "@/config/api";
 
 interface SubmissionsPageState {
   submissions: SubmissionResponseDTO[];
@@ -151,6 +152,27 @@ export default function SubmissoesPage() {
     }));
   };
 
+  const handleResubmit = async (submissionId: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent row click
+    
+    if (!confirm('Deseja realmente re-submeter esta submissão? Uma nova submissão será criada com os mesmos dados.')) {
+      return;
+    }
+
+    try {
+      setState(prev => ({ ...prev, loading: true }));
+      await API.submissions.resubmit(submissionId);
+      logger.info('Submissão re-submetida com sucesso', { submissionId });
+      // Reload submissions to show the new one
+      await loadSubmissions();
+    } catch (error) {
+      logger.error('Erro ao re-submeter', { error, submissionId });
+      alert('Erro ao re-submeter a submissão. Tente novamente.');
+    } finally {
+      setState(prev => ({ ...prev, loading: false }));
+    }
+  };
+
   if (state.loading) {
     return <PageLoading message="Carregando submissões..." description="Buscando dados das submissões" />;
   }
@@ -276,6 +298,9 @@ export default function SubmissoesPage() {
                       {userRole !== 'student' && (
                         <th className="text-left py-3 px-4 font-medium text-gray-600">Estudante</th>
                       )}
+                      {(userRole === 'professor' || userRole === 'assistant') && (
+                        <th className="text-center py-3 px-4 font-medium text-gray-600">Ações</th>
+                      )}
                     </tr>
                   </thead>
                   <tbody>
@@ -320,6 +345,21 @@ export default function SubmissoesPage() {
                             <div className="text-gray-600">
                               {submission.userName || submission.userId}
                             </div>
+                          </td>
+                        )}
+                        {(userRole === 'professor' || userRole === 'assistant') && (
+                          <td className="py-3 px-4 text-center">
+                            <Button
+                              onClick={(e) => handleResubmit(submission.id, e)}
+                              variant="outline"
+                              size="sm"
+                              className="px-3 py-1 text-xs hover:bg-blue-50 hover:border-blue-400 hover:text-blue-600 transition-colors"
+                              title="Re-submeter esta submissão"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                              </svg>
+                            </Button>
                           </td>
                         )}
                       </tr>

@@ -122,7 +122,7 @@ export function InviteForm({ onInviteCreated }: InviteFormProps) {
   ];
 
   return (
-    <Card className="p-6 mb-8">
+    <Card className="p-6 mb-8 overflow-visible">
       <h2 className="text-xl font-semibold mb-6">Gerar Novo Convite</h2>
       
       {}
@@ -181,7 +181,7 @@ export function InviteForm({ onInviteCreated }: InviteFormProps) {
       {}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
         {formData.role === 'student' && (
-          <div className="md:col-span-2 lg:col-span-1">
+          <div className="md:col-span-2 lg:col-span-1 relative">
             <label className="block text-sm font-medium text-gray-700 mb-2">Turma</label>
             <div className="relative class-dropdown-container">
               <button
@@ -205,7 +205,7 @@ export function InviteForm({ onInviteCreated }: InviteFormProps) {
               </button>
               
               {isClassDropdownOpen && (
-                <div className="absolute z-10 w-full mt-2 bg-white border border-gray-300 rounded-lg shadow-lg max-h-64 overflow-y-auto">
+                <div className="absolute z-50 w-full mt-2 bg-white border border-gray-300 rounded-lg shadow-xl max-h-64 overflow-y-auto">
                   {!formData.classId && (
                     <button
                       type="button"
@@ -300,7 +300,7 @@ export function InviteForm({ onInviteCreated }: InviteFormProps) {
           </div>
         </div>
 
-        <div>
+        <div className="relative">
           <label className="block text-sm font-medium text-gray-700 mb-2">Validade do Convite</label>
           <div className="relative expiration-dropdown-container">
             <button
@@ -324,7 +324,7 @@ export function InviteForm({ onInviteCreated }: InviteFormProps) {
             </button>
             
             {isExpirationDropdownOpen && (
-              <div className="absolute z-10 w-full mt-2 bg-white border border-gray-300 rounded-lg shadow-lg overflow-y-auto max-h-64">
+              <div className="absolute z-50 w-full mt-2 bg-white border border-gray-300 rounded-lg shadow-xl overflow-y-auto max-h-64">
                 {expirationOptions.map((option, index) => (
                   <button
                     key={option.value}

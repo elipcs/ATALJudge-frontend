@@ -35,7 +35,6 @@ export interface CreateListRequest {
   classIds?: string[];
   countTowardScore?: boolean;
   isRestricted?: boolean;
-  // Opcionalmente incluir dados de pontuação na criação
   scoringMode?: 'simple' | 'groups';
   maxScore?: number;
   minQuestionsForMaxScore?: number;
@@ -100,7 +99,7 @@ export const listsApi = {
           questions: (list.questions as any) || [],
           questionCount: list.questionCount || (list.questions as any)?.length || 0,
           isRestricted: list.isRestricted,
-          countTowardScore: (list as any).countTowardScore ?? false,
+          countTowardScore: list.countTowardScore ?? false,
           scoringMode: list.scoringMode,
           maxScore: list.maxScore,
           minQuestionsForMaxScore: list.minQuestionsForMaxScore,
@@ -139,7 +138,7 @@ export const listsApi = {
         minQuestionsForMaxScore: list.minQuestionsForMaxScore,
         questionGroups: (list.questionGroups as any) || [],
         isRestricted: list.isRestricted ?? false,
-        countTowardScore: (list as any).countTowardScore ?? false,
+        countTowardScore: list.countTowardScore ?? false,
         calculatedStatus: calculateListStatus(startDate, endDate)
       };
 
@@ -197,7 +196,6 @@ export const listsApi = {
 
       const title = newTitle || `${originalList.title} (Cópia)`;
       
-      // 1. Criar lista com dados básicos
       const newListData: CreateListRequest = {
         title,
         description: originalList.description,
@@ -210,7 +208,6 @@ export const listsApi = {
 
       const newList = await this.create(newListData);
 
-      // 2. Atualizar configuração de pontuação separadamente
       if (originalList.scoringMode || originalList.maxScore || originalList.questionGroups) {
         const scoringData: UpdateListScoringRequest = {
           scoringMode: originalList.scoringMode,
@@ -226,7 +223,6 @@ export const listsApi = {
         await this.updateScoring(newList.id, scoringData);
       }
 
-      // 3. Adicionar questões
       if (originalList.questions && originalList.questions.length > 0) {
         for (const question of originalList.questions) {
           if (question && (question as any).id) {

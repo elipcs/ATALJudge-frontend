@@ -23,8 +23,8 @@ export default function JudgeTypeModal({
   const [judgeType, setJudgeType] = useState<'local' | 'codeforces'>(
     question.judgeType || 'local'
   );
-  const [contestId, setContestId] = useState(question.codeforcesContestId || '');
-  const [problemIndex, setProblemIndex] = useState(question.codeforcesProblemIndex || '');
+  const [contestId, setContestId] = useState(question.contestId || '');
+  const [problemIndex, setProblemIndex] = useState(question.problemIndex || '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [validating, setValidating] = useState(false);
@@ -33,8 +33,8 @@ export default function JudgeTypeModal({
   useEffect(() => {
     if (isOpen) {
       setJudgeType(question.judgeType || 'local');
-      setContestId(question.codeforcesContestId || '');
-      setProblemIndex(question.codeforcesProblemIndex || '');
+      setContestId(question.contestId || '');
+      setProblemIndex(question.problemIndex || '');
       setError(null);
       setProblemInfo(null);
     }

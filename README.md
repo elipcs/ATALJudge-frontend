@@ -106,7 +106,6 @@ Open [http://localhost:3000](http://localhost:3000)
 export function useListPage(questionListId: string) {
   const [list, setList] = useState<QuestionList | null>(null);
   const [loading, setLoading] = useState(true);
-  // ... business logic
   return { list, loading, handleSubmit };
 }
 ```
@@ -121,7 +120,6 @@ export const getQuestions = async (questionListId: string): Promise<Question[]> 
 ### Component Structure
 ```typescript
 export function QuestionCard({ question, onSubmit }: Props) {
-  // Pure presentation logic
   return <div>...</div>;
 }
 ```

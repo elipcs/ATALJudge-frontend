@@ -69,7 +69,6 @@ export default function ListsPage() {
 
   const handleCreateList = async (listData: any) => {
     await baseHandleCreateList(listData);
-    // Limpa o filtro de busca para mostrar a lista recém-criada
     setSearch('');
     setServerSearch('');
     await refreshLists();
@@ -113,12 +112,13 @@ export default function ListsPage() {
     };
   }, [search]);
 
-  useMemo(() => {
+  useEffect(() => {
     const filters = {
       search: serverSearch || undefined
     };
     setFilters(filters);
-  }, [serverSearch, setFilters]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [serverSearch]);
 
   useEffect(() => {
     setLocalLists(lists);
@@ -138,7 +138,6 @@ export default function ListsPage() {
     });
   }, [localLists, search]);
 
-  // Mostra loading apenas no carregamento inicial
   if ((loading && localLists.length === 0) || isInitialLoad.current) {
     return <PageLoading message="Carregando listas..." description="Preparando as listas de exercícios" />;
   }
@@ -227,7 +226,10 @@ export default function ListsPage() {
           description: editingList.description || '',
           startDate: editingList.startDate,
           endDate: editingList.endDate,
-          classIds: editingList.classIds || []
+          classIds: editingList.classIds || [],
+          countTowardScore: editingList.countTowardScore ?? false,
+          isRestricted: editingList.isRestricted ?? false,
+          calculatedStatus: editingList.calculatedStatus
         } : undefined}
       />
 

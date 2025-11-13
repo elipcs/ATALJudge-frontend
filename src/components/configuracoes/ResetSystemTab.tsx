@@ -9,6 +9,7 @@ interface SystemReset {
   resetMonitors: boolean;
   resetProfessors: boolean;
   resetInvites: boolean;
+  resetAllowedIPs: boolean;
   confirmationText: string;
 }
 
@@ -35,10 +36,11 @@ export default function ResetSystemTab({
     { key: 'resetSubmissions', label: 'Submissões', description: 'Remove todas as submissões dos estudantes' },
     { key: 'resetStudents', label: 'Estudantes', description: 'Remove todos os estudantes cadastrados' },
     { key: 'resetClasses', label: 'Turmas', description: 'Remove todas as turmas criadas' },
-    { key: 'resetLists', label: 'Listas de Exercícios', description: 'Remove todas as listas de exercícios' },
+    { key: 'resetLists', label: 'Listas de Exercícios', description: 'Remove todas as listas de exercícios, questões e casos de teste relacionados' },
     { key: 'resetMonitors', label: 'Monitores', description: 'Remove todos os monitores cadastrados' },
     { key: 'resetProfessors', label: 'Outros Professores', description: 'Remove todos os outros professores (exceto você)' },
-    { key: 'resetInvites', label: 'Convites', description: 'Remove todos os convites pendentes e expirados' }
+    { key: 'resetInvites', label: 'Convites', description: 'Remove todos os convites pendentes e expirados' },
+    { key: 'resetAllowedIPs', label: 'IPs Permitidos', description: 'Remove todas as configurações de IPs permitidos' }
   ];
 
   return (

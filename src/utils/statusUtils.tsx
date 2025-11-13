@@ -38,18 +38,16 @@ export function getSubmissionStatusColor(status: string): string {
 
 export function getVerdictColor(verdict: string): string {
   if (verdict === 'Accepted') return 'text-green-600';
-  if (verdict.includes('Wrong Answer')) return 'text-orange-600'; // Laranja para Wrong Answer
-  // Qualquer erro em vermelho
+  if (verdict.includes('Wrong Answer')) return 'text-orange-600';
   if (verdict.includes('Runtime Error') || verdict.includes('Compilation Error') || verdict.includes('Presentation Error')) {
     return 'text-red-600';
   }
-  if (verdict.includes('Time Limit Exceeded')) return 'text-red-600'; // Tempo limite também é erro
-  if (verdict.includes('Memory Limit Exceeded')) return 'text-red-600'; // Memória limite também é erro
+  if (verdict.includes('Time Limit Exceeded')) return 'text-red-600';
+  if (verdict.includes('Memory Limit Exceeded')) return 'text-red-600';
   return 'text-gray-600';
 }
 
 export function getVerdictBadgeColor(verdict?: string, status?: string): string {
-  // Se temos um verdict, usar ele para determinar a cor
   if (verdict) {
     if (verdict === 'Accepted') {
       return 'bg-green-100 text-green-800';
@@ -63,7 +61,6 @@ export function getVerdictBadgeColor(verdict?: string, status?: string): string 
     }
   }
   
-  // Fallback para usar o status se não temos verdict
   if (status) {
     return getSubmissionStatusColor(status);
   }

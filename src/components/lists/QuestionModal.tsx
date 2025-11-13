@@ -5,18 +5,13 @@ import TextEditorWithLatex from '../questions/TextEditorWithLatex';
 
 interface QuestionFormData {
   title: string;
-  statement: string;
-  inputFormat: string;
-  outputFormat: string;
-  constraints?: string;
-  notes?: string;
+  text: string;
   examples: Array<{
     input: string;
     output: string;
   }>;
   timeLimit: string;
   memoryLimit: string;
-  tags: string[];
 }
 
 interface QuestionModalProps {
@@ -38,42 +33,40 @@ export default function QuestionModal({
   
   const [formData, setFormData] = React.useState({
     title: question?.title || '',
-    statement: question?.statement || '',
-    inputFormat: question?.inputFormat || '',
-    outputFormat: question?.outputFormat || '',
-    constraints: question?.constraints || '',
-    notes: question?.notes || '',
+    text: question?.text || '',
     timeLimit: question?.timeLimit || '1s',
     memoryLimit: question?.memoryLimit || '128MB',
-    tags: question?.tags?.join(', ') || '',
     examples: question?.examples || [{ input: '', output: '' }],
   });
 
   React.useEffect(() => {
     if (question) {
+      // Garantir formato correto para timeLimit e memoryLimit
+      let timeLimit = question.timeLimit || '1s';
+      if (timeLimit && !timeLimit.endsWith('s')) {
+        const numValue = timeLimit.replace(/[^0-9.,]/g, '').replace(',', '.');
+        timeLimit = numValue ? `${numValue}s` : '1s';
+      }
+      
+      let memoryLimit = question.memoryLimit || '128MB';
+      if (memoryLimit && !memoryLimit.toUpperCase().endsWith('MB')) {
+        const numValue = memoryLimit.replace(/[^0-9.,]/g, '').replace(',', '.');
+        memoryLimit = numValue ? `${numValue}MB` : '128MB';
+      }
+
       setFormData({
         title: question.title || '',
-        statement: question.statement || '',
-        inputFormat: question.inputFormat || '',
-        outputFormat: question.outputFormat || '',
-        constraints: question.constraints || '',
-        notes: question.notes || '',
-        timeLimit: question.timeLimit || '1s',
-        memoryLimit: question.memoryLimit || '128MB',
-        tags: question.tags?.join(', ') || '',
+        text: question.text || '',
+        timeLimit,
+        memoryLimit,
         examples: question.examples || [{ input: '', output: '' }],
       });
     } else {
       setFormData({
         title: '',
-        statement: '',
-        inputFormat: '',
-        outputFormat: '',
-        constraints: '',
-        notes: '',
+        text: '',
         timeLimit: '1s',
         memoryLimit: '128MB',
-        tags: '',
         examples: [{ input: '', output: '' }],
       });
     }
@@ -81,6 +74,30 @@ export default function QuestionModal({
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleTimeLimitChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // Remover 's' se existir
+    const withoutSuffix = value.replace(/s$/i, '');
+    // Aceitar apenas números, ponto e vírgula
+    const sanitized = withoutSuffix.replace(/[^0-9.,]/g, '');
+    // Converter vírgula para ponto
+    const normalized = sanitized.replace(',', '.');
+    // Adicionar 's' automaticamente se houver valor
+    setFormData({ ...formData, timeLimit: normalized ? `${normalized}s` : '' });
+  };
+
+  const handleMemoryLimitChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // Remover 'MB' se existir
+    const withoutSuffix = value.replace(/mb$/i, '');
+    // Aceitar apenas números, ponto e vírgula
+    const sanitized = withoutSuffix.replace(/[^0-9.,]/g, '');
+    // Converter vírgula para ponto
+    const normalized = sanitized.replace(',', '.');
+    // Adicionar 'MB' automaticamente se houver valor
+    setFormData({ ...formData, memoryLimit: normalized ? `${normalized}MB` : '' });
   };
 
   const handleExampleChange = (index: number, field: 'input' | 'output', value: string) => {
@@ -107,7 +124,6 @@ export default function QuestionModal({
     e.preventDefault();
     onSave({
       ...formData,
-      tags: formData.tags.split(',').map((t: string) => t.trim()).filter(Boolean),
       examples: formData.examples.filter(ex => ex.input.trim() || ex.output.trim()),
     });
   };
@@ -153,80 +169,65 @@ export default function QuestionModal({
           </nav>
         </div>
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">Título</label>
+            <input 
+              name="title" 
+              value={formData.title} 
+              onChange={handleChange} 
+              className="w-full h-12 px-4 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 bg-white text-slate-900 placeholder:text-slate-500" 
+              required 
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Título</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Limite de Tempo (segundos)</label>
               <input 
-                name="title" 
-                value={formData.title} 
-                onChange={handleChange} 
+                name="timeLimit" 
+                value={formData.timeLimit} 
+                onChange={handleTimeLimitChange}
+                onBlur={(e) => {
+                  // Garantir que sempre termine com 's'
+                  const value = e.target.value.replace(/s$/i, '').replace(/[^0-9.,]/g, '').replace(',', '.');
+                  if (value) {
+                    setFormData({ ...formData, timeLimit: `${value}s` });
+                  } else if (!e.target.value) {
+                    setFormData({ ...formData, timeLimit: '1s' });
+                  }
+                }}
                 className="w-full h-12 px-4 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 bg-white text-slate-900 placeholder:text-slate-500" 
-                required 
+                placeholder="Ex: 1.5"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Tags</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Limite de Memória (MB)</label>
               <input 
-                name="tags" 
-                value={formData.tags} 
-                onChange={handleChange} 
+                name="memoryLimit" 
+                value={formData.memoryLimit} 
+                onChange={handleMemoryLimitChange}
+                onBlur={(e) => {
+                  // Garantir que sempre termine com 'MB'
+                  const value = e.target.value.replace(/mb$/i, '').replace(/[^0-9.,]/g, '').replace(',', '.');
+                  if (value) {
+                    setFormData({ ...formData, memoryLimit: `${value}MB` });
+                  } else if (!e.target.value) {
+                    setFormData({ ...formData, memoryLimit: '128MB' });
+                  }
+                }}
                 className="w-full h-12 px-4 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 bg-white text-slate-900 placeholder:text-slate-500" 
-                placeholder="ex: A, B, C" 
+                placeholder="Ex: 128"
               />
             </div>
           </div>
           
           <div>
-            <label className="block text-lg font-medium text-slate-700 mb-2">Enunciado</label>
+            <label className="block text-lg font-medium text-slate-700 mb-2">Texto da Questão</label>
             <TextEditorWithLatex
-              value={formData.statement}
-              onChange={(value: string) => setFormData({ ...formData, statement: value })}
+              value={formData.text}
+              onChange={(value: string) => setFormData({ ...formData, text: value })}
               placeholder=""
-              className="h-32"
-              showPreview={showPreviewMode}
-            />
-          </div>
-          
-          <div>
-            <label className="block text-lg font-medium text-slate-700 mb-2">Formato de Entrada</label>
-            <TextEditorWithLatex
-              value={formData.inputFormat}
-              onChange={(value: string) => setFormData({ ...formData, inputFormat: value })}
-              placeholder=""
-              className="h-20"
-              showPreview={showPreviewMode}
-            />
-          </div>
-
-          <div>
-            <label className="block text-lg font-medium text-slate-700 mb-2">Formato de Saída</label>
-            <TextEditorWithLatex
-              value={formData.outputFormat}
-              onChange={(value: string) => setFormData({ ...formData, outputFormat: value })}
-              placeholder=""
-              className="h-20"
-              showPreview={showPreviewMode}
-            />
-          </div>
-
-          <div>
-            <label className="block text-lg font-medium text-slate-700 mb-2">Restrições</label>
-            <TextEditorWithLatex
-              value={formData.constraints || ''}
-              onChange={(value: string) => setFormData({ ...formData, constraints: value })}
-              placeholder=""
-              className="h-24"
-              showPreview={showPreviewMode}
-            />
-          </div>
-
-          <div>
-            <label className="block text-lg font-medium text-slate-700 mb-2">Observações</label>
-            <TextEditorWithLatex
-              value={formData.notes || ''}
-              onChange={(value: string) => setFormData({ ...formData, notes: value })}
-              placeholder=""
-              className="h-24"
+              className="h-64"
               showPreview={showPreviewMode}
             />
           </div>
@@ -284,26 +285,6 @@ export default function QuestionModal({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Limite de Tempo</label>
-              <input 
-                name="timeLimit" 
-                value={formData.timeLimit} 
-                onChange={handleChange} 
-                className="w-full h-12 px-4 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 bg-white text-slate-900 placeholder:text-slate-500" 
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Limite de Memória</label>
-              <input 
-                name="memoryLimit" 
-                value={formData.memoryLimit} 
-                onChange={handleChange} 
-                className="w-full h-12 px-4 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 bg-white text-slate-900 placeholder:text-slate-500" 
-              />
-            </div>
-          </div>
           <div className="flex gap-3 mt-8 pt-6 border-t border-slate-200">
             <button 
               type="button" 

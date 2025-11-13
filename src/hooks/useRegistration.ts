@@ -118,7 +118,7 @@ export function useRegistration() {
     }
     
     setIsRegistrationFinished(true);
-    setCountdown(5); // Reset countdown
+    setCountdown(5);
   };
 
   const getRoleTitle = () => {

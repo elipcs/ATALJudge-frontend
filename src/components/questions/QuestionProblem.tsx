@@ -13,7 +13,7 @@ export default function QuestionProblem({ question }: QuestionProblemProps) {
       <Card className="p-6">
         <h2 className="text-xl font-semibold mb-4">Problema</h2>
         <div className="bg-slate-50 rounded-lg p-4">
-          <MarkdownRenderer content={question.statement} />
+          <MarkdownRenderer content={question.text} />
         </div>
       </Card>
 

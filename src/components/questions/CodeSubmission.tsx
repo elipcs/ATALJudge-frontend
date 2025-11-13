@@ -238,7 +238,7 @@ export default function CodeSubmission({
               ? "# Escreva seu código Python aqui\ndef main():\n    pass\n\nif __name__ == '__main__':\n    main()"
               : "// Escreva seu código Java aqui\npublic class Main {\n    public static void main(String[] args) {\n        \n    }\n}"
           }
-          className="flex-1 min-h-[300px] w-full p-4 font-mono text-sm bg-slate-900 text-green-400 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+          className="flex-1 min-h-[300px] w-full p-4 font-mono text-sm bg-slate-900 text-slate-200 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
           spellCheck={false}
         />
       </div>

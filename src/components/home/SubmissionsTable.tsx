@@ -99,7 +99,6 @@ export default function SubmissionsTable({ submissions, showActions = false }: S
           </thead>
           <tbody>
             {safeSubmissions.slice(0, 5).map((submission: any, index) => {
-              // O backend retorna campos expandidos diretamente
               const studentName = submission.userName || submission.student?.name || 'Aluno';
               const questionListTitle= submission.questionListTitle|| submission.questionList?.name || 'Lista desconhecida';
               const questionTitle = submission.questionName || submission.question?.name || 'Questão desconhecida';

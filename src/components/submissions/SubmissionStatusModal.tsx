@@ -53,9 +53,7 @@ export default function SubmissionStatusModal({
 
     const currentStatus = status.toLowerCase();
     
-    // Se status for completed, não fazer polling
     if (currentStatus === "completed" || currentStatus === "failed") {
-      // Buscar os resultados uma vez se estiver completed
       if (currentStatus === "completed" && !results) {
         submissionsApi.getSubmissionResults(submissionId)
           .then(submissionResults => {
@@ -73,7 +71,6 @@ export default function SubmissionStatusModal({
       return () => clearTimeout(id);
     }
     
-    // Se status for pending ou running, fazer polling
     if (currentStatus === "pending" || currentStatus === "running") {
       setTimeout(() => setIsPolling(true), 0);
     }

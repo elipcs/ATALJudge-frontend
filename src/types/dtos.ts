@@ -42,19 +42,14 @@ export interface QuestionExampleDTO {
 export interface QuestionResponseDTO {
   id: string;
   title: string;
-  statement: string;
-  inputFormat: string;
-  outputFormat: string;
-  constraints: string;
-  notes: string;
-  tags: string[];
+  text: string;
   timeLimitMs: number;
   memoryLimitKb: number;
   examples: QuestionExampleDTO[];
   judgeType: JudgeType;
-  codeforcesContestId?: string;
-  codeforcesProblemIndex?: string;
-  codeforcesLink?: string;
+  submissionType?: 'local' | 'codeforces';
+  contestId?: string;
+  problemIndex?: string;
   referenceCode?: string;
   referenceLanguage?: string;
   authorId?: string;
@@ -74,6 +69,7 @@ export interface QuestionListResponseDTO {
   minQuestionsForMaxScore?: number;
   questionGroups?: unknown[];
   isRestricted: boolean;
+  countTowardScore: boolean;
   classIds?: string[];
   questions?: unknown[];
   questionCount?: number;

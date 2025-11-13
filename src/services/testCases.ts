@@ -64,3 +64,30 @@ export const reorderTestCases = async (
 ): Promise<void> => {
   await API.testCases.reorder(questionId, testCaseIds);
 };
+
+export interface GenerateTestCasesRequest {
+  oracleCode: string;
+  language: 'python' | 'java';
+  count: number;
+}
+
+export interface GeneratedTestCase {
+  input: string;
+  expectedOutput: string;
+}
+
+export interface GenerateTestCasesResponse {
+  testCases: GeneratedTestCase[];
+  totalGenerated: number;
+  algorithmTypeDetected?: string;
+}
+
+export const generateTestCases = async (
+  questionId: string,
+  data: GenerateTestCasesRequest
+): Promise<GenerateTestCasesResponse> => {
+  // Usar timeout maior para geração de casos de teste (5 minutos)
+  // A geração pode demorar, especialmente para muitos casos ou casos complexos
+  const { data: result } = await API.testCases.generate(questionId, data, { timeout: 300000 }); // 5 minutos
+  return result;
+};

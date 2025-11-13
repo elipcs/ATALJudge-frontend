@@ -3,14 +3,9 @@ import { QuestionResponseDTO } from '@/types/dtos';
 
 export interface CreateQuestionRequest {
   title: string;
-  statement: string;
-  inputFormat: string;
-  outputFormat: string;
-  constraints?: string;
-  notes?: string;
+  text: string;
   timeLimit: string;
   memoryLimit: string;
-  tags: string[];
   examples: Array<{
     input: string;
     output: string;

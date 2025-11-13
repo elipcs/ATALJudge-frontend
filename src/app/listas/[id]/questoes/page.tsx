@@ -211,7 +211,7 @@ export default function QuestionsPage() {
       {}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-4">
-          <Link href="/listas">
+          <Link href={`/listas/${id}`}>
             <Button variant="outline" size="sm" className="border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold transition-all duration-200 rounded-xl">
               ← Voltar
             </Button>
@@ -289,44 +289,14 @@ export default function QuestionsPage() {
             </div>
             
             {}
-            {activeQuestion.statement && (
+            {activeQuestion.text && (
               <div className="mb-6">
                 <h3 className="text-lg font-semibold text-slate-800 mb-2">Enunciado</h3>
                 <div className="bg-slate-50 rounded-xl p-4">
-                  <MarkdownRenderer content={activeQuestion.statement} />
+                  <MarkdownRenderer content={activeQuestion.text} />
                 </div>
               </div>
             )}
-
-          {}
-          {activeQuestion.inputFormat && (
-            <div className="mb-6">
-              <h3 className="text-lg font-semibold text-slate-800 mb-2">Entrada</h3>
-              <div className="bg-slate-50 rounded-xl p-4">
-                <MarkdownRenderer content={activeQuestion.inputFormat} />
-              </div>
-            </div>
-          )}
-
-          {}
-          {activeQuestion.outputFormat && (
-            <div className="mb-6">
-              <h3 className="text-lg font-semibold text-slate-800 mb-2">Saída</h3>
-              <div className="bg-slate-50 rounded-xl p-4">
-                <MarkdownRenderer content={activeQuestion.outputFormat} />
-              </div>
-            </div>
-          )}
-
-          {}
-          {activeQuestion.constraints && (
-            <div className="mb-6">
-              <h3 className="text-lg font-semibold text-slate-800 mb-2">Restrições</h3>
-              <div className="bg-slate-50 rounded-xl p-4">
-                <MarkdownRenderer content={activeQuestion.constraints} />
-              </div>
-            </div>
-          )}
 
           {}
           {activeQuestion.examples && activeQuestion.examples.length > 0 && (
@@ -357,15 +327,6 @@ export default function QuestionsPage() {
           )}
 
           {}
-          {activeQuestion.notes && (
-            <div className="mb-6">
-              <h3 className="text-lg font-semibold text-slate-800 mb-2">Observações</h3>
-              <div className="bg-amber-50 rounded-xl p-4 border border-amber-200">
-                <MarkdownRenderer content={activeQuestion.notes} />
-              </div>
-            </div>
-          )}
-
         </div>
       </Card>
 

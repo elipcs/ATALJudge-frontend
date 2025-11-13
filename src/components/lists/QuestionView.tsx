@@ -63,7 +63,7 @@ export default function QuestionView({
       <div className="bg-white/70 p-6 rounded shadow border border-slate-200">
         <h2 className="text-xl font-bold mb-2 text-blue-800">{question.title}</h2>
         <div className="text-slate-800">
-          <MarkdownRenderer content={question.statement} />
+          <MarkdownRenderer content={question.text} />
         </div>
         <div className="flex gap-2 mt-2">
           <button
