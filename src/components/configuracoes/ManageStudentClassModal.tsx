@@ -74,7 +74,6 @@ export default function ManageStudentClassModal({
       }}
     >
       <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 animate-in zoom-in-95 duration-200 overflow-hidden">
-        {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-slate-200 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-2xl">
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg">
@@ -99,9 +98,7 @@ export default function ManageStudentClassModal({
           )}
         </div>
 
-        {/* Content */}
         <div className="p-6">
-          {/* Success Message */}
           {saveSuccess && (
             <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl animate-in slide-in-from-top-2 duration-300">
               <div className="flex items-center gap-2">
@@ -114,7 +111,6 @@ export default function ManageStudentClassModal({
           )}
 
           <div className="space-y-6">
-            {/* Student Info */}
             <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
               <p className="text-xs font-medium text-slate-600 mb-1">Estudante:</p>
               <p className="font-semibold text-slate-900 text-sm">{student.name}</p>
@@ -124,7 +120,6 @@ export default function ManageStudentClassModal({
               )}
             </div>
 
-            {/* Current Class */}
             <div>
               <p className="text-xs font-medium text-slate-600 mb-2">Turma Atual:</p>
               <div className="bg-blue-50 border border-blue-200 rounded-xl p-3">
@@ -134,7 +129,6 @@ export default function ManageStudentClassModal({
               </div>
             </div>
 
-            {/* Class Selection */}
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">
                 Selecionar Nova Turma:
@@ -157,7 +151,6 @@ export default function ManageStudentClassModal({
               </p>
             </div>
 
-            {/* Error Message */}
             {error && (
               <div className="p-4 bg-red-50 border border-red-200 rounded-xl animate-in slide-in-from-top-2 duration-300">
                 <div className="flex items-start gap-2">
@@ -169,7 +162,6 @@ export default function ManageStudentClassModal({
               </div>
             )}
 
-            {/* Footer Actions */}
             <div className="flex gap-3 pt-6 border-t border-slate-200">
               <button
                 onClick={onClose}

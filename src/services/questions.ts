@@ -30,7 +30,6 @@ export const questionsApi = {
       const { data } = await API.questions.list();
       return data.questions || [];
     } catch (error) {
-      console.error('Erro ao buscar questões:', error);
       return [];
     }
   },
@@ -40,7 +39,6 @@ export const questionsApi = {
       const { data } = await API.questions.get(id);
       return data || null;
     } catch (error) {
-      console.error('❌ [questionsApi.getById] Erro ao buscar questão:', error);
       return null;
     }
   },
@@ -54,7 +52,6 @@ export const questionsApi = {
       if (!data || !data.id) throw new Error('Questão não foi criada corretamente');
       return data;
     } catch (error) {
-      console.error('Erro ao criar questão:', error);
       throw error;
     }
   },
@@ -67,7 +64,6 @@ export const questionsApi = {
       const { data } = await API.questions.update(id, cleanData);
       return data;
     } catch (error) {
-      console.error('Erro ao atualizar questão:', error);
       throw error;
     }
   },
@@ -77,7 +73,6 @@ export const questionsApi = {
       await API.questions.delete(id);
       return true;
     } catch (error) {
-      console.error('Erro ao deletar questão:', error);
       throw error;
     }
   },

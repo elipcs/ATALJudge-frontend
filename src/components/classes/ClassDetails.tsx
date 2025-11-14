@@ -36,25 +36,10 @@ export default function ClassDetails({
     ? students.find(s => s.id === currentUserId)
     : null;
   
-  React.useEffect(() => {
-    console.log('ClassDetails - Debug Info:');
-    console.log('userRole:', userRole);
-    console.log('currentUserId:', currentUserId);
-    console.log('students:', students);
-    console.log('currentStudent:', currentStudent);
-    if (currentStudent) {
-      console.log('currentStudent.grades:', currentStudent.grades);
-    }
-  }, [userRole, currentUserId, students, currentStudent]);
-  
   const { lists: allLists, loading: listsLoading } = useListsData();
   const questionLists = allLists.filter((list: QuestionList) =>
     list.classIds && list.classIds.includes(cls.id)
   );
-  
-  React.useEffect(() => {
-    console.log('questionLists:', questionLists);
-  }, [questionLists]);
 
   const exportToCSV = () => {
     const listsForGrade = questionLists.filter((list: QuestionList) => list.countTowardScore !== false);
@@ -116,12 +101,9 @@ export default function ClassDetails({
 
   return (
     <div className="space-y-6">
-      {/* Card de Notas do Aluno (apenas para estudantes) */}
       {userRole === 'student' && currentStudent && (
         <Card className="bg-white border-slate-200 rounded-2xl shadow-xl p-6">
-          {/* Conteúdo */}
           <div>
-            {/* Cabeçalho */}
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-slate-100 text-slate-600 rounded-xl flex items-center justify-center border border-slate-200">
@@ -135,7 +117,6 @@ export default function ClassDetails({
                 </div>
               </div>
               
-              {/* Badge com quantidade de listas */}
               <div className="bg-slate-100 px-3 py-1 rounded-lg border border-slate-200">
                 <p className="text-slate-700 text-xs font-semibold">
                   {currentStudent.grades?.filter(g => parseFloat(String(g.score)) > 0).length || 0}/{questionLists.length}
@@ -143,17 +124,12 @@ export default function ClassDetails({
               </div>
             </div>
 
-            {/* Grid de Notas */}
             {questionLists.length > 0 ? (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mb-4">
                 {questionLists.map((list) => {
                   const gradeObj = currentStudent.grades?.find(g => g.questionListId === list.id);
                   const gradeValue = gradeObj ? parseFloat(String(gradeObj.score)) : 0;
                   const hasGrade = gradeValue > 0;
-                  
-                  console.log('Renderizando nota para lista:', list.title, 'questionListId:', list.id);
-                  console.log('gradeObj encontrado:', gradeObj);
-                  console.log('gradeValue:', gradeValue);
                   
                   return (
                     <div 
@@ -202,7 +178,6 @@ export default function ClassDetails({
               </div>
             )}
             
-            {/* Card de Média Geral */}
             <div className="bg-white rounded-xl p-4 shadow-xl">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -232,7 +207,6 @@ export default function ClassDetails({
         </Card>
       )}
 
-      {/* Lista de Alunos */}
       <Card className="bg-white border-slate-200 rounded-3xl shadow-lg p-6">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-slate-900">

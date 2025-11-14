@@ -42,7 +42,6 @@ export const profileApi = {
 
       return profileData;
     } catch (error) {
-      console.error('Erro ao buscar perfil:', error);
       throw error;
     }
   },
@@ -67,7 +66,6 @@ export const profileApi = {
 
       return profileData;
     } catch (error) {
-      console.error('Erro ao atualizar perfil:', error);
       throw error;
     }
   },
@@ -77,7 +75,6 @@ export const profileApi = {
       await API.users.changePassword(data);
       return true;
     } catch (error) {
-      console.error('Erro ao alterar senha:', error);
       if (error instanceof Error) {
         throw new Error(error.message);
       }

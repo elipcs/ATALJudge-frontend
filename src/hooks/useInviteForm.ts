@@ -34,7 +34,6 @@ export function useInviteForm() {
       }));
       setAvailableClasses(formattedClasses);
     } catch (error) {
-      console.error('Erro ao carregar turmas:', error);
       setClassesError(error instanceof Error ? error.message : 'Erro ao carregar turmas');
       setAvailableClasses([]);
     } finally {

@@ -63,7 +63,6 @@ export default function ConfiguracoesPage() {
         const allClasses = await classesApi.getAll(true);
         setClasses(allClasses);
       } catch (error) {
-        console.error("Erro ao carregar turmas:", error);
       } finally {
         setLoadingClasses(false);
       }
@@ -93,7 +92,6 @@ export default function ConfiguracoesPage() {
       setShowClassModal(false);
       setSelectedStudent(null);
     } catch (error) {
-      console.error("Erro ao atualizar turma do aluno:", error);
       throw error;
     }
   };

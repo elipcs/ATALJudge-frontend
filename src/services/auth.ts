@@ -74,7 +74,6 @@ export const authApi = {
         const newToken = await this.refreshAccessToken();
         return !!newToken;
       } catch (error) {
-        logger.error('[Auth] Erro ao fazer refresh', { error });
         return false;
       }
     }
@@ -95,7 +94,6 @@ export const authApi = {
       }
       return null;
     } catch (error) {
-      logger.error('[Auth] Erro ao renovar token', { error });
       this.removeTokens();
       return null;
     }
@@ -123,7 +121,6 @@ export const authApi = {
       }
       return true;
     } catch (error) {
-      logger.error('Erro ao fazer logout', { error });
       this.removeTokens();
       if (typeof window !== "undefined") {
         localStorage.removeItem('userRole');

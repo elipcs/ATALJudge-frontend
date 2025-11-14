@@ -51,12 +51,6 @@ export default function ScoreSystemConfigModal({
 
   useEffect(() => {
     if (isOpen) {
-      logger.debug('Opening modal with list', {
-        scoringMode: list.scoringMode,
-        questionGroups: list.questionGroups,
-        questionsCount: list.questions.length
-      });
-      
       setScoringMode(list.scoringMode || 'simple');
       setMinQuestionsForMaxScore(list.minQuestionsForMaxScore || list.questions.length);
       setMaxScore(list.maxScore || 10);
@@ -65,7 +59,6 @@ export default function ScoreSystemConfigModal({
         questionIds: Array.isArray(group.questionIds) ? group.questionIds : []
       }));
       
-      logger.debug('Normalized groups', { groups: normalizedGroups });
       setQuestionGroups(normalizedGroups);
       setErrors({ groups: '', percentage: '' });
     }
@@ -211,7 +204,6 @@ export default function ScoreSystemConfigModal({
       });
       onClose();
     } catch (error) {
-      logger.error('Erro ao salvar configuração', { error });
     } finally {
       setLoading(false);
     }

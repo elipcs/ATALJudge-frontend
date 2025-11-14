@@ -26,7 +26,6 @@ export function useProfile() {
   const profileData = await profileApi.getProfile();
   setUser(profileData);
     } catch (error) {
-      console.error('useProfile: Erro ao carregar dados:', error);
       if (error instanceof Error && (error.message.includes('Não autorizado') || error.message.includes('Token expirado'))) {
         router.push('/login');
         return;
@@ -37,7 +36,7 @@ export function useProfile() {
         error.message.includes('NetworkError') ||
         error.message.includes('fetch')
       )) {
-        setError('Erro de conexão: Não foi possível conectar ao servidor. Verifique se o backend está rodando em http://localhost:5000');
+        setError('Erro de conexão: Não foi possível conectar ao servidor.');
       } else {
         setError('Erro ao carregar dados do perfil. Tente novamente.');
       }
@@ -87,7 +86,6 @@ export function useProfile() {
         variant: "success",
       });
     } catch (error) {
-      console.error('Error saving profile:', error);
       if (error instanceof Error && (error.message.includes('Não autorizado') || error.message.includes('Token expirado'))) {
         router.push('/login');
         return;
@@ -157,7 +155,6 @@ export function useProfile() {
         variant: "success",
       });
     } catch (error) {
-      console.error('Error changing password:', error);
       if (error instanceof Error && (error.message.includes('Não autorizado') || error.message.includes('Token expirado'))) {
         router.push('/login');
         return;
@@ -168,7 +165,7 @@ export function useProfile() {
         error.message.includes('NetworkError') ||
         error.message.includes('fetch')
       )) {
-        setError('Erro de conexão: Não foi possível conectar ao servidor. Verifique se o backend está rodando em http://localhost:5000');
+        setError('Erro de conexão: Não foi possível conectar ao servidor.');
       } else {
         const errorMessage = error instanceof Error ? error.message : 'Erro ao alterar senha';
         setError(errorMessage);

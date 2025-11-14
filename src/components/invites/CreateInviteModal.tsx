@@ -75,7 +75,6 @@ export function CreateInviteModal({ isOpen, onClose, onInviteCreated }: CreateIn
         onClose();
       }, 1500);
     } catch (error) {
-      logger.error('Erro ao gerar convite', { error });
       toast({
         title: "Erro",
         description: 'Erro ao gerar convite: ' + (error instanceof Error ? error.message : 'Erro desconhecido'),
@@ -150,7 +149,6 @@ export function CreateInviteModal({ isOpen, onClose, onInviteCreated }: CreateIn
       }}
     >
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl mx-4 my-8 animate-in zoom-in-95 duration-200">
-        {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-slate-200 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-2xl">
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg">
@@ -175,9 +173,7 @@ export function CreateInviteModal({ isOpen, onClose, onInviteCreated }: CreateIn
           )}
         </div>
 
-        {/* Content */}
         <div className="p-6">
-          {/* Success Message */}
           {saveSuccess && (
             <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl animate-in slide-in-from-top-2 duration-300">
               <div className="flex items-center gap-2">
@@ -190,7 +186,6 @@ export function CreateInviteModal({ isOpen, onClose, onInviteCreated }: CreateIn
           )}
 
           <div className="space-y-6">
-            {/* Tipo de Usuário */}
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-3">Tipo de Usuário *</label>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -244,9 +239,7 @@ export function CreateInviteModal({ isOpen, onClose, onInviteCreated }: CreateIn
               </div>
             </div>
 
-            {/* Campos do Formulário */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {/* Turma (apenas para alunos) */}
               {formData.role === 'student' && (
                 <div className="md:col-span-2 lg:col-span-1 relative z-10">
                   <label className="block text-sm font-semibold text-slate-700 mb-2">Turma *</label>
@@ -344,7 +337,6 @@ export function CreateInviteModal({ isOpen, onClose, onInviteCreated }: CreateIn
                 </div>
               )}
 
-              {/* Máximo de Usos */}
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">Máximo de Usos</label>
                 <input 
@@ -357,7 +349,6 @@ export function CreateInviteModal({ isOpen, onClose, onInviteCreated }: CreateIn
                 />
               </div>
 
-              {/* Validade do Convite */}
               <div className="relative z-10">
                 <label className="block text-sm font-semibold text-slate-700 mb-2">Validade do Convite</label>
                 <div className="relative expiration-dropdown-container">
@@ -414,7 +405,6 @@ export function CreateInviteModal({ isOpen, onClose, onInviteCreated }: CreateIn
               </div>
             </div>
 
-            {/* Footer Actions */}
             <div className="flex gap-3 pt-6 border-t border-slate-200">
               <button
                 type="button"

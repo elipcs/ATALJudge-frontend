@@ -52,7 +52,6 @@ export function useAuthGuard(timeoutMs: number = 10000) {
 
         setIsChecking(false);
       } catch (error) {
-        console.error('Erro na verificação de autenticação:', error);
         router.replace("/login");
       }
     };

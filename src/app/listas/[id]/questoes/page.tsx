@@ -275,11 +275,6 @@ export default function QuestionsPage() {
                   const qids = Array.isArray(g.questionIds) ? g.questionIds : [];
                   return qids.includes(activeQuestion.id);
                 });
-                try {
-                  logger.debug('Diagnostic info', { questionId: activeQuestion?.id, groupId: group?.id ?? null });
-                } catch (e) {
-                  logger.error('Error logging active question group', { error: e });
-                }
                 return group ? (
                   <span className="px-3 py-1 bg-blue-100 text-blue-700 text-sm font-semibold rounded-full border border-blue-200">
                     {group.name}
@@ -339,7 +334,6 @@ export default function QuestionsPage() {
           questionName={activeQuestion.title}
           questionListTitle={list?.title}
           onSubmit={(code, language) => {
-            logger.info('Código submetido', { language, questionId: activeQuestion.id });
           }}
         />
       )}

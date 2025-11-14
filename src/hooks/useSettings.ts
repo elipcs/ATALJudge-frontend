@@ -102,7 +102,6 @@ export function useSettings() {
           className: student.className || studentClassMap.get(student.id)?.className
         }));
       } catch (enrichError) {
-        console.error('Erro ao enriquecer dados dos alunos:', enrichError);
       }
       
       setStudents(list);

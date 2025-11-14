@@ -31,7 +31,6 @@ export function useListsActions({
       });
       setShowCreateModal(false);
     } catch (error) {
-      console.error('Erro ao criar lista:', error);
       throw error;
     }
   };
@@ -48,7 +47,6 @@ export function useListsActions({
       setShowEditModal(false);
       setEditingList(null);
     } catch (error) {
-      console.error('Erro ao editar lista:', error);
       throw error;
     }
   };
@@ -65,7 +63,6 @@ export function useListsActions({
       setShowDeleteModal(false);
       setDeletingList(null);
     } catch (error) {
-      console.error('Erro ao deletar lista:', error);
       throw error;
     }
   };

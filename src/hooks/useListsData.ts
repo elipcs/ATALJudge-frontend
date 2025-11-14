@@ -14,7 +14,6 @@ interface UseListsDataReturn {
   updateList: (id: string, updates: CreateListRequest) => Promise<QuestionList>;
   updateListScoring: (id: string, scoringData: UpdateListScoringRequest) => Promise<QuestionList>;
   deleteList: (id: string) => Promise<void>;
-  duplicateList: (id: string, newTitle?: string) => Promise<QuestionList>;
   addQuestionToList: (questionListId: string, questionId: string) => Promise<void>;
   removeQuestionFromList: (questionListId: string, questionId: string) => Promise<void>;
   filters: ListFilters;
@@ -31,17 +30,14 @@ export function useListsData(userRole?: string, currentUser?: any): UseListsData
   const isLoadingRef = useRef(false);
   const lastFiltersRef = useRef<string>('');
 
-  // Memoizar apenas os campos necessários do currentUser para evitar re-renders desnecessários
   const currentUserId = useMemo(() => currentUser?.id, [currentUser?.id]);
   const currentUserClassId = useMemo(() => currentUser?.classId, [currentUser?.classId]);
 
   const loadData = useCallback(async () => {
-    // Evitar múltiplas chamadas simultâneas
     if (isLoadingRef.current) {
       return;
     }
 
-    // Evitar chamadas quando os filtros não mudaram (apenas na primeira chamada)
     const filtersKey = JSON.stringify(filters);
     if (filtersKey === lastFiltersRef.current && lastFiltersRef.current !== '') {
       return;
@@ -63,7 +59,6 @@ export function useListsData(userRole?: string, currentUser?: any): UseListsData
         classesApi.getAll(false).then(classes => {
           return Array.isArray(classes) ? classes : [];
         }).catch(err => {
-          console.error('❌ [useListsData] Erro ao carregar classes:', err);
           return [];
         })
       ]);
@@ -76,7 +71,6 @@ export function useListsData(userRole?: string, currentUser?: any): UseListsData
       setLists(processedLists);
       setClasses(processedClasses);
     } catch (err) {
-      console.error('❌ [useListsData] Erro ao carregar dados:', err);
       setError(err instanceof Error ? err.message : 'Erro desconhecido');
     } finally {
       setLoading(false);

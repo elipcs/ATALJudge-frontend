@@ -72,7 +72,6 @@ export function useInvites() {
       
       setInvites(sortedInvites);
     } catch (error) {
-      console.error('Error loading invites:', error);
       setError(error instanceof Error ? error.message : 'Erro ao carregar convites');
       setInvites([]);
     } finally {
@@ -110,7 +109,6 @@ export function useInvites() {
       }
       return false;
     } catch (error) {
-      console.error('Error deleting invite:', error);
       throw error;
     }
   };
@@ -126,7 +124,6 @@ export function useInvites() {
       }
       return false;
     } catch (error) {
-      console.error('Error revoking invite:', error);
       throw error;
     }
   };

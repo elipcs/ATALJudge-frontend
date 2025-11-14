@@ -33,14 +33,11 @@ export function TokenValidation({ token, onTokenValidated, children }: TokenVali
     setError("");
     
     try {
-      logger.info('Iniciando validação de token do convite');
       const response = await API.invites.verify(tokenValue);
-      logger.info('Resposta recebida da validação', { response });
       
       const result = response.data as any;
 
       if (!response.success || !result || !result.id) {
-        logger.error('Token inválido ou expirado', { response, result });
         setTokenInfo({
           role: 'student',
           valid: false,
@@ -50,8 +47,6 @@ export function TokenValidation({ token, onTokenValidated, children }: TokenVali
         onTokenValidated(null);
         return;
       }
-      
-      logger.info('Token validado com sucesso', { role: result.role, classId: result.classId });
       
       const data = result;
       const validatedTokenInfo = {
@@ -67,7 +62,6 @@ export function TokenValidation({ token, onTokenValidated, children }: TokenVali
       onTokenValidated(validatedTokenInfo);
 
     } catch (error) {
-      logger.error('Erro ao validar token', { error });
       setError(MESSAGES.ERROR_GENERIC);
       setTokenInfo({
         role: 'student',

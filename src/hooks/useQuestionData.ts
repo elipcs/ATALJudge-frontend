@@ -28,7 +28,6 @@ export const useQuestionData = () => {
       const response = await listsApi.getById(questionListId);
       return response;
     } catch (error) {
-      console.error('Error loading list:', error);
       return null;
     }
   }, []);
@@ -38,7 +37,6 @@ export const useQuestionData = () => {
       const response = await submissionsApi.getSubmissions({ questionId, questionListId });
       return response as any;
     } catch (error) {
-      console.error('Error loading submissions:', error);
       return [];
     }
   }, []);
@@ -68,7 +66,6 @@ export const useQuestionData = () => {
         }
       }
     } catch (error) {
-      console.error('Error fetching data:', error);
     } finally {
       setLoading(false);
     }
@@ -105,7 +102,6 @@ export const useQuestionData = () => {
         return { success: false, message: 'Erro ao submeter código' };
       }
     } catch (error) {
-      console.error('Error submitting solution:', error);
       return { success: false, message: 'Erro inesperado ao submeter código' };
     } finally {
       setSubmitting(false);

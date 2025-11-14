@@ -38,7 +38,6 @@ export default function TextEditorWithLatex({
       return placeholder;
     });
 
-    // Processar negrito e itálico primeiro (antes de processar títulos)
     html = html.replace(/\*\*([^\*]+)\*\*/g, (match: string, content: string) => `<strong>${content}</strong>`);
     html = html.replace(/\*([^\*]+)\*/g, (match: string, content: string) => `<em>${content}</em>`);
     html = html.replace(/`([^`]+)`/g, (match: string, content: string) => `<code>${content}</code>`);
@@ -50,7 +49,6 @@ export default function TextEditorWithLatex({
     for (const line of lines) {
       const trimmed = line.trim();
 
-      // Processar títulos markdown (já com negrito/itálico processado)
       if (trimmed.startsWith('#### ')) {
         if (inList) {
           result += '</ul>';
@@ -100,7 +98,6 @@ export default function TextEditorWithLatex({
 
     if (inList) result += '</ul>';
 
-    // Restaurar fórmulas após processar tudo
     Object.entries(formulas).forEach(([placeholder, formula]) => {
       const highlighted = `<mark style="background: #dbeafe; color: #1e40af; padding: 2px 6px; border-radius: 4px;">$${formula}$</mark>`;
       result = result.replace(new RegExp(placeholder, 'g'), highlighted);
@@ -114,12 +111,10 @@ export default function TextEditorWithLatex({
 
     let result = html;
 
-    // Primeiro, processar fórmulas
     result = result.replace(/<mark[^>]*>\$([^<]+)\$<\/mark>/g, (match: string, content: string) => {
       return `$${content}$`;
     });
 
-    // Processar strong e em dentro de elementos antes de processar títulos
     result = result.replace(/<strong[^>]*>([\s\S]*?)<\/strong>/g, (match: string, content: string) => {
       return `**${content.trim()}**`;
     });
@@ -136,7 +131,6 @@ export default function TextEditorWithLatex({
       return `\`${content.trim()}\``;
     });
 
-    // Processar títulos (já com strong/em processados)
     result = result.replace(/<h1[^>]*>([\s\S]*?)<\/h1>/g, (match: string, content: string) => {
       return `# ${content.trim()}\n`;
     });
@@ -150,7 +144,6 @@ export default function TextEditorWithLatex({
       return `#### ${content.trim()}\n`;
     });
 
-    // Processar listas
     result = result.replace(/<ul[^>]*>([\s\S]*?)<\/ul>/g, (match: string, content: string) => {
       let listContent = content.replace(/<li[^>]*>([\s\S]*?)<\/li>/g, (liMatch: string, liContent: string) => {
         let itemText = liContent.replace(/<p[^>]*>/g, '').replace(/<\/p>/g, '').trim();
@@ -159,12 +152,10 @@ export default function TextEditorWithLatex({
       return listContent;
     });
 
-    // Processar parágrafos
     result = result.replace(/<p[^>]*>([\s\S]*?)<\/p>/g, (match: string, content: string) => {
       return `${content.trim()}\n`;
     });
 
-    // Remover todas as outras tags HTML
     result = result.replace(/<[^>]+>/g, '');
 
     result = result.replace(/\n\n\n+/g, '\n\n');

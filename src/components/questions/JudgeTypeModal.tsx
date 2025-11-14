@@ -83,7 +83,6 @@ export default function JudgeTypeModal({
       onSuccess(updatedQuestion as any);
       onClose();
     } catch (err: any) {
-      console.error('Erro ao salvar tipo de judge:', err);
       setError(err?.message || 'Erro ao salvar configuração');
     } finally {
       setLoading(false);

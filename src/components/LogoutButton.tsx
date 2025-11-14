@@ -24,11 +24,9 @@ export default function LogoutButton({ isCollapsed = false }: LogoutButtonProps)
       if (success) {
         router.push("/");
       } else {
-        logger.warn('Logout com problemas, mas redirecionando para página inicial');
         router.push("/");
       }
     } catch (error) {
-      logger.error('Erro durante logout', { error });
       router.push("/");
     } finally {
       setIsLoggingOut(false);

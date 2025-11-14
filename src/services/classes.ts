@@ -51,21 +51,14 @@ export const classesApi = {
       const response = await API.classes.list(params);
       const { data } = response;
       
-      // Garantir que data é um array
       if (!data) {
-        logger.warn('Resposta da API não contém data');
         return [];
       }
       
       const array = Array.isArray(data) ? data : [];
       
-      if (array.length === 0) {
-        logger.warn('Nenhuma turma encontrada na resposta da API');
-      }
-      
       return array.map(mapClassDTO);
     } catch (error) {
-      logger.error('Erro ao buscar turmas', { error });
       throw error;
     }
   },
@@ -76,17 +69,10 @@ export const classesApi = {
       const { data } = await API.classes.get(id, true);
       if (!data) return null;
       
-      console.log('classesApi.getById - Class data:', data);
-      console.log('classesApi.getById - Professor:', data.professor);
-      
       const studentsResponse = await API.classes.students(id);
-      
-      console.log('classesApi.getById - Raw response:', studentsResponse);
-      console.log('classesApi.getById - Students:', studentsResponse.data.students);
       
       const studentsWithGrades = Array.isArray(studentsResponse.data.students)
         ? studentsResponse.data.students.map((s: any) => {
-            console.log('Mapeando aluno:', s.name, 'grades:', s.grades);
             const mapped = {
               id: s.id,
               name: s.name,
@@ -97,12 +83,9 @@ export const classesApi = {
               grades: s.grades || [],
               createdAt: typeof s.createdAt === 'string' ? s.createdAt : new Date(s.createdAt).toISOString(),
             };
-            console.log('Aluno mapeado:', mapped);
             return mapped;
           })
         : [];
-      
-      console.log('classesApi.getById - Final studentsWithGrades:', studentsWithGrades);
       
       const professor: Professor | null = data.professor
         ? {
@@ -130,7 +113,6 @@ export const classesApi = {
         updatedAt: typeof data.updatedAt === 'string' ? data.updatedAt : new Date(data.updatedAt).toISOString(),
       };
     } catch (error) {
-      logger.error('Erro ao buscar turma', { error });
       return null;
     }
   },
@@ -142,7 +124,6 @@ export const classesApi = {
     userClassId?: string
   ): Promise<Class[]> {
     try {
-      // Para estudantes, se temos o classId do perfil, busca diretamente
       if (userRole === 'student' && userClassId) {
         try {
           const classData = await this.getById(userClassId);
@@ -150,8 +131,6 @@ export const classesApi = {
             return [classData];
           }
         } catch (err) {
-          logger.error(`Erro ao buscar turma do estudante pelo classId ${userClassId}`, { error: err });
-          // Continua com a busca normal se falhar
         }
       }
       
@@ -160,23 +139,18 @@ export const classesApi = {
       const array = Array.isArray(allClasses.data) ? allClasses.data : [];
       
       if (userRole === 'student') {
-        // Para estudantes, primeiro mapeia as classes básicas
         const mappedClasses = array.map(mapClassDTO);
         
-        // Filtra apenas as classes onde o estudante está matriculado
         let studentClasses = mappedClasses.filter((cls: Class) => {
-          // Verifica se o estudante está na lista de estudantes da classe
           if (Array.isArray(cls.students) && cls.students.length > 0) {
             return cls.students.some(student => student.id === userId);
           }
-          // Se temos o classId do perfil, usa ele para filtrar
           if (userClassId && cls.id === userClassId) {
             return true;
           }
           return false;
         });
         
-        // Se não encontrou classes, tenta buscar pelo classId do perfil
         if (studentClasses.length === 0 && userClassId) {
           const classById = mappedClasses.find(cls => cls.id === userClassId);
           if (classById) {
@@ -184,14 +158,11 @@ export const classesApi = {
           }
         }
         
-        // Se ainda não encontrou, busca classes que podem ter o estudante mas não foram populadas
         if (studentClasses.length === 0) {
           const classesToFetch = array.filter((clsData: ClassResponseDTO) => {
-            // Se não tem students na resposta, precisa buscar
             return !Array.isArray(clsData.students) || clsData.students.length === 0;
           });
           
-          // Busca cada classe individualmente para verificar se o estudante está nela
           const fetchedClasses = await Promise.all(
             classesToFetch.map(async (clsData: ClassResponseDTO) => {
               try {
@@ -202,7 +173,6 @@ export const classesApi = {
                 }
                 return null;
               } catch (err) {
-                logger.error(`Erro ao buscar turma ${clsData.id}`, { error: err });
                 return null;
               }
             })
@@ -214,8 +184,6 @@ export const classesApi = {
           }
         }
         
-        // Se já tem estudantes populados e includeRelations foi true, os dados já vêm completos
-        // Não precisa fazer chamadas adicionais
         if (studentClasses.length > 0) {
           return studentClasses;
         }
@@ -223,15 +191,10 @@ export const classesApi = {
         return [];
       }
       
-      // Para professores/assistentes, mapeia todas as classes
-      // Se includeRelations foi passado na query, os dados já vêm completos
       const mappedClasses = array.map(mapClassDTO);
       
-      // Se includeRelations foi true na query, os dados já vêm com estudantes
-      // Não precisa fazer chamadas adicionais para getById
       return mappedClasses;
     } catch (error) {
-      logger.error('Erro ao buscar turmas do usuário', { error });
       throw error;
     }
   },
@@ -244,7 +207,6 @@ export const classesApi = {
       });
       return mapClassDTO(created);
     } catch (error) {
-      logger.error('Erro ao criar turma', { error });
       throw error;
     }
   },
@@ -254,7 +216,6 @@ export const classesApi = {
       const { data: updated } = await API.classes.update(id, { name: data.name });
       return mapClassDTO(updated);
     } catch (error) {
-      logger.error('Erro ao atualizar turma', { error });
       throw error;
     }
   },
@@ -264,7 +225,6 @@ export const classesApi = {
       await API.classes.delete(id);
       return true;
     } catch (error) {
-      logger.error('Erro ao excluir turma', { error });
       throw error;
     }
   },
@@ -274,7 +234,6 @@ export const classesApi = {
       const { data } = await API.classes.students(classId);
       return data.students || [];
     } catch (error) {
-      logger.error('Erro ao buscar alunos da turma', { error });
       throw error;
     }
   },

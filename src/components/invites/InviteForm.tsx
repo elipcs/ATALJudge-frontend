@@ -66,7 +66,6 @@ export function InviteForm({ onInviteCreated }: InviteFormProps) {
       onInviteCreated();
       resetForm();
     } catch (error) {
-      logger.error('Erro ao gerar convite', { error });
       toast({
         title: "Erro",
         description: 'Erro ao gerar convite: ' + (error instanceof Error ? error.message : 'Erro desconhecido'),

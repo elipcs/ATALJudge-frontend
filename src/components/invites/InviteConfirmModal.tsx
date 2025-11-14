@@ -37,7 +37,6 @@ export default function InviteConfirmModal({
       }}
     >
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 animate-in zoom-in-95 duration-200 overflow-hidden">
-        {/* Header */}
         <div className={`flex items-center justify-between p-6 border-b border-slate-200 rounded-t-2xl ${
           isDelete 
             ? 'bg-gradient-to-r from-red-50 to-orange-50' 
@@ -76,7 +75,6 @@ export default function InviteConfirmModal({
           )}
         </div>
 
-        {/* Content */}
         <div className="p-6">
           <div className="space-y-4">
             <div className="text-center">
@@ -95,7 +93,6 @@ export default function InviteConfirmModal({
               </div>
             </div>
 
-            {/* Footer Actions */}
             <div className="flex gap-3 pt-6 border-t border-slate-200">
               <button
                 type="button"

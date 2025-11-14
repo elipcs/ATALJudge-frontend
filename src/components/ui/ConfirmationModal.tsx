@@ -99,7 +99,6 @@ export function ConfirmationModal({
       }}
     >
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 animate-in zoom-in-95 duration-200 overflow-hidden">
-        {/* Header */}
         <div className={`flex items-center justify-between p-6 border-b border-slate-200 ${styles.headerBg} rounded-t-2xl`}>
           <div className="flex items-center gap-3">
             <div className={`p-2.5 ${styles.iconBg} rounded-xl shadow-lg`}>
@@ -124,7 +123,6 @@ export function ConfirmationModal({
           )}
         </div>
 
-        {/* Content */}
         <div className="p-6">
           <div className="mb-6">
             <p className="text-slate-700 leading-relaxed">
@@ -132,7 +130,6 @@ export function ConfirmationModal({
             </p>
           </div>
 
-          {/* Footer Actions */}
           <div className="flex gap-3 pt-6 border-t border-slate-200">
             <button
               type="button"

@@ -17,11 +17,7 @@ export function useQuestionActions(questionListId: string) {
         questionListId: questionListId
       };
       
-      logger.debug('Criando questão com dados', { questionData: questionDataWithListId });
-      
       const newQuestion = await questionsApi.create(questionDataWithListId as CreateQuestionRequest);
-      
-      logger.info('Questão criada e adicionada à lista', { questionId: newQuestion.id });
       
       if (!newQuestion || !newQuestion.id) {
         throw new Error('Questão criada mas sem ID válido');

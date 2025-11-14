@@ -27,7 +27,6 @@ export default function GenerateTestCasesModal({
 
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  // Limpar estados ao fechar
   useEffect(() => {
     if (!isOpen) {
       setOracleCode("");
@@ -38,7 +37,6 @@ export default function GenerateTestCasesModal({
       setGeneratedCount(0);
       setIsGenerating(false);
       
-      // Cancelar requisição pendente
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
         abortControllerRef.current = null;
@@ -46,7 +44,6 @@ export default function GenerateTestCasesModal({
     }
   }, [isOpen]);
 
-  // Cleanup ao desmontar
   useEffect(() => {
     return () => {
       if (abortControllerRef.current) {
@@ -61,12 +58,10 @@ export default function GenerateTestCasesModal({
       return;
     }
 
-    // Cancelar requisição anterior se existir
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
 
-    // Criar novo AbortController
     const abortController = new AbortController();
     abortControllerRef.current = abortController;
 
@@ -84,7 +79,6 @@ export default function GenerateTestCasesModal({
 
       const result = await generateTestCases(questionId, request, abortController.signal);
       
-      // Verificar se foi cancelado
       if (abortController.signal.aborted) {
         return;
       }
@@ -98,7 +92,6 @@ export default function GenerateTestCasesModal({
       setGeneratedCount(result.totalGenerated);
       setGenerationSuccess(true);
 
-      // Chamar callback de sucesso após um delay
       setTimeout(() => {
         if (onSuccess) {
           onSuccess();
@@ -107,15 +100,11 @@ export default function GenerateTestCasesModal({
       }, 2000);
 
     } catch (error: any) {
-      // Ignorar erros de abort
       if (error.name === 'AbortError' || abortControllerRef.current?.signal.aborted) {
         setIsGenerating(false);
         return;
       }
 
-      logger.error('Erro ao gerar casos de teste', error);
-      
-      // Verificar se é um erro de timeout
       if (error.message?.includes('Timeout') || error.message?.includes('timeout')) {
         setGenerationError(
           'A geração de casos de teste está demorando mais que o esperado. ' +
@@ -136,7 +125,6 @@ export default function GenerateTestCasesModal({
 
   const handleClose = () => {
     if (isGenerating) {
-      // Cancelar requisição ao fechar durante geração
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
@@ -156,7 +144,6 @@ export default function GenerateTestCasesModal({
       }}
     >
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
-        {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-slate-200 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-t-2xl">
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl shadow-lg">
@@ -181,9 +168,7 @@ export default function GenerateTestCasesModal({
           )}
         </div>
 
-        {/* Content */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {/* Info Banner */}
           <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
             <div className="flex items-start gap-3">
               <svg className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -199,7 +184,6 @@ export default function GenerateTestCasesModal({
             </div>
           </div>
 
-          {/* Configuration */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">
@@ -232,7 +216,6 @@ export default function GenerateTestCasesModal({
             </div>
           </div>
 
-          {/* Code Editor */}
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-2">
               Código Oráculo
@@ -253,7 +236,6 @@ export default function GenerateTestCasesModal({
             </p>
           </div>
 
-          {/* Success Message */}
           {generationSuccess && (
             <div className="bg-green-50 border border-green-200 rounded-xl p-4 animate-in slide-in-from-top-2 duration-300">
               <div className="flex items-center gap-3">
@@ -274,7 +256,6 @@ export default function GenerateTestCasesModal({
             </div>
           )}
 
-          {/* Error Message */}
           {generationError && (
             <div className="bg-red-50 border border-red-200 rounded-xl p-4 animate-in slide-in-from-top-2 duration-300">
               <div className="flex items-start gap-3">
@@ -286,7 +267,6 @@ export default function GenerateTestCasesModal({
             </div>
           )}
 
-          {/* Loading State */}
           {isGenerating && (
             <div className="bg-purple-50 border border-purple-200 rounded-xl p-6">
               <div className="flex flex-col items-center justify-center gap-4">
@@ -307,7 +287,6 @@ export default function GenerateTestCasesModal({
           )}
         </div>
 
-        {/* Footer */}
         <div className="flex gap-3 p-6 border-t border-slate-200 bg-slate-50">
           <button
             type="button"

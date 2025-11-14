@@ -17,7 +17,6 @@ export const getSupportedLanguages = async (): Promise<string[]> => {
     const { data } = await API.execution.getLanguages();
     return Array.isArray(data) ? data : [];
   } catch (error) {
-    console.error('Erro ao buscar linguagens suportadas:', error);
     return [];
   }
 };
@@ -27,7 +26,6 @@ export const getExecutionStatus = async (): Promise<ExecutionStatus> => {
     const { data } = await API.execution.getStatus();
     return data;
   } catch (error) {
-    console.error('Erro ao buscar status do sistema:', error);
     throw error;
   }
 };

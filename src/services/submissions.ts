@@ -107,7 +107,6 @@ export const submissionsApi = {
       const { data } = await API.submissions.list(queryParams);
       return data;
     } catch (error) {
-      logger.error('Erro ao buscar submissões', { error });
       return {
         submissions: [],
         pagination: {
@@ -125,7 +124,6 @@ export const submissionsApi = {
       const { data } = await API.submissions.get(id);
       return data || null;
     } catch (error) {
-      logger.error('Erro ao buscar submissão', { error });
       return null;
     }
   },
@@ -135,7 +133,6 @@ export const submissionsApi = {
       const { data } = await API.submissions.getResults(id);
       return data || null;
     } catch (error) {
-      logger.error('Erro ao buscar resultados da submissão', { error });
       return null;
     }
   },
@@ -145,7 +142,6 @@ export const submissionsApi = {
       const { data: result } = await API.submissions.submit(data);
       return result;
     } catch (error) {
-      logger.error('Erro ao submeter código', { error });
       throw error;
     }
   },

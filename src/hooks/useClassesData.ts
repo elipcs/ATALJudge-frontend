@@ -21,7 +21,6 @@ export const useUserClasses = (userId: string, userRole: string, userClassId?: s
       const result = await classesApi.getUserClasses(userId, userRole, true, userClassId);
       setClasses(result);
     } catch (err) {
-      console.error('Erro ao carregar turmas:', err);
       setError(err instanceof Error ? err.message : 'Erro ao carregar turmas');
     } finally {
       setLoading(false);
@@ -130,7 +129,6 @@ export const useClassStudents = (classId: string) => {
         }));
         setStudents(mappedStudents);
       } catch (err) {
-        console.error('useClassStudents: erro:', err);
         setError(err instanceof Error ? err.message : 'Erro ao carregar alunos');
         setStudents([]);
       } finally {

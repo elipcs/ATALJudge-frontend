@@ -125,7 +125,6 @@ export default function InvitesPage() {
                 variant: "success",
               });
             } catch (e) {
-              logger.error('Erro ao excluir convite', { error: e });
               toast({
                 title: "Erro",
                 description: "Erro ao excluir convite",
@@ -141,7 +140,6 @@ export default function InvitesPage() {
                 variant: "success",
               });
             } catch (e) {
-              logger.error('Erro ao revogar convite', { error: e });
               toast({
                 title: "Erro",
                 description: "Erro ao revogar convite",
@@ -153,7 +151,6 @@ export default function InvitesPage() {
         />
       </div>
 
-      {/* Modal de Criar Convite */}
       <CreateInviteModal
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}

@@ -40,7 +40,6 @@ export function useUserRole(): UseUserRoleReturn {
           }
         }
       } catch (error) {
-        logger.error('Erro ao decodificar token', { error });
       }
     }
 
@@ -70,7 +69,6 @@ export function useUserRole(): UseUserRoleReturn {
 
         localStorage.setItem('userRole', detectedUserRole);
       } catch (error) {
-        logger.error('Erro ao detectar role do usuário', { error });
         setUserRoleState('professor');
         setIsLoading(false);
       }

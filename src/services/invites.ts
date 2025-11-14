@@ -9,7 +9,6 @@ export const invitesApi = {
       const { data } = await API.invites.list();
       return Array.isArray(data) ? data : [];
     } catch (error) {
-      logger.error('Erro ao buscar convites', { error });
       throw error;
     }
   },
@@ -19,7 +18,6 @@ export const invitesApi = {
       const { data } = await API.invites.get(id);
       return data || null;
     } catch (error) {
-      logger.error('Erro ao buscar convite', { error });
       throw error;
     }
   },
@@ -45,7 +43,6 @@ export const invitesApi = {
       });
       return result.invite;
     } catch (error) {
-      logger.error('Erro ao gerar convite', { error });
       throw error;
     }
   },
@@ -55,7 +52,6 @@ export const invitesApi = {
       await API.invites.revoke(id);
       return true;
     } catch (error) {
-      logger.error('Erro ao revogar convite', { error });
       throw error;
     }
   },
@@ -65,7 +61,6 @@ export const invitesApi = {
       await API.invites.delete(id);
       return true;
     } catch (error) {
-      logger.error('Erro ao excluir convite', { error });
       throw error;
     }
   },
@@ -91,7 +86,6 @@ export const invitesApi = {
         creatorName: data.creatorName
       };
     } catch (error) {
-      logger.error('Erro ao validar token', { error });
       return null;
     }
   },
@@ -103,7 +97,6 @@ export const invitesApi = {
       if (data.currentUses >= data.maxUses) return false;
       return true;
     } catch (error) {
-      logger.error('Erro ao usar token', { error });
       return false;
     }
   }

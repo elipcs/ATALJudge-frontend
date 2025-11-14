@@ -135,7 +135,6 @@ export default function TurmasPage() {
         </div>
       )}
 
-      {/* Detalhes da turma ou lista de turmas */}
       {showDetails && classDetails ? (
         <ClassDetails
           classDetails={classDetails}

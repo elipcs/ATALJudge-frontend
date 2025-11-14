@@ -67,15 +67,11 @@ async function apiClient<T>(
   };
 
   try {
-    // Usar signal externo se fornecido, senão criar um novo
     let controller: AbortController | null = null;
     let timeoutId: NodeJS.Timeout | null = null;
     
     if (config.signal) {
-      // Se um signal externo foi fornecido, usar ele (não criar timeout interno)
-      // O timeout já está sendo gerenciado externamente
     } else {
-      // Criar controller e timeout interno apenas se não houver signal externo
       controller = new AbortController();
       timeoutId = setTimeout(() => {
         if (controller) controller.abort();

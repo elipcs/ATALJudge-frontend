@@ -42,7 +42,6 @@ export default function QuestionModal({
 
   React.useEffect(() => {
     if (question) {
-      // Garantir formato correto para timeLimit e memoryLimit
       let timeLimit = question.timeLimit || '1s';
       if (timeLimit && !timeLimit.endsWith('s')) {
         const numValue = timeLimit.replace(/[^0-9.,]/g, '').replace(',', '.');
@@ -79,25 +78,17 @@ export default function QuestionModal({
 
   const handleTimeLimitChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    // Remover 's' se existir
     const withoutSuffix = value.replace(/s$/i, '');
-    // Aceitar apenas números, ponto e vírgula
     const sanitized = withoutSuffix.replace(/[^0-9.,]/g, '');
-    // Converter vírgula para ponto
     const normalized = sanitized.replace(',', '.');
-    // Adicionar 's' automaticamente se houver valor
     setFormData({ ...formData, timeLimit: normalized ? `${normalized}s` : '' });
   };
 
   const handleMemoryLimitChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    // Remover 'MB' se existir
     const withoutSuffix = value.replace(/mb$/i, '');
-    // Aceitar apenas números, ponto e vírgula
     const sanitized = withoutSuffix.replace(/[^0-9.,]/g, '');
-    // Converter vírgula para ponto
     const normalized = sanitized.replace(',', '.');
-    // Adicionar 'MB' automaticamente se houver valor
     setFormData({ ...formData, memoryLimit: normalized ? `${normalized}MB` : '' });
   };
 
@@ -146,7 +137,6 @@ export default function QuestionModal({
       }}
     >
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl mx-4 my-8 animate-in zoom-in-95 duration-200 overflow-hidden">
-        {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-slate-200 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-2xl">
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg">
@@ -171,9 +161,7 @@ export default function QuestionModal({
           )}
         </div>
 
-        {/* Content */}
         <div className="p-6">
-          {/* Abas */}
           <div className="bg-white rounded-xl border border-slate-200 p-2 mb-6">
             <nav className="flex space-x-2">
               <button
@@ -222,7 +210,6 @@ export default function QuestionModal({
                   value={formData.timeLimit} 
                   onChange={handleTimeLimitChange}
                   onBlur={(e) => {
-                    // Garantir que sempre termine com 's'
                     const value = e.target.value.replace(/s$/i, '').replace(/[^0-9.,]/g, '').replace(',', '.');
                     if (value) {
                       setFormData({ ...formData, timeLimit: `${value}s` });
@@ -242,7 +229,6 @@ export default function QuestionModal({
                   value={formData.memoryLimit} 
                   onChange={handleMemoryLimitChange}
                   onBlur={(e) => {
-                    // Garantir que sempre termine com 'MB'
                     const value = e.target.value.replace(/mb$/i, '').replace(/[^0-9.,]/g, '').replace(',', '.');
                     if (value) {
                       setFormData({ ...formData, memoryLimit: `${value}MB` });
@@ -268,7 +254,6 @@ export default function QuestionModal({
               />
             </div>
 
-            {/* Exemplos */}
             <div className="border-t border-slate-200 pt-6">
               <div className="flex items-center justify-between mb-4">
                 <label className="block text-sm font-semibold text-slate-700">Exemplos</label>
@@ -331,7 +316,6 @@ export default function QuestionModal({
               </div>
             </div>
 
-            {/* Footer Actions */}
             <div className="flex gap-3 pt-6 border-t border-slate-200">
               <button 
                 type="button" 

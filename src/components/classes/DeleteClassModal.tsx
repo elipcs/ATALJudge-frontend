@@ -51,7 +51,6 @@ export default function DeleteClassModal({
       }}
     >
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 animate-in zoom-in-95 duration-200 overflow-hidden">
-        {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-slate-200 bg-gradient-to-r from-red-50 to-orange-50 rounded-t-2xl">
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-gradient-to-br from-red-500 to-orange-600 rounded-xl shadow-lg">
@@ -78,7 +77,6 @@ export default function DeleteClassModal({
           )}
         </div>
 
-        {/* Content */}
         <div className="p-6">
           <div className="space-y-6">
             {hasStudents ? (
@@ -116,7 +114,6 @@ export default function DeleteClassModal({
               </div>
             )}
 
-            {/* Error Message */}
             {error && (
               <div className="p-4 bg-red-50 border border-red-200 rounded-xl animate-in slide-in-from-top-2 duration-300">
                 <div className="flex items-start gap-2">
@@ -128,7 +125,6 @@ export default function DeleteClassModal({
               </div>
             )}
 
-            {/* Footer Actions */}
             <div className="flex gap-3 pt-6 border-t border-slate-200">
               <button
                 type="button"

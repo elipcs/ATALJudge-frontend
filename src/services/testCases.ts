@@ -28,12 +28,10 @@ export const getTestCases = async (questionId: string): Promise<TestCaseResponse
 };
 
 export const getTestCase = async (questionId: string, testCaseId: string): Promise<TestCaseResponseDTO> => {
-  // Usar endpoint específico se disponível, senão buscar todos (menos eficiente mas funcional)
   try {
     const { data } = await API.testCases.get(testCaseId);
     return data;
   } catch (error) {
-    // Fallback: buscar todos os casos se endpoint específico não estiver disponível
     const testCases = await getTestCases(questionId);
     const testCase = testCases.find(tc => tc.id === testCaseId);
     if (!testCase) throw new Error('Test case not found');
@@ -94,10 +92,7 @@ export const generateTestCases = async (
   data: GenerateTestCasesRequest,
   abortSignal?: AbortSignal
 ): Promise<GenerateTestCasesResponse> => {
-  // Usar timeout razoável para geração de casos de teste (2 minutos)
-  // A geração pode demorar, especialmente para muitos casos ou casos complexos
-  // Mas 5 minutos é muito tempo e pode causar problemas de memória
-  const config: any = { timeout: 120000 }; // 2 minutos
+  const config: any = { timeout: 120000 };
   if (abortSignal) {
     config.signal = abortSignal;
   }

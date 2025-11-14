@@ -59,7 +59,6 @@ export const homeApi = {
           classParticipants: (userClass.students || []).sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))
         };
       } catch (error) {
-        logger.error('Erro ao buscar dados do estudante', { error });
         throw error;
       }
     },
@@ -71,7 +70,6 @@ export const homeApi = {
         const submissions = data.submissions || data || [];
         return Array.isArray(submissions) ? submissions.slice(0, limit) : [];
       } catch (error) {
-        logger.error('Erro ao buscar submissões do estudante', { error });
         return [];
       }
     }
@@ -107,7 +105,6 @@ export const homeApi = {
           systemNotices: [] 
         };
       } catch (error) {
-        logger.error('Erro ao buscar dados do staff', { error });
         return {
           classes: [],
           students: [],
@@ -153,7 +150,6 @@ export const homeApi = {
           };
         });
       } catch (error) {
-        logger.error('Erro ao buscar listas ativas', { error });
         return [];
       }
     }
@@ -171,7 +167,6 @@ export const homeApi = {
         const userData = response.data as User;
         return userData;
       } catch (error) {
-        logger.error('[homeApi] Erro ao buscar dados do usuário', { error });
         throw error;
       }
     }

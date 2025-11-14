@@ -110,7 +110,6 @@ export const listsApi = {
 
       return mappedLists;
     } catch (error) {
-      logger.error('Erro ao buscar listas', { error });
       return [];
     }
   },
@@ -144,7 +143,6 @@ export const listsApi = {
 
       return mapped;
     } catch (error) {
-      logger.error('[listsApi.getById] Erro ao buscar lista', { error });
       return null;
     }
   },
@@ -154,7 +152,6 @@ export const listsApi = {
       const { data } = await API.lists.create(listData);
       return await this.getById(data.id) as QuestionList;
     } catch (error) {
-      logger.error('Erro ao criar lista', { error });
       throw error;
     }
   },
@@ -164,7 +161,6 @@ export const listsApi = {
       const { data } = await API.lists.update(id, listData);
       return await this.getById(data.id) as QuestionList;
     } catch (error) {
-      logger.error('Erro ao atualizar lista', { error });
       throw error;
     }
   },
@@ -174,7 +170,6 @@ export const listsApi = {
       const { data } = await API.lists.updateScoring(id, scoringData);
       return await this.getById(data.id) as QuestionList;
     } catch (error) {
-      logger.error('Erro ao atualizar pontuação da lista', { error });
       throw error;
     }
   },
@@ -184,7 +179,6 @@ export const listsApi = {
       await API.lists.delete(id);
       return true;
     } catch (error) {
-      logger.error('Erro ao excluir lista', { error });
       throw error;
     }
   },
@@ -193,7 +187,6 @@ export const listsApi = {
     try {
       await API.lists.addQuestion(questionListId, questionId);
     } catch (error) {
-      logger.error('[listsApi.addQuestionToList] Erro ao adicionar questão', { error });
       throw error;
     }
   },
@@ -202,7 +195,6 @@ export const listsApi = {
     try {
       await API.lists.removeQuestion(questionListId, questionId);
     } catch (error) {
-      logger.error('[listsApi.removeQuestionFromList] Erro ao remover questão', { error });
       throw error;
     }
   },

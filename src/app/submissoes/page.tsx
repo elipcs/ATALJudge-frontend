@@ -83,7 +83,6 @@ export default function SubmissoesPage() {
         totalItems: response.pagination.total
       }));
     } catch (error) {
-      logger.error('Erro ao carregar submissões', { error });
       setState(prev => ({ 
         ...prev, 
         loading: false,
@@ -154,7 +153,7 @@ export default function SubmissoesPage() {
   };
 
   const handleResubmit = async (submissionId: string, e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent row click
+    e.stopPropagation();
     
     if (!confirm('Deseja realmente re-submeter esta submissão? Uma nova submissão será criada com os mesmos dados.')) {
       return;
@@ -163,11 +162,8 @@ export default function SubmissoesPage() {
     try {
       setState(prev => ({ ...prev, loading: true }));
       await API.submissions.resubmit(submissionId);
-      logger.info('Submissão re-submetida com sucesso', { submissionId });
-      // Reload submissions to show the new one
       await loadSubmissions();
     } catch (error) {
-      logger.error('Erro ao re-submeter', { error, submissionId });
       alert('Erro ao re-submeter a submissão. Tente novamente.');
     } finally {
       setState(prev => ({ ...prev, loading: false }));
@@ -429,7 +425,6 @@ export default function SubmissoesPage() {
         </div>
       </Card>
 
-      {/* Modal de Detalhes da Submissão */}
       {state.selectedSubmissionId && (
         <SubmissionStatusModal
           isOpen={state.isModalOpen}

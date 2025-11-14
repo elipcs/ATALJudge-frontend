@@ -10,7 +10,6 @@ export function formatLanguageName(language: string | undefined | null): string 
   
   const normalized = language.toLowerCase().trim();
   
-  // Mapeamento de linguagens conhecidas
   const languageMap: Record<string, string> = {
     'python': 'Python',
     'python3': 'Python',
@@ -26,12 +25,10 @@ export function formatLanguageName(language: string | undefined | null): string 
     'typescript': 'TypeScript'
   };
   
-  // Retorna o nome formatado do mapeamento ou capitaliza a primeira letra
   if (languageMap[normalized]) {
     return languageMap[normalized];
   }
   
-  // Fallback: primeira letra maiúscula, resto minúsculo
   return normalized.charAt(0).toUpperCase() + normalized.slice(1);
 }
 

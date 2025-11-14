@@ -33,7 +33,6 @@ export function useInviteActions() {
         }, 0);
       }
     } catch (error) {
-      console.error('Erro ao excluir convite:', error);
     } finally {
       setInviteToDelete(null);
     }
@@ -52,11 +51,8 @@ export function useInviteActions() {
         setTimeout(() => {
           window.scrollTo(0, scrollPosition);
         }, 0);
-      } else {
-        console.error('Erro ao revogar convite: Convite não encontrado');
       }
     } catch (error) {
-      console.error('Erro ao revogar convite:', error);
     } finally {
       setInviteToRevoke(null);
     }

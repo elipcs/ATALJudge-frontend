@@ -80,7 +80,6 @@ export default function CodeSubmission({
         throw new Error("Resposta inválida do servidor: submissão sem ID");
       }
     } catch (error: any) {
-      logger.error('Erro ao submeter código', { error });
       setResult({
         status: "error",
         message: "Erro ao submeter código",
@@ -336,12 +335,10 @@ export default function CodeSubmission({
           onClose={() => setIsTestCasesModalOpen(false)}
           questionId={questionId}
           onSave={() => {
-            logger.info('Casos de teste salvos');
           }}
         />
       )}
 
-      {/* Modal de Submissão Reutilizável */}
       {submissionId && (
         <SubmissionStatusModal
           isOpen={showSubmissionModal}

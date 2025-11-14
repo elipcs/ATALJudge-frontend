@@ -52,8 +52,6 @@ export default function ListPage() {
 
   const handleSaveScoreConfig = async (config: any) => {
     try {
-      logger.debug('Configuração recebida do modal', { config });
-      
       const scoringData: any = {
         scoringMode: config.scoringMode,
         maxScore: config.maxScore,
@@ -72,11 +70,8 @@ export default function ListPage() {
         }));
       }
 
-      logger.debug('Dados de pontuação para backend', { scoringData });
-      
       await listsApi.updateScoring(id, scoringData);
       
-      logger.info('Configuração salva com sucesso');
       toast({
         title: "Sucesso",
         description: "Configuração de pontuação salva com sucesso.",
@@ -86,7 +81,6 @@ export default function ListPage() {
         reloadList();
       }, 500);
     } catch (error) {
-      logger.error('Erro ao salvar configuração de pontuação', { error });
       toast({
         title: "Erro",
         description: "Erro ao salvar configuração. Por favor, tente novamente.",
@@ -562,7 +556,6 @@ export default function ListPage() {
               setShowAddQuestionModal(false);
               window.location.reload();
             } catch (error) {
-              logger.error('Erro ao criar questão', { error });
               toast({
                 title: "Erro",
                 description: "Erro ao criar questão. Por favor, tente novamente.",
@@ -589,7 +582,6 @@ export default function ListPage() {
               setEditingQuestion(null);
               window.location.reload();
             } catch (error) {
-              logger.error('Erro ao editar questão', { error });
               toast({
                 title: "Erro",
                 description: "Erro ao editar questão. Por favor, tente novamente.",

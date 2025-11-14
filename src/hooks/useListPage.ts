@@ -45,23 +45,12 @@ export function useListPage() {
       setLoading(true);
       setError(null);
       
-      logger.debug('[useListPage] Carregando lista', { questionListId, userRole });
-      
       const listData = await listsApi.getById(questionListId);
-      logger.debug('[useListPage] Dados recebidos', { listData });
       
       if (!listData) {
-        logger.warn('[useListPage] Lista não encontrada', { questionListId });
         setError(`Lista não encontrada (ID: ${questionListId})`);
         return;
       }
-      
-      logger.debug('[useListPage] Lista carregada com sucesso', {
-        id: listData.id,
-        title: listData.title,
-        questionsCount: listData.questions?.length,
-        isArray: Array.isArray(listData.questions)
-      });
       
       setList(listData);
 
@@ -78,7 +67,6 @@ export function useListPage() {
       }
       
     } catch (err) {
-      logger.error('[useListPage] Erro ao carregar dados da lista', { error: err });
       setError(`Erro ao carregar dados da lista: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
     } finally {
       setLoading(false);
@@ -143,7 +131,6 @@ export function useListPage() {
       
       setSubmissions(allSubmissions);
     } catch (err) {
-      logger.error('Erro ao carregar submissões', { error: err });
     }
   }, [questionListId]);
 
@@ -204,7 +191,6 @@ export function useListPage() {
       });
 
     } catch (err) {
-      logger.error('Erro ao enviar solução', { error: err });
       setSubmissionResult({
         status: 'error',
         message: 'Erro ao enviar solução. Tente novamente.',

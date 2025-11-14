@@ -235,7 +235,6 @@ export default function EditListModal({ isOpen, onClose, onSubmit, onRefresh, cl
         }
       }, 2000);
     } catch (error) {
-      console.error('Erro ao atualizar lista:', error);
       setErrorMessage(error instanceof Error ? error.message : 'Erro ao atualizar lista');
     } finally {
       setLoading(false);
@@ -274,7 +273,6 @@ export default function EditListModal({ isOpen, onClose, onSubmit, onRefresh, cl
       }}
     >
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl mx-4 my-8 animate-in zoom-in-95 duration-200 overflow-hidden">
-        {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-slate-200 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-2xl">
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg">
@@ -299,9 +297,7 @@ export default function EditListModal({ isOpen, onClose, onSubmit, onRefresh, cl
           )}
         </div>
 
-        {/* Content */}
         <div className="p-6">
-          {/* Success Message */}
           {showSuccessMessage && (
             <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl animate-in slide-in-from-top-2 duration-300">
               <div className="flex items-center gap-2">
@@ -313,7 +309,6 @@ export default function EditListModal({ isOpen, onClose, onSubmit, onRefresh, cl
             </div>
           )}
 
-          {/* Error Message */}
           {errorMessage && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl animate-in slide-in-from-top-2 duration-300">
               <div className="flex items-start gap-2">
@@ -325,7 +320,6 @@ export default function EditListModal({ isOpen, onClose, onSubmit, onRefresh, cl
             </div>
           )}
 
-          {/* Closed Warning */}
           {isClosed && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
               <div className="flex items-start gap-3">
@@ -539,7 +533,6 @@ export default function EditListModal({ isOpen, onClose, onSubmit, onRefresh, cl
                 </div>
               )}
               
-              {/* Campos de opções */}
               <div className="mt-4 border-t border-slate-200 pt-4 space-y-3">
                 <label className="flex items-center gap-3 cursor-pointer">
                   <Checkbox
@@ -565,7 +558,6 @@ export default function EditListModal({ isOpen, onClose, onSubmit, onRefresh, cl
               </div>
             </div>
 
-            {/* Footer Actions */}
             <div className="flex gap-3 pt-6 border-t border-slate-200">
               <button 
                 type="button"

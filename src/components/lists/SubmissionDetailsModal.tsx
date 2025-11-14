@@ -36,7 +36,6 @@ export default function SubmissionDetailsModal({
 
   const questionTitle = submission.question?.name || submission.question?.title || 'Questão desconhecida';
   
-  // Determinar gradiente do header baseado no status
   const getHeaderGradient = () => {
     switch (submission.status) {
       case 'accepted':
@@ -50,7 +49,6 @@ export default function SubmissionDetailsModal({
     }
   };
 
-  // Determinar cor do ícone do header
   const getHeaderIconBg = () => {
     switch (submission.status) {
       case 'accepted':
@@ -64,7 +62,6 @@ export default function SubmissionDetailsModal({
     }
   };
 
-  // Obter ícone baseado no status
   const getStatusIcon = () => {
     switch (submission.status) {
       case 'accepted':
@@ -103,7 +100,6 @@ export default function SubmissionDetailsModal({
         className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl mx-4 my-8 animate-in zoom-in-95 duration-200 overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
-        {/* Header */}
         <div className={`flex items-center justify-between p-6 border-b border-slate-200 ${getHeaderGradient()} rounded-t-2xl`}>
           <div className="flex items-center gap-3">
             <div className={`p-2.5 ${getHeaderIconBg()} rounded-xl shadow-lg`}>
@@ -124,10 +120,8 @@ export default function SubmissionDetailsModal({
           </button>
         </div>
 
-        {/* Content */}
         <div className="p-6 max-h-[calc(90vh-120px)] overflow-y-auto">
           <div className="space-y-6">
-            {/* Informações principais */}
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4 animate-in slide-in-from-top-2 duration-300">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {submission.student && (
@@ -143,9 +137,7 @@ export default function SubmissionDetailsModal({
               </div>
             </div>
 
-            {/* Grid de informações */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Coluna 1 */}
               <div className="space-y-4">
                 <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl">
                   <p className="text-xs font-semibold text-slate-600 mb-1">Status:</p>
@@ -166,7 +158,6 @@ export default function SubmissionDetailsModal({
                 </div>
               </div>
 
-              {/* Coluna 2 */}
               <div className="space-y-4">
                 <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl">
                   <p className="text-xs font-semibold text-slate-600 mb-1">Tentativa:</p>
@@ -187,7 +178,6 @@ export default function SubmissionDetailsModal({
               </div>
             </div>
 
-            {/* Código Submetido */}
             {submission.code && (
               <div className="border-t border-slate-200 pt-6">
                 <h3 className="text-sm font-semibold text-slate-700 mb-3">Código Submetido:</h3>
@@ -199,7 +189,6 @@ export default function SubmissionDetailsModal({
           </div>
         </div>
 
-        {/* Footer */}
         <div className="flex justify-end gap-3 p-6 border-t border-slate-200 bg-slate-50 rounded-b-2xl">
           <button 
             onClick={onClose} 

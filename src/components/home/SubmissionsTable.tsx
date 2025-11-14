@@ -28,7 +28,6 @@ function QuestionLink({ questionListId, questionId, questionTitle }: { questionL
           setQuestionIndex(index >= 0 ? index : 0);
         }
       } catch (error) {
-        console.error('Erro ao buscar lista:', error);
         setQuestionIndex(0);
       } finally {
         setLoading(false);

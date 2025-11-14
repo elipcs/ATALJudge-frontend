@@ -52,12 +52,9 @@ export default function SubmissionStatusModal({
           .then(submissionResults => {
             if (submissionResults) {
               setResults(submissionResults);
-            } else {
-              logger.warn('Resultados da submissão incompletos', { submissionResults });
             }
           })
           .catch(error => {
-            logger.error('Erro ao buscar resultados da submissão', { error });
           });
       }
       const id = setTimeout(() => setIsPolling(false), 0);
@@ -87,11 +84,8 @@ export default function SubmissionStatusModal({
             const submissionResults = await submissionsApi.getSubmissionResults(submissionId);
             if (submissionResults) {
               setResults(submissionResults);
-            } else {
-              logger.warn('Resultados da submissão incompletos', { submissionResults });
             }
           } catch (error) {
-            logger.error('Erro ao buscar resultados da submissão', { error });
           }
         }
 
@@ -193,7 +187,6 @@ export default function SubmissionStatusModal({
 
   if (!isOpen) return null;
 
-  // Determinar gradiente do header baseado no status
   const getHeaderGradient = () => {
     switch (status) {
       case "completed":
@@ -207,7 +200,6 @@ export default function SubmissionStatusModal({
     }
   };
 
-  // Determinar cor do ícone do header
   const getHeaderIconBg = () => {
     switch (status) {
       case "completed":
@@ -231,7 +223,6 @@ export default function SubmissionStatusModal({
       }}
     >
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl mx-4 my-8 animate-in zoom-in-95 duration-200 overflow-hidden">
-        {/* Header */}
         <div className={`flex items-center justify-between p-4 border-b border-slate-200 ${getHeaderGradient()} rounded-t-2xl`}>
           <div className="flex items-center gap-2.5">
             <div className={`p-2 ${getHeaderIconBg()} rounded-xl shadow-lg`}>
@@ -254,10 +245,8 @@ export default function SubmissionStatusModal({
           )}
         </div>
 
-        {/* Content */}
         <div className="p-4 max-h-[calc(85vh-100px)] overflow-y-auto">
           <div className="space-y-4">
-            {/* Informações principais da submissão */}
             {(questionName || userName || questionListTitle) && (
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-3 animate-in slide-in-from-top-2 duration-300">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -283,7 +272,6 @@ export default function SubmissionStatusModal({
               </div>
             )}
 
-            {/* Status e Linguagem */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="bg-slate-50 border border-slate-200 p-3 rounded-lg">
                 <div className="flex items-center justify-between mb-1.5">
@@ -312,7 +300,6 @@ export default function SubmissionStatusModal({
               </div>
             </div>
 
-            {/* Informações da Submissão */}
             <details className="bg-slate-50 border border-slate-200 p-3 rounded-lg" open={!results}>
               <summary className="text-xs font-semibold text-slate-700 cursor-pointer hover:text-slate-900 transition-colors">
                 Informações da Submissão
@@ -339,10 +326,8 @@ export default function SubmissionStatusModal({
               </div>
             </details>
 
-            {/* Resultados da Avaliação */}
             {results && status === "completed" && (
               <div className="space-y-3 animate-in slide-in-from-bottom-2 duration-300">
-                {/* Resumo dos Resultados */}
                 <div
                   className={`p-4 rounded-lg border-2 shadow-sm ${
                     results.passedTests === results.totalTests
@@ -384,11 +369,9 @@ export default function SubmissionStatusModal({
                   </div>
                 </div>
 
-                {/* Detalhes dos Casos de Teste */}
                 <div className="space-y-2">
                   <h4 className="text-xs font-semibold text-slate-700">Detalhes dos Casos de Teste:</h4>
                 
-                  {/* Resumo visual */}
                   <div className="flex gap-2 mb-3">
                     <div className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 border border-green-200 rounded-lg shadow-sm">
                       <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -409,7 +392,6 @@ export default function SubmissionStatusModal({
                   </div>
 
                   <div className="max-h-64 overflow-y-auto space-y-2">
-                    {/* Exibir todos os casos de teste */}
                     {(results.testResults || []).map((result, index) => (
                       <div
                         key={result.testCaseId || index}
@@ -476,7 +458,6 @@ export default function SubmissionStatusModal({
           </div>
         </div>
 
-        {/* Footer */}
         <div className="flex justify-end gap-3 p-4 border-t border-slate-200 bg-slate-50 rounded-b-2xl">
           <button
             onClick={handleClose}

@@ -49,10 +49,8 @@ export default function TestCasesModal({
   const [isDeletingAll, setIsDeletingAll] = useState(false);
   const [showGenerateModal, setShowGenerateModal] = useState(false);
 
-  // Refs para armazenar timeouts e permitir cleanup
   const timeoutRefs = useRef<NodeJS.Timeout[]>([]);
 
-  // Função helper para adicionar timeout com cleanup automático
   const addTimeout = useCallback((callback: () => void, delay: number) => {
     const timeoutId = setTimeout(() => {
       callback();
@@ -62,13 +60,11 @@ export default function TestCasesModal({
     return timeoutId;
   }, []);
 
-  // Cleanup de todos os timeouts
   const clearAllTimeouts = useCallback(() => {
     timeoutRefs.current.forEach(timeoutId => clearTimeout(timeoutId));
     timeoutRefs.current = [];
   }, []);
 
-  // Cleanup quando o modal fechar ou componente desmontar
   useEffect(() => {
     if (!isOpen) {
       clearAllTimeouts();
@@ -78,13 +74,11 @@ export default function TestCasesModal({
     };
   }, [isOpen, clearAllTimeouts]);
 
-  // Ref para controlar se já está carregando (evitar múltiplas chamadas)
   const isLoadingRef = useRef(false);
   const hasLoadedRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!isOpen) {
-      // Resetar tudo quando o modal fecha
       setTestCases([]);
       setError(null);
       setSaveSuccess(false);
@@ -99,13 +93,11 @@ export default function TestCasesModal({
       return;
     }
 
-    // Se já carregou para este questionId, não carregar novamente
     if (hasLoadedRef.current === questionId) {
       setIsLoading(false);
       return;
     }
 
-    // Evitar múltiplas chamadas simultâneas
     if (isLoadingRef.current) {
       return;
     }
@@ -119,8 +111,6 @@ export default function TestCasesModal({
       if (cancelled) return;
       
       try {
-        // Carregar dados da questão
-        try {
           const result = await API.questions.get(questionId);
           const question = result.data;
           if (question && !cancelled) {
@@ -132,13 +122,9 @@ export default function TestCasesModal({
               setCodeforcesProblemIndex(question.problemIndex);
             }
           }
-        } catch (error) {
-          logger.error('Erro ao carregar dados da questão', error);
-        }
-        
+                  
         if (cancelled) return;
         
-        // Carregar casos de teste
         const cases = await testCasesService.getTestCases(questionId);
         
         if (cancelled) return;
@@ -168,7 +154,6 @@ export default function TestCasesModal({
         hasLoadedRef.current = questionId;
       } catch (err: any) {
         if (!cancelled) {
-          logger.error('Erro ao carregar casos de teste', err);
           const errorMessage = err?.response?.data?.message || err?.message || "Erro ao carregar casos de teste. Tente novamente.";
           setError(errorMessage);
           setTestCases([
@@ -242,7 +227,6 @@ export default function TestCasesModal({
       setTestCases(testCases.filter((tc) => tc.id !== deleteConfirm.testCaseId));
       setDeleteConfirm({ isOpen: false, testCaseId: null, testCaseName: "" });
     } catch (error: any) {
-      logger.error('Erro ao remover caso de teste', error);
       setError(error?.message || "Erro ao remover caso de teste. Tente novamente.");
       setDeleteConfirm({ isOpen: false, testCaseId: null, testCaseName: "" });
     }
@@ -310,7 +294,6 @@ export default function TestCasesModal({
         setError(`Alguns casos de teste não puderam ser removidos (${succeeded.length}/${savedCases.length} removidos). Tente novamente.`);
       }
 
-      // Recarregar casos de teste após remover
       hasLoadedRef.current = null;
       setIsLoading(true);
       try {
@@ -338,7 +321,6 @@ export default function TestCasesModal({
         }
         hasLoadedRef.current = questionId;
       } catch (loadError: any) {
-        logger.error('Erro ao recarregar casos de teste', loadError);
       } finally {
         setIsLoading(false);
       }
@@ -352,10 +334,8 @@ export default function TestCasesModal({
         }, 2000);
       }
     } catch (error: any) {
-      logger.error('Erro ao remover todos os casos de teste', error);
       setError(error?.message || "Erro ao remover casos de teste. Tente novamente.");
       
-      // Tentar recarregar mesmo em caso de erro
       hasLoadedRef.current = null;
       setIsLoading(true);
       try {
@@ -383,7 +363,6 @@ export default function TestCasesModal({
         }
         hasLoadedRef.current = questionId;
       } catch (loadError: any) {
-        // Silenciosamente ignorar erro de recarga
       } finally {
         setIsLoading(false);
       }
@@ -463,7 +442,6 @@ export default function TestCasesModal({
         }
 
         setSaveSuccess(true);
-        // Recarregar casos de teste após salvar
         hasLoadedRef.current = null;
         setIsLoading(true);
         try {
@@ -481,7 +459,6 @@ export default function TestCasesModal({
           }
           hasLoadedRef.current = questionId;
         } catch (err: any) {
-          logger.error('Erro ao recarregar casos de teste', err);
         } finally {
           setIsLoading(false);
         }
@@ -518,7 +495,6 @@ export default function TestCasesModal({
       }, 1500);
       
     } catch (error: any) {
-      logger.error('Erro ao salvar configuração', error);
       setError(error.response?.data?.message || error?.message || "Erro ao salvar configuração. Tente novamente.");
     } finally {
       setIsSaving(false);
@@ -526,7 +502,6 @@ export default function TestCasesModal({
   };
 
   const handleGenerateSuccess = async () => {
-    // Recarregar casos de teste após gerar
     hasLoadedRef.current = null;
     setIsLoading(true);
     try {
@@ -544,7 +519,6 @@ export default function TestCasesModal({
       }
       hasLoadedRef.current = questionId;
     } catch (err: any) {
-      logger.error('Erro ao recarregar casos de teste', err);
     } finally {
       setIsLoading(false);
     }
@@ -561,7 +535,6 @@ export default function TestCasesModal({
         }}
       >
         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl mx-4 my-8 animate-in zoom-in-95 duration-200 overflow-hidden">
-          {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-slate-200 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-2xl">
             <div className="flex items-center gap-3">
               <div className="p-2.5 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg">
@@ -586,9 +559,7 @@ export default function TestCasesModal({
             )}
           </div>
 
-          {/* Content */}
           <div className="p-6">
-            {/* Seletor de tipo de submissão */}
             <div className="mb-6">
               <label className="block text-sm font-semibold text-slate-700 mb-3">Tipo de Submissão</label>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -646,7 +617,6 @@ export default function TestCasesModal({
               </div>
             </div>
 
-            {/* Loading State */}
             {isLoading && (
               <div className="flex items-center justify-center py-12">
                 <div className="flex flex-col items-center gap-3">
@@ -656,7 +626,6 @@ export default function TestCasesModal({
               </div>
             )}
 
-            {/* Success Message */}
             {saveSuccess && (
               <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl animate-in slide-in-from-top-2 duration-300">
                 <div className="flex items-center gap-2">
@@ -668,13 +637,10 @@ export default function TestCasesModal({
               </div>
             )}
 
-            {/* Form Content */}
             {!isLoading && (
               <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Seção: Submissão Local */}
                 {submissionType === 'local' && (
                   <div className="space-y-6">
-                    {/* Botão de Gerar Casos */}
                     <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl p-4 border border-purple-200">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
@@ -699,7 +665,6 @@ export default function TestCasesModal({
                       </div>
                     </div>
 
-                    {/* Lista de Casos de Teste */}
                     <div>
                       <div className="flex items-center justify-between mb-4">
                         <div>
@@ -817,7 +782,6 @@ export default function TestCasesModal({
                       </div>
                     </div>
 
-                    {/* Pontuação Total */}
                     <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
                       <div className="flex items-center gap-3">
                         <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -836,7 +800,6 @@ export default function TestCasesModal({
                   </div>
                 )}
 
-                {/* Seção: Submissão Codeforces */}
                 {submissionType === 'codeforces' && (
                   <div className="space-y-6">
                     <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
@@ -885,7 +848,6 @@ export default function TestCasesModal({
                   </div>
                 )}
 
-                {/* Error Message */}
                 {error && (
                   <div className="p-4 bg-red-50 border border-red-200 rounded-xl animate-in slide-in-from-top-2 duration-300">
                     <div className="flex items-start gap-2">
@@ -897,7 +859,6 @@ export default function TestCasesModal({
                   </div>
                 )}
 
-                {/* Footer Actions */}
                 <div className="flex gap-3 pt-6 border-t border-slate-200">
                   <button 
                     type="button" 
@@ -939,7 +900,6 @@ export default function TestCasesModal({
         </div>
       </div>
 
-      {/* Modal de Confirmação de Exclusão Individual */}
       {deleteConfirm.isOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md mx-4 animate-in zoom-in-95 duration-200">
@@ -979,7 +939,6 @@ export default function TestCasesModal({
         </div>
       )}
 
-      {/* Modal de Confirmação de Exclusão de Todos */}
       {deleteAllConfirm && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md mx-4 animate-in zoom-in-95 duration-200">
@@ -1028,7 +987,6 @@ export default function TestCasesModal({
         </div>
       )}
 
-      {/* Modal de Geração de Casos de Teste */}
       <GenerateTestCasesModal
         isOpen={showGenerateModal}
         onClose={() => setShowGenerateModal(false)}

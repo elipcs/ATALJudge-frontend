@@ -20,7 +20,6 @@ export default function ListCard({
   classNames = []
 }: ListCardProps) {
   if (!list || !list.id) {
-    console.warn('Lista inválida encontrada:', list);
     return null;
   }
 
