@@ -5,7 +5,6 @@ export interface CreateTestCaseData {
   questionId: string;
   input: string;
   expectedOutput: string;
-  isSample: boolean;
   weight: number;
   order?: number;
 }
@@ -13,7 +12,6 @@ export interface CreateTestCaseData {
 export interface UpdateTestCaseData {
   input?: string;
   expectedOutput?: string;
-  isSample?: boolean;
   weight?: number;
   order?: number;
 }
@@ -23,8 +21,25 @@ export interface ReorderTestCasesData {
 }
 
 export const getTestCases = async (questionId: string): Promise<TestCaseResponseDTO[]> => {
-  const { data } = await API.testCases.list(questionId);
-  return Array.isArray(data) ? data : [];
+  try {
+    const response = await API.testCases.list(questionId, { timeout: 60000 });
+    const data = response?.data;
+    
+    if (Array.isArray(data)) {
+      return data;
+    } else if (data && typeof data === 'object' && 'testCases' in data) {
+      const dataWithTestCases = data as { testCases?: unknown };
+      return Array.isArray(dataWithTestCases.testCases) ? dataWithTestCases.testCases : [];
+    } else if (data && typeof data === 'object' && Array.isArray(Object.values(data)[0])) {
+      const firstArray = Object.values(data).find(v => Array.isArray(v)) as TestCaseResponseDTO[] | undefined;
+      return firstArray || [];
+    }
+    
+    return [];
+  } catch (error: any) {
+    console.error('Erro ao buscar casos de teste:', error);
+    return [];
+  }
 };
 
 export const getTestCase = async (questionId: string, testCaseId: string): Promise<TestCaseResponseDTO> => {

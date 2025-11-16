@@ -52,6 +52,8 @@ export interface QuestionResponseDTO {
   problemIndex?: string;
   referenceCode?: string;
   referenceLanguage?: string;
+  oracleCode?: string;
+  oracleLanguage?: string;
   authorId?: string;
   createdAt: string | Date;
   updatedAt: string | Date;
@@ -83,7 +85,6 @@ export interface TestCaseResponseDTO {
   questionId: string;
   input: string;
   expectedOutput: string;
-  isSample: boolean;
   weight: number;
   createdAt: string | Date;
 }
@@ -116,7 +117,6 @@ export interface SubmissionResponseDTO {
 
 export interface TestCaseResultDTO {
   testCaseId: string;
-  isSample: boolean;
   verdict: string;
   passed: boolean;
   executionTimeMs?: number;

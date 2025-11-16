@@ -365,7 +365,7 @@ export const API = {
   },
 
   testCases: {
-    list: (questionId: string) => get<TestCaseResponseDTO[]>(`/questions/${questionId}/testcases`),
+    list: (questionId: string, config?: RequestConfig) => get<TestCaseResponseDTO[]>(`/questions/${questionId}/testcases`, config),
     get: (testCaseId: string) => get<TestCaseResponseDTO>(`/testcases/${testCaseId}`),
     create: (questionId: string, data: Omit<TestCaseResponseDTO, 'id' | 'createdAt'>) => post<TestCaseResponseDTO>(`/questions/${questionId}/testcases`, data),
     update: (questionId: string, testCaseId: string, data: Partial<TestCaseResponseDTO>) => 
@@ -374,7 +374,7 @@ export const API = {
       del<null>(`/testcases/${testCaseId}`),
     reorder: (questionId: string, testCaseIds: string[]) => 
       post<null>(`/questions/${questionId}/testcases/reorder`, { testCaseIds }),
-    bulkUpdate: (questionId: string, data: { testCases: Array<{ id?: string; input: string; expectedOutput: string; isSample: boolean; weight: number }> }) =>
+    bulkUpdate: (questionId: string, data: { testCases: Array<{ id?: string; input: string; expectedOutput: string; weight: number }> }) =>
       put<TestCaseResponseDTO[]>(`/questions/${questionId}/testcases/bulk`, data),
     generate: (questionId: string, data: { oracleCode: string; language: string; count: number }, config?: RequestConfig) =>
       post<{ testCases: Array<{ input: string; expectedOutput: string }>; totalGenerated: number; algorithmTypeDetected?: string }>(

@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { generateTestCases, GenerateTestCasesRequest } from "@/services/testCases";
+import { questionsApi } from "@/services/questions";
 import { logger } from "@/utils/logger";
 
 interface GenerateTestCasesModalProps {
@@ -41,8 +42,27 @@ export default function GenerateTestCasesModal({
         abortControllerRef.current.abort();
         abortControllerRef.current = null;
       }
+    } else {
+      // Quando o modal abrir, buscar a questão para obter o código oráculo salvo
+      const loadQuestion = async () => {
+        try {
+          const question = await questionsApi.getById(questionId);
+          if (question?.oracleCode) {
+            setOracleCode(question.oracleCode);
+            // Se houver linguagem salva, usar ela; caso contrário manter padrão
+            if (question.oracleLanguage) {
+              setOracleLanguage(question.oracleLanguage as 'python' | 'java');
+            }
+          }
+        } catch (error) {
+          // Silenciosamente falha se não conseguir carregar a questão
+          logger.error('Erro ao carregar código oráculo salvo:', error);
+        }
+      };
+      
+      loadQuestion();
     }
-  }, [isOpen]);
+  }, [isOpen, questionId]);
 
   useEffect(() => {
     return () => {

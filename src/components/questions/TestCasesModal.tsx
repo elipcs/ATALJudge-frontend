@@ -4,13 +4,13 @@ import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import * as testCasesService from "@/services/testCases";
 import { logger } from "@/utils/logger";
 import { API } from "@/config/api";
+import { TestCaseResponseDTO } from "@/types/dtos";
 import GenerateTestCasesModal from "./GenerateTestCasesModal";
 
 interface TestCase {
   id: string;
   input: string;
   expectedOutput: string;
-  isSample: boolean;
   weight: number;
   order?: number;
 }
@@ -111,41 +111,92 @@ export default function TestCasesModal({
       if (cancelled) return;
       
       try {
-          const result = await API.questions.get(questionId);
-          const question = result.data;
-          if (question && !cancelled) {
-            setSubmissionType(question.submissionType || 'local');
-            if (question.contestId) {
-              setCodeforcesContestId(question.contestId);
-            }
-            if (question.problemIndex) {
-              setCodeforcesProblemIndex(question.problemIndex);
-            }
+        // Buscar dados da questão com timeout
+        const questionPromise = API.questions.get(questionId);
+        const questionTimeout = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Timeout ao carregar questão')), 10000)
+        );
+        
+        const result = await Promise.race([questionPromise, questionTimeout]) as any;
+        const question = result?.data;
+        
+        if (question && !cancelled) {
+          setSubmissionType(question.submissionType || 'local');
+          if (question.contestId) {
+            setCodeforcesContestId(question.contestId);
           }
+          if (question.problemIndex) {
+            setCodeforcesProblemIndex(question.problemIndex);
+          }
+        }
                   
         if (cancelled) return;
         
-        const cases = await testCasesService.getTestCases(questionId);
+        // Buscar casos de teste
+        let cases: TestCaseResponseDTO[] = [];
+        try {
+          logger.info(`Carregando casos de teste para questão: ${questionId}`);
+          cases = await testCasesService.getTestCases(questionId);
+          logger.info(`Casos de teste carregados: ${cases?.length || 0} casos`);
+          
+          // Validar que os casos são válidos
+          if (!Array.isArray(cases)) {
+            logger.warn('Resposta não é um array, convertendo...');
+            cases = [];
+          }
+        } catch (loadError: any) {
+          logger.error('Erro ao carregar casos de teste:', loadError);
+          // Se houver erro, tentar novamente uma vez após um pequeno delay
+          try {
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Aguardar 1 segundo
+            logger.warn('Tentando carregar casos de teste novamente...');
+            cases = await testCasesService.getTestCases(questionId);
+            logger.info(`Casos de teste carregados na segunda tentativa: ${cases?.length || 0} casos`);
+            
+            if (!Array.isArray(cases)) {
+              cases = [];
+            }
+          } catch (retryError: any) {
+            logger.error('Erro ao tentar carregar casos de teste novamente:', retryError);
+            // Não lançar erro, apenas usar array vazio e marcar como carregado
+            cases = [];
+            hasLoadedRef.current = questionId; // Marcar como carregado para evitar loop
+          }
+        }
         
         if (cancelled) return;
         
+        // Validar e mapear casos de teste
         if (Array.isArray(cases) && cases.length > 0) {
-          const mappedCases = cases.map((tc, index) => ({
-            id: tc.id,
-            input: tc.input || '',
-            expectedOutput: tc.expectedOutput || '',  
-            isSample: tc.isSample || false,
-            weight: tc.weight || 10,
-            order: index,
-          }));
-          setTestCases(mappedCases);
+          const mappedCases = cases
+            .filter(tc => tc && tc.id) // Filtrar casos inválidos
+            .map((tc, index) => ({
+              id: tc.id,
+              input: String(tc.input || ''),
+              expectedOutput: String(tc.expectedOutput || ''),
+              weight: Number(tc.weight || 10),
+              order: index,
+            }));
+          
+          if (mappedCases.length > 0) {
+            setTestCases(mappedCases);
+          } else {
+            // Se todos foram filtrados, criar caso vazio
+            setTestCases([
+              {
+                id: "new-1",
+                input: "",
+                expectedOutput: "",
+                weight: 10,
+              },
+            ]);
+          }
         } else {
           setTestCases([
             {
               id: "new-1",
               input: "",
               expectedOutput: "",
-              isSample: true,
               weight: 10,
             },
           ]);
@@ -154,17 +205,19 @@ export default function TestCasesModal({
         hasLoadedRef.current = questionId;
       } catch (err: any) {
         if (!cancelled) {
-          const errorMessage = err?.response?.data?.message || err?.message || "Erro ao carregar casos de teste. Tente novamente.";
+          const errorMessage = err?.message?.includes('Timeout') 
+            ? 'A requisição demorou muito para responder. Tente recarregar a página.'
+            : err?.response?.data?.message || err?.message || "Erro ao carregar casos de teste. Tente novamente.";
           setError(errorMessage);
           setTestCases([
             {
               id: "new-1",
               input: "",
               expectedOutput: "",
-              isSample: true,
               weight: 10,
             },
           ]);
+          hasLoadedRef.current = questionId; // Marcar como carregado mesmo com erro para evitar loop
         }
       } finally {
         if (!cancelled) {
@@ -193,7 +246,6 @@ export default function TestCasesModal({
       id: `new-${Date.now()}`,
       input: "",
       expectedOutput: "",
-      isSample: false,
       weight: 10,
       order: testCases.length,
     };
@@ -256,7 +308,6 @@ export default function TestCasesModal({
             id: "new-1",
             input: "",
             expectedOutput: "",
-            isSample: true,
             weight: 10,
           },
         ]);
@@ -303,7 +354,6 @@ export default function TestCasesModal({
             id: tc.id,
             input: tc.input || '',
             expectedOutput: tc.expectedOutput || '',  
-            isSample: tc.isSample || false,
             weight: tc.weight || 10,
             order: index,
           }));
@@ -314,7 +364,6 @@ export default function TestCasesModal({
               id: "new-1",
               input: "",
               expectedOutput: "",
-              isSample: true,
               weight: 10,
             },
           ]);
@@ -345,7 +394,6 @@ export default function TestCasesModal({
             id: tc.id,
             input: tc.input || '',
             expectedOutput: tc.expectedOutput || '',  
-            isSample: tc.isSample || false,
             weight: tc.weight || 10,
             order: index,
           }));
@@ -356,7 +404,6 @@ export default function TestCasesModal({
               id: "new-1",
               input: "",
               expectedOutput: "",
-              isSample: true,
               weight: 10,
             },
           ]);
@@ -419,7 +466,6 @@ export default function TestCasesModal({
             questionId,
             input: tc.input,
             expectedOutput: tc.expectedOutput,
-            isSample: tc.isSample,
             weight: tc.weight,
             order: i,
           });
@@ -431,7 +477,6 @@ export default function TestCasesModal({
           await testCasesService.updateTestCase(questionId, tc.id, {
             input: tc.input,
             expectedOutput: tc.expectedOutput,
-            isSample: tc.isSample,
             weight: tc.weight,
             order: newCases.length + i,
           });
@@ -451,7 +496,6 @@ export default function TestCasesModal({
               id: tc.id,
               input: tc.input || '',
               expectedOutput: tc.expectedOutput || '',  
-              isSample: tc.isSample || false,
               weight: tc.weight || 10,
               order: index,
             }));
@@ -511,7 +555,6 @@ export default function TestCasesModal({
           id: tc.id,
           input: tc.input || '',
           expectedOutput: tc.expectedOutput || '',  
-          isSample: tc.isSample || false,
           weight: tc.weight || 10,
           order: index,
         }));
@@ -645,7 +688,7 @@ export default function TestCasesModal({
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <div className="p-2 bg-purple-500 rounded-lg">
-                            <svg className="w-5 h-5 text-white" fill="none" stroke="white" viewBox="0 0 24 24">
+                            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                             </svg>
                           </div>
@@ -712,11 +755,6 @@ export default function TestCasesModal({
                             <div className="flex items-center justify-between mb-4">
                               <div className="flex items-center gap-2">
                                 <span className="text-sm font-semibold text-slate-700">Caso {index + 1}</span>
-                                {testCase.isSample && (
-                                  <span className="px-2 py-0.5 text-xs font-medium text-blue-700 bg-blue-100 rounded-full">
-                                    Exemplo
-                                  </span>
-                                )}
                               </div>
                               {testCases.length > 1 && (
                                 <button
@@ -753,29 +791,16 @@ export default function TestCasesModal({
                               </div>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              <div>
-                                <label className="block text-xs font-medium text-slate-600 mb-2">Pontuação</label>
-                                <input
-                                  type="number"
-                                  min="0"
-                                  max="100"
-                                  value={testCase.weight}
-                                  onChange={(e) => updateTestCase(testCase.id, "weight", parseInt(e.target.value) || 0)}
-                                  className="w-full h-10 px-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-slate-900"
-                                />
-                              </div>
-                              <div className="flex items-end">
-                                <label className="flex items-center gap-2 cursor-pointer">
-                                  <input
-                                    type="checkbox"
-                                    checked={testCase.isSample}
-                                    onChange={(e) => updateTestCase(testCase.id, "isSample", e.target.checked)}
-                                    className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
-                                  />
-                                  <span className="text-xs font-medium text-slate-600">Marcar como exemplo</span>
-                                </label>
-                              </div>
+                            <div>
+                              <label className="block text-xs font-medium text-slate-600 mb-2">Pontuação</label>
+                              <input
+                                type="number"
+                                min="0"
+                                max="100"
+                                value={testCase.weight}
+                                onChange={(e) => updateTestCase(testCase.id, "weight", parseInt(e.target.value) || 0)}
+                                className="w-full h-10 px-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-slate-900"
+                              />
                             </div>
                           </div>
                         ))}
