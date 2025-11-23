@@ -74,15 +74,18 @@ export function useListPage() {
   }, [questionListId, userRole]);
 
   const isListStarted = useCallback(() => {
-    if (!list || userRole !== 'student') return true;
+    if (!list) return true;
     
-    if (!list.startDate) return true;
+    if (!list.startDate) {
+      // Se não tem data de início definida, considera como já iniciada
+      return true;
+    }
     
     const now = new Date();
     const startDate = new Date(list.startDate);
     
     return now >= startDate;
-  }, [list, userRole]);
+  }, [list]);
 
   const isListEnded = useCallback(() => {
     if (!list || userRole !== 'student') return false;

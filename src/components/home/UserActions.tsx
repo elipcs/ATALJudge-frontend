@@ -43,6 +43,18 @@ export default function UserActions({ userRole }: UserActionsProps) {
             iconColor: "text-green-600",
           },
           {
+            href: "/questoes",
+            icon: (
+              <svg className="w-6 h-6 text-purple-600 group-hover:text-purple-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+              </svg>
+            ),
+            title: "Criar Questões",
+            description: "Gerenciar banco de questões",
+            hoverColor: "hover:border-purple-300",
+            iconColor: "text-purple-600",
+          },
+          {
             href: "/turmas",
             icon: (
               <svg className="w-6 h-6 text-blue-600 group-hover:text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -69,6 +81,18 @@ export default function UserActions({ userRole }: UserActionsProps) {
             description: "Adicionar novas listas de exercícios",
             hoverColor: "hover:border-green-300",
             iconColor: "text-green-600",
+          },
+          {
+            href: "/questoes",
+            icon: (
+              <svg className="w-6 h-6 text-purple-600 group-hover:text-purple-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+              </svg>
+            ),
+            title: "Criar Questões",
+            description: "Gerenciar banco de questões",
+            hoverColor: "hover:border-purple-300",
+            iconColor: "text-purple-600",
           },
           {
             href: "/turmas",

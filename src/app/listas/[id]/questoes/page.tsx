@@ -217,7 +217,7 @@ export default function QuestionsPage() {
             </Button>
           </Link>
           <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">
+            <h1 className="text-3xl font-bold text-slate-900">
               {list.title}
             </h1>
             <p className="text-slate-600 mt-1">Questão {questionLabels[activeIndex]}</p>

@@ -94,7 +94,8 @@ export default function GenerateTestCasesModal({
       const request: GenerateTestCasesRequest = {
         oracleCode,
         language: oracleLanguage,
-        count: testCaseCount
+        count: testCaseCount,
+        use_supervision: true
       };
 
       const result = await generateTestCases(questionId, request, abortController.signal);
@@ -189,21 +190,6 @@ export default function GenerateTestCasesModal({
         </div>
 
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-            <div className="flex items-start gap-3">
-              <svg className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <div className="flex-1">
-                <p className="text-sm font-semibold text-blue-900 mb-1">Como funciona?</p>
-                <p className="text-xs text-blue-800 leading-relaxed">
-                  O código oráculo deve ler da entrada padrão (stdin) e imprimir a saída esperada. 
-                  O sistema irá gerar entradas variadas e executar seu código para obter as saídas correspondentes.
-                </p>
-              </div>
-            </div>
-          </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">

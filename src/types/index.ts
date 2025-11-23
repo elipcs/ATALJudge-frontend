@@ -17,9 +17,9 @@ export interface Student {
   studentRegistration: string;
   role: string;
   classId: string;
-  grades: { 
+  grades: {
     id: string;
-    questionListId: string; 
+    questionListId: string;
     score: string | number;
     createdAt: string;
     updatedAt: string;
@@ -57,7 +57,7 @@ export interface Question {
   timeLimit: string;
   memoryLimit: string;
   referenceCode?: string;
-  referenceLanguage?: 'python' | 'java' ;
+  referenceLanguage?: 'python' | 'java';
   testCases?: Array<{
     input: string;
     expectedOutput: string;
@@ -68,6 +68,8 @@ export interface Question {
   contestId?: string;
   problemIndex?: string;
   group?: string;
+  source?: string;
+  tags?: string[];
 }
 
 export interface Submission {

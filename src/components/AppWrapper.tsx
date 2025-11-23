@@ -13,7 +13,8 @@ const PROTECTED_ROUTES = [
   '/submissoes',
   '/configuracoes',
   '/perfil',
-  '/home'
+  '/home',
+  '/questoes'
 ];
 
 const PUBLIC_ROUTES = [
@@ -46,12 +47,12 @@ function AppWrapperContent({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  
-  const shouldHaveNavigation = PROTECTED_ROUTES.some(route => 
+
+  const shouldHaveNavigation = PROTECTED_ROUTES.some(route =>
     pathname === route || pathname.startsWith(route + '/')
   );
 
-  const isPublicRoute = PUBLIC_ROUTES.some(route => 
+  const isPublicRoute = PUBLIC_ROUTES.some(route =>
     pathname === route || pathname.startsWith(route + '/')
   );
 
@@ -60,9 +61,9 @@ function AppWrapperContent({
   }
 
   if (shouldHaveNavigation) {
-    const currentPage = pathname === '/' || pathname === '/home' ? 'home' : 
-                       pathname.replace('/', '').split('/')[0] || 'home';
-    
+    const currentPage = pathname === '/' || pathname === '/home' ? 'home' :
+      pathname.replace('/', '').split('/')[0] || 'home';
+
     return (
       <UniversalLayout currentPage={currentPage}>
         {children}

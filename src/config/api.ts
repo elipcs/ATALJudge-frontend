@@ -376,7 +376,7 @@ export const API = {
       post<null>(`/questions/${questionId}/testcases/reorder`, { testCaseIds }),
     bulkUpdate: (questionId: string, data: { testCases: Array<{ id?: string; input: string; expectedOutput: string; weight: number }> }) =>
       put<TestCaseResponseDTO[]>(`/questions/${questionId}/testcases/bulk`, data),
-    generate: (questionId: string, data: { oracleCode: string; language: string; count: number }, config?: RequestConfig) =>
+    generate: (questionId: string, data: { oracleCode: string; language: string; count: number; use_supervision?: boolean }, config?: RequestConfig) =>
       post<{ testCases: Array<{ input: string; expectedOutput: string }>; totalGenerated: number; algorithmTypeDetected?: string }>(
         `/questions/${questionId}/testcases/generate`, data, config
       ),

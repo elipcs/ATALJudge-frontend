@@ -571,11 +571,6 @@ export default function TestCasesModal({
     <>
       <div 
         className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-start justify-center z-50 p-4 overflow-y-auto animate-in fade-in duration-200"
-        onClick={(e) => {
-          if (e.target === e.currentTarget && !isSaving) {
-            onClose();
-          }
-        }}
       >
         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl mx-4 my-8 animate-in zoom-in-95 duration-200 overflow-hidden">
           <div className="flex items-center justify-between p-6 border-b border-slate-200 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-2xl">

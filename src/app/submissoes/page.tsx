@@ -56,23 +56,23 @@ export default function SubmissoesPage() {
 
   const loadSubmissions = useCallback(async () => {
     setState(prev => ({ ...prev, loading: true }));
-    
+
     try {
       const filters: SubmissionFilters = {
         page: state.currentPage,
         limit: state.itemsPerPage
       };
-      
+
       if (state.selectedStatus !== "all") {
         filters.verdict = state.selectedStatus as any;
       }
-      
+
       const response = await submissionsApi.getSubmissions(filters);
 
       const restrictedListIds = new Set<string>();
 
       const accessibleSubmissions = response.submissions;
-      
+
       setState(prev => ({
         ...prev,
         submissions: accessibleSubmissions,
@@ -83,8 +83,8 @@ export default function SubmissoesPage() {
         totalItems: response.pagination.total
       }));
     } catch (error) {
-      setState(prev => ({ 
-        ...prev, 
+      setState(prev => ({
+        ...prev,
         loading: false,
         submissions: [],
         filteredSubmissions: [],
@@ -101,16 +101,16 @@ export default function SubmissoesPage() {
 
   const displayedSubmissions = state.searchTerm.trim()
     ? state.submissions.filter(submission => {
-        const searchLower = state.searchTerm.toLowerCase();
-        return (
-          submission.questionId.toLowerCase().includes(searchLower) ||
-          submission.questionName?.toLowerCase().includes(searchLower) ||
-          submission.userId.toLowerCase().includes(searchLower) ||
-          submission.userName?.toLowerCase().includes(searchLower) ||
-          submission.questionListTitle?.toLowerCase().includes(searchLower) ||
-          submission.language.toLowerCase().includes(searchLower)
-        );
-      })
+      const searchLower = state.searchTerm.toLowerCase();
+      return (
+        submission.questionId.toLowerCase().includes(searchLower) ||
+        submission.questionName?.toLowerCase().includes(searchLower) ||
+        submission.userId.toLowerCase().includes(searchLower) ||
+        submission.userName?.toLowerCase().includes(searchLower) ||
+        submission.questionListTitle?.toLowerCase().includes(searchLower) ||
+        submission.language.toLowerCase().includes(searchLower)
+      );
+    })
     : state.submissions;
 
   useEffect(() => {
@@ -137,24 +137,24 @@ export default function SubmissoesPage() {
   };
 
   const handleSubmissionClick = (submissionId: string) => {
-    setState(prev => ({ 
-      ...prev, 
+    setState(prev => ({
+      ...prev,
       selectedSubmissionId: submissionId,
-      isModalOpen: true 
+      isModalOpen: true
     }));
   };
 
   const handleCloseModal = () => {
-    setState(prev => ({ 
-      ...prev, 
+    setState(prev => ({
+      ...prev,
       selectedSubmissionId: null,
-      isModalOpen: false 
+      isModalOpen: false
     }));
   };
 
   const handleResubmit = async (submissionId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    
+
     if (!confirm('Deseja realmente re-submeter esta submissão? Uma nova submissão será criada com os mesmos dados.')) {
       return;
     }
@@ -179,13 +179,19 @@ export default function SubmissoesPage() {
       <PageHeader
         title={userRole === 'student' ? "Minhas Submissões" : "Submissões"}
         description={
-          userRole === 'student' 
-            ? "Acompanhe suas submissões e resultados" 
+          userRole === 'student'
+            ? "Acompanhe suas submissões e resultados"
             : "Visualize e acompanhe todas as submissões dos estudantes"
         }
+        icon={
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+        }
+        iconColor="indigo"
       />
-      
-      {}
+
+      { }
       {userRole === 'student' && state.restrictedListIds.size > 0 && (
         <Card className="bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-200 rounded-2xl shadow-lg p-6">
           <div className="flex items-center gap-4">
@@ -197,15 +203,15 @@ export default function SubmissoesPage() {
             <div className="flex-1">
               <h3 className="text-lg font-semibold text-yellow-800">Submissões Restritas por IP</h3>
               <p className="text-yellow-700">
-                Algumas submissões não estão sendo exibidas porque pertencem a listas com restrição de IP. 
+                Algumas submissões não estão sendo exibidas porque pertencem a listas com restrição de IP.
                 Seu endereço IP atual não está autorizado para visualizar essas submissões.
               </p>
             </div>
           </div>
         </Card>
       )}
-      
-      {}
+
+      { }
       <Card className="p-6">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1">
@@ -221,7 +227,7 @@ export default function SubmissoesPage() {
               </p>
             )}
           </div>
-          
+
           <div className="flex gap-2">
             <Dropdown
               value={state.selectedStatus}
@@ -229,7 +235,7 @@ export default function SubmissoesPage() {
               options={SUBMISSION_STATUS_OPTIONS}
               placeholder="Selecione um status"
             />
-            
+
             <Dropdown
               value={state.itemsPerPage.toString()}
               onChange={(value) => setState(prev => ({ ...prev, itemsPerPage: Number(value), currentPage: 1 }))}
@@ -241,7 +247,7 @@ export default function SubmissoesPage() {
               ]}
               placeholder="Itens por página"
             />
-            
+
             <Button
               onClick={refreshSubmissions}
               variant="outline"
@@ -253,7 +259,7 @@ export default function SubmissoesPage() {
         </div>
       </Card>
 
-      {}
+      { }
       <Card className="p-6">
         <div className="space-y-4">
           <div className="flex items-center justify-between">
@@ -271,8 +277,8 @@ export default function SubmissoesPage() {
               </div>
               <p className="text-lg font-medium text-gray-600">Nenhuma submissão encontrada</p>
               <p className="text-gray-500">
-                {state.searchTerm || state.selectedStatus !== "all" 
-                  ? "Tente ajustar os filtros de busca" 
+                {state.searchTerm || state.selectedStatus !== "all"
+                  ? "Tente ajustar os filtros de busca"
                   : userRole === 'student'
                     ? "Você ainda não fez nenhuma submissão"
                     : "Nenhum estudante fez submissões ainda"
@@ -281,7 +287,7 @@ export default function SubmissoesPage() {
             </div>
           ) : (
             <>
-              {}
+              { }
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
@@ -302,8 +308,8 @@ export default function SubmissoesPage() {
                   </thead>
                   <tbody>
                     {state.filteredSubmissions.map((submission) => (
-                      <tr 
-                        key={submission.id} 
+                      <tr
+                        key={submission.id}
                         className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors"
                         onClick={() => handleSubmissionClick(submission.id)}
                       >
@@ -365,7 +371,7 @@ export default function SubmissoesPage() {
                 </table>
               </div>
 
-              {}
+              { }
               <div className="flex items-center justify-between pt-4 border-t border-gray-200">
                 <div className="text-sm text-gray-600">
                   {state.searchTerm.trim() ? (
@@ -446,7 +452,7 @@ export default function SubmissoesPage() {
             state.submissions.find(s => s.id === state.selectedSubmissionId)?.userName || ''
           }
           questionListTitle={
-            state.submissions.find(s => s.id === state.selectedSubmissionId)?.questionListTitle|| ''
+            state.submissions.find(s => s.id === state.selectedSubmissionId)?.questionListTitle || ''
           }
           code={
             state.submissions.find(s => s.id === state.selectedSubmissionId)?.code || ''

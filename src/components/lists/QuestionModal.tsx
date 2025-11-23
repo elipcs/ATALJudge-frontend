@@ -2,6 +2,8 @@ import React from 'react';
 
 import { Question } from '../../types';
 import TextEditorWithLatex from '../questions/TextEditorWithLatex';
+import TagInput from '../ui/TagInput';
+import { secondsToMs, mbToKb } from '@/utils/timeMemoryConverter';
 
 interface QuestionFormData {
   title: string;
@@ -12,6 +14,8 @@ interface QuestionFormData {
   }>;
   timeLimit: string;
   memoryLimit: string;
+  source?: string;
+  tags?: string[];
 }
 
 interface QuestionModalProps {
@@ -31,27 +35,36 @@ export default function QuestionModal({
 }: QuestionModalProps) {
   const [showPreviewMode, setShowPreviewMode] = React.useState(false);
   const [isSaving, setIsSaving] = React.useState(false);
-  
+
   const [formData, setFormData] = React.useState({
     title: question?.title || '',
     text: question?.text || '',
     timeLimit: question?.timeLimit || '1s',
     memoryLimit: question?.memoryLimit || '128MB',
     examples: question?.examples || [{ input: '', output: '' }],
+    source: question?.source || '',
+    tags: question?.tags || [],
   });
 
   React.useEffect(() => {
     if (question) {
-      let timeLimit = question.timeLimit || '1s';
-      if (timeLimit && !timeLimit.endsWith('s')) {
-        const numValue = timeLimit.replace(/[^0-9.,]/g, '').replace(',', '.');
-        timeLimit = numValue ? `${numValue}s` : '1s';
+      // Converter timeLimitMs (backend) para timeLimit em segundos (frontend)
+      let timeLimit = '1s';
+      if (question.timeLimit) {
+        // Se timeLimit já é string (formato frontend), use diretamente
+        if (typeof question.timeLimit === 'string') {
+          timeLimit = question.timeLimit.endsWith('s') ? question.timeLimit : `${question.timeLimit}s`;
+        }
       }
-      
-      let memoryLimit = question.memoryLimit || '128MB';
-      if (memoryLimit && !memoryLimit.toUpperCase().endsWith('MB')) {
-        const numValue = memoryLimit.replace(/[^0-9.,]/g, '').replace(',', '.');
-        memoryLimit = numValue ? `${numValue}MB` : '128MB';
+
+      // Converter memoryLimitKb (backend) para memoryLimit em MB (frontend)
+      let memoryLimit = '128MB';
+      if (question.memoryLimit) {
+        // Se memoryLimit já é string (formato frontend), use diretamente
+        if (typeof question.memoryLimit === 'string') {
+          const upper = question.memoryLimit.toUpperCase();
+          memoryLimit = upper.endsWith('MB') ? upper : `${question.memoryLimit}MB`;
+        }
       }
 
       setFormData({
@@ -60,6 +73,8 @@ export default function QuestionModal({
         timeLimit,
         memoryLimit,
         examples: question.examples || [{ input: '', output: '' }],
+        source: question.source || '',
+        tags: question.tags || [],
       });
     } else {
       setFormData({
@@ -68,6 +83,8 @@ export default function QuestionModal({
         timeLimit: '1s',
         memoryLimit: '128MB',
         examples: [{ input: '', output: '' }],
+        source: '',
+        tags: [],
       });
     }
   }, [question, isOpen]);
@@ -78,16 +95,22 @@ export default function QuestionModal({
 
   const handleTimeLimitChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
+    // Remove sufixo 's' se houver
     const withoutSuffix = value.replace(/s$/i, '');
+    // Mantém apenas números, ponto e vírgula
     const sanitized = withoutSuffix.replace(/[^0-9.,]/g, '');
+    // Converte vírgula para ponto
     const normalized = sanitized.replace(',', '.');
     setFormData({ ...formData, timeLimit: normalized ? `${normalized}s` : '' });
   };
 
   const handleMemoryLimitChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
+    // Remove sufixo 'MB' se houver
     const withoutSuffix = value.replace(/mb$/i, '');
+    // Mantém apenas números, ponto e vírgula
     const sanitized = withoutSuffix.replace(/[^0-9.,]/g, '');
+    // Converte vírgula para ponto
     const normalized = sanitized.replace(',', '.');
     setFormData({ ...formData, memoryLimit: normalized ? `${normalized}MB` : '' });
   };
@@ -99,9 +122,9 @@ export default function QuestionModal({
   };
 
   const addExample = () => {
-    setFormData({ 
-      ...formData, 
-      examples: [...formData.examples, { input: '', output: '' }] 
+    setFormData({
+      ...formData,
+      examples: [...formData.examples, { input: '', output: '' }]
     });
   };
 
@@ -126,15 +149,10 @@ export default function QuestionModal({
   };
 
   if (!isOpen) return null;
-  
+
   return (
-    <div 
+    <div
       className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-start justify-center z-50 p-4 overflow-y-auto animate-in fade-in duration-200"
-      onClick={(e) => {
-        if (e.target === e.currentTarget && !isSaving) {
-          onClose();
-        }
-      }}
     >
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl mx-4 my-8 animate-in zoom-in-95 duration-200 overflow-hidden">
         <div className="flex items-center justify-between p-6 border-b border-slate-200 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-2xl">
@@ -167,22 +185,20 @@ export default function QuestionModal({
               <button
                 type="button"
                 onClick={() => setShowPreviewMode(false)}
-                className={`px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-200 ${
-                  !showPreviewMode
-                    ? 'shadow-sm border bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 border-blue-200'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                }`}
+                className={`px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-200 ${!showPreviewMode
+                  ? 'shadow-sm border bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 border-blue-200'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                  }`}
               >
                 Editor
               </button>
               <button
                 type="button"
                 onClick={() => setShowPreviewMode(true)}
-                className={`px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-200 ${
-                  showPreviewMode
-                    ? 'shadow-sm border bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 border-blue-200'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                }`}
+                className={`px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-200 ${showPreviewMode
+                  ? 'shadow-sm border bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 border-blue-200'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                  }`}
               >
                 Preview
               </button>
@@ -192,12 +208,12 @@ export default function QuestionModal({
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">Título *</label>
-              <input 
-                name="title" 
-                value={formData.title} 
-                onChange={handleChange} 
-                className="w-full h-12 px-4 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-slate-900 placeholder:text-slate-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all" 
-                required 
+              <input
+                name="title"
+                value={formData.title}
+                onChange={handleChange}
+                className="w-full h-12 px-4 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-slate-900 placeholder:text-slate-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                required
                 disabled={isSaving}
               />
             </div>
@@ -205,9 +221,9 @@ export default function QuestionModal({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">Limite de Tempo (segundos)</label>
-                <input 
-                  name="timeLimit" 
-                  value={formData.timeLimit} 
+                <input
+                  name="timeLimit"
+                  value={formData.timeLimit}
                   onChange={handleTimeLimitChange}
                   onBlur={(e) => {
                     const value = e.target.value.replace(/s$/i, '').replace(/[^0-9.,]/g, '').replace(',', '.');
@@ -217,16 +233,16 @@ export default function QuestionModal({
                       setFormData({ ...formData, timeLimit: '1s' });
                     }
                   }}
-                  className="w-full h-12 px-4 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-slate-900 placeholder:text-slate-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all" 
+                  className="w-full h-12 px-4 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-slate-900 placeholder:text-slate-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                   placeholder="Ex: 1.5"
                   disabled={isSaving}
                 />
               </div>
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">Limite de Memória (MB)</label>
-                <input 
-                  name="memoryLimit" 
-                  value={formData.memoryLimit} 
+                <input
+                  name="memoryLimit"
+                  value={formData.memoryLimit}
                   onChange={handleMemoryLimitChange}
                   onBlur={(e) => {
                     const value = e.target.value.replace(/mb$/i, '').replace(/[^0-9.,]/g, '').replace(',', '.');
@@ -236,13 +252,35 @@ export default function QuestionModal({
                       setFormData({ ...formData, memoryLimit: '128MB' });
                     }
                   }}
-                  className="w-full h-12 px-4 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-slate-900 placeholder:text-slate-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all" 
+                  className="w-full h-12 px-4 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-slate-900 placeholder:text-slate-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                   placeholder="Ex: 128"
                   disabled={isSaving}
                 />
               </div>
             </div>
-            
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">Fonte (opcional)</label>
+                <input
+                  name="source"
+                  value={formData.source || ''}
+                  onChange={handleChange}
+                  className="w-full h-12 px-4 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-slate-900 placeholder:text-slate-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  placeholder="Ex: Codeforces, USACO, OBI"
+                  disabled={isSaving}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">Tags (opcional)</label>
+                <TagInput
+                  tags={formData.tags || []}
+                  onChange={(tags) => setFormData({ ...formData, tags })}
+                  placeholder="Adicionar tags..."
+                />
+              </div>
+            </div>
+
             <div>
               <label className="block text-lg font-semibold text-slate-700 mb-2">Texto da Questão</label>
               <TextEditorWithLatex
@@ -269,7 +307,7 @@ export default function QuestionModal({
                   Adicionar Exemplo
                 </button>
               </div>
-              
+
               <div className="space-y-4">
                 {formData.examples.map((example, index) => (
                   <div key={index} className="bg-slate-50 rounded-xl p-5 border border-slate-200 hover:border-slate-300 transition-all">
@@ -317,16 +355,16 @@ export default function QuestionModal({
             </div>
 
             <div className="flex gap-3 pt-6 border-t border-slate-200">
-              <button 
-                type="button" 
-                onClick={onClose} 
+              <button
+                type="button"
+                onClick={onClose}
                 disabled={isSaving}
                 className="flex-1 h-12 px-4 text-sm font-semibold text-slate-700 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Cancelar
               </button>
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 disabled={isSaving}
                 className="flex-1 h-12 px-4 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
               >

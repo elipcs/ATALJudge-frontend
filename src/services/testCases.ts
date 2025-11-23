@@ -89,6 +89,7 @@ export interface GenerateTestCasesRequest {
   oracleCode: string;
   language: 'python' | 'java';
   count: number;
+  use_supervision?: boolean;
 }
 
 export interface GeneratedTestCase {
