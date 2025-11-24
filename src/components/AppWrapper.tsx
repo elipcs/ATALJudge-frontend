@@ -14,7 +14,8 @@ const PROTECTED_ROUTES = [
   '/configuracoes',
   '/perfil',
   '/home',
-  '/questoes'
+  '/questoes',
+  '/ajuda'
 ];
 
 const PUBLIC_ROUTES = [

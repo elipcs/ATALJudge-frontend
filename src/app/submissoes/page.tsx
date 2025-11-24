@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
 import { Button } from "../../components/ui/button";
 import { Card } from "../../components/ui/card";
@@ -19,13 +19,13 @@ import { SUBMISSION_STATUS_OPTIONS } from "../../constants";
 import { logger } from '@/utils/logger';
 import { getVerdictBadgeColor } from "@/utils/statusUtils";
 import { formatLanguageName } from "@/utils/languageUtils";
-import { API } from "@/config/api";
+import * as apiConfig from "@/config/api";
 
 interface SubmissionsPageState {
   submissions: SubmissionResponseDTO[];
   filteredSubmissions: SubmissionResponseDTO[];
   loading: boolean;
-  searchTerm: string;
+  debouncedSearchTerm: string;
   selectedStatus: string;
   currentPage: number;
   itemsPerPage: number;
@@ -38,12 +38,14 @@ interface SubmissionsPageState {
 
 export default function SubmissoesPage() {
   const { userRole } = useUserRoleContext();
+  const [searchTerm, setSearchTerm] = useState("");
+  const debounceTimer = useRef<NodeJS.Timeout | null>(null);
 
   const [state, setState] = useState<SubmissionsPageState>({
     submissions: [],
     filteredSubmissions: [],
     loading: true,
-    searchTerm: "",
+    debouncedSearchTerm: "",
     selectedStatus: "all",
     currentPage: 1,
     itemsPerPage: 20,
@@ -58,16 +60,41 @@ export default function SubmissoesPage() {
     setState(prev => ({ ...prev, loading: true }));
 
     try {
-      const filters: SubmissionFilters = {
-        page: state.currentPage,
-        limit: state.itemsPerPage
-      };
+      let response;
 
-      if (state.selectedStatus !== "all") {
-        filters.verdict = state.selectedStatus as any;
+      if (state.debouncedSearchTerm.trim()) {
+        // Global search
+        const params = new URLSearchParams();
+        params.append('q', state.debouncedSearchTerm);
+        params.append('page', state.currentPage.toString());
+        params.append('limit', state.itemsPerPage.toString());
+        if (state.selectedStatus !== "all") {
+          params.append('verdict', state.selectedStatus as string);
+        }
+
+        const result = await apiConfig.get<any>(`/submissions/search/global?${params.toString()}`);
+        response = {
+          submissions: result.data?.submissions || [],
+          pagination: {
+            page: result.data?.page || 1,
+            limit: result.data?.limit || 20,
+            total: result.data?.total || 0,
+            totalPages: Math.ceil((result.data?.total || 0) / (result.data?.limit || 20))
+          }
+        };
+      } else {
+        // Regular query with filters
+        const filters: SubmissionFilters = {
+          page: state.currentPage,
+          limit: state.itemsPerPage
+        };
+
+        if (state.selectedStatus !== "all") {
+          filters.verdict = state.selectedStatus as any;
+        }
+
+        response = await submissionsApi.getSubmissions(filters);
       }
-
-      const response = await submissionsApi.getSubmissions(filters);
 
       const restrictedListIds = new Set<string>();
 
@@ -92,36 +119,32 @@ export default function SubmissoesPage() {
         totalItems: 0
       }));
     }
-  }, [state.currentPage, state.itemsPerPage, state.selectedStatus]);
+  }, [state.currentPage, state.itemsPerPage, state.selectedStatus, state.debouncedSearchTerm]);
+
+  // Debounce logic for search
+  useEffect(() => {
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current);
+    }
+
+    debounceTimer.current = setTimeout(() => {
+      setState(prev => ({ ...prev, debouncedSearchTerm: searchTerm, currentPage: 1 }));
+    }, 500);
+
+    return () => {
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current);
+      }
+    };
+  }, [searchTerm]);
 
   useEffect(() => {
     const id = setTimeout(() => { loadSubmissions(); }, 0);
     return () => clearTimeout(id);
   }, [loadSubmissions]);
 
-  const displayedSubmissions = state.searchTerm.trim()
-    ? state.submissions.filter(submission => {
-      const searchLower = state.searchTerm.toLowerCase();
-      return (
-        submission.questionId.toLowerCase().includes(searchLower) ||
-        submission.questionName?.toLowerCase().includes(searchLower) ||
-        submission.userId.toLowerCase().includes(searchLower) ||
-        submission.userName?.toLowerCase().includes(searchLower) ||
-        submission.questionListTitle?.toLowerCase().includes(searchLower) ||
-        submission.language.toLowerCase().includes(searchLower)
-      );
-    })
-    : state.submissions;
-
-  useEffect(() => {
-    setState(prev => ({
-      ...prev,
-      filteredSubmissions: displayedSubmissions
-    }));
-  }, [state.searchTerm, state.submissions]);
-
   const handleSearchChange = (value: string) => {
-    setState(prev => ({ ...prev, searchTerm: value }));
+    setSearchTerm(value);
   };
 
   const handleStatusChange = (status: string) => {
@@ -161,12 +184,13 @@ export default function SubmissoesPage() {
 
     try {
       setState(prev => ({ ...prev, loading: true }));
-      await API.submissions.resubmit(submissionId);
+      await submissionsApi.resubmit(submissionId);
+      setState(prev => ({ ...prev, loading: false }));
+      alert('Submissão re-submetida com sucesso!');
       await loadSubmissions();
     } catch (error) {
-      alert('Erro ao re-submeter a submissão. Tente novamente.');
-    } finally {
       setState(prev => ({ ...prev, loading: false }));
+      alert('Erro ao re-submeter a submissão. Tente novamente.');
     }
   };
 
@@ -217,15 +241,10 @@ export default function SubmissoesPage() {
           <div className="flex-1">
             <Input
               placeholder="Buscar por questão, lista ou estudante..."
-              value={state.searchTerm}
+              value={searchTerm}
               onChange={(e) => handleSearchChange(e.target.value)}
               className="w-full"
             />
-            {state.searchTerm.trim() && (
-              <p className="text-xs text-gray-500 mt-1">
-                ℹ️ Buscando localmente nos resultados da página atual
-              </p>
-            )}
           </div>
 
           <div className="flex gap-2">
@@ -277,7 +296,7 @@ export default function SubmissoesPage() {
               </div>
               <p className="text-lg font-medium text-gray-600">Nenhuma submissão encontrada</p>
               <p className="text-gray-500">
-                {state.searchTerm || state.selectedStatus !== "all"
+                {searchTerm || state.selectedStatus !== "all"
                   ? "Tente ajustar os filtros de busca"
                   : userRole === 'student'
                     ? "Você ainda não fez nenhuma submissão"
@@ -374,9 +393,9 @@ export default function SubmissoesPage() {
               { }
               <div className="flex items-center justify-between pt-4 border-t border-gray-200">
                 <div className="text-sm text-gray-600">
-                  {state.searchTerm.trim() ? (
+                  {searchTerm.trim() ? (
                     <>
-                      Mostrando {state.filteredSubmissions.length} resultado(s) filtrado(s) de {state.totalItems} submissões
+                      Mostrando {state.filteredSubmissions.length} resultado(s) de {state.totalItems} submissões
                     </>
                   ) : (
                     <>

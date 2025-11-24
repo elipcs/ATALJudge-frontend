@@ -145,4 +145,13 @@ export const submissionsApi = {
       throw error;
     }
   },
+
+  async resubmit(submissionId: string): Promise<SubmissionResponseDTO> {
+    try {
+      const { data } = await API.submissions.resubmit(submissionId);
+      return data;
+    } catch (error) {
+      throw error;
+    }
+  },
 };

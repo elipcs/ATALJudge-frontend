@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,7 @@ import { formatTimeLimit, formatMemoryLimit } from "@/utils/timeMemoryConverter"
 interface QuestionsPageState {
     questions: Question[];
     loading: boolean;
-    searchTerm: string;
+    debouncedSearchTerm: string;
     sourceFilter: string;
     tagFilter: string[];
     currentPage: number;
@@ -33,7 +33,7 @@ export default function QuestoesPage() {
     const [state, setState] = useState<QuestionsPageState>({
         questions: [],
         loading: true,
-        searchTerm: "",
+        debouncedSearchTerm: "",
         sourceFilter: "all",
         tagFilter: [],
         currentPage: 1,
@@ -41,6 +41,10 @@ export default function QuestoesPage() {
         totalPages: 1,
         totalItems: 0,
     });
+
+    // Estado para o termo de busca imediato (sem debounce)
+    const [searchTerm, setSearchTerm] = useState("");
+    const debounceTimer = useRef<NodeJS.Timeout | null>(null);
 
     // Estados para modais
     const [showQuestionModal, setShowQuestionModal] = useState(false);
@@ -51,9 +55,9 @@ export default function QuestoesPage() {
         setState(prev => ({ ...prev, loading: true }));
         try {
             // Se há termo de busca, buscar globalmente
-            if (state.searchTerm.trim()) {
+            if (state.debouncedSearchTerm.trim()) {
                 const searchParams = new URLSearchParams();
-                searchParams.append('q', state.searchTerm);
+                searchParams.append('q', state.debouncedSearchTerm);
                 searchParams.append('page', state.currentPage.toString());
                 searchParams.append('limit', state.itemsPerPage.toString());
 
@@ -115,14 +119,36 @@ export default function QuestoesPage() {
             });
             setState(prev => ({ ...prev, loading: false }));
         }
-    }, [state.currentPage, state.itemsPerPage, state.sourceFilter, state.tagFilter, state.searchTerm]);
+    }, [state.currentPage, state.itemsPerPage, state.sourceFilter, state.tagFilter, state.debouncedSearchTerm]);
 
+    // Efeito para carregar questões quando mudam critérios de busca
     useEffect(() => {
         loadQuestions();
     }, [loadQuestions]);
 
+    // Efeito para fazer debounce na busca
+    useEffect(() => {
+        if (debounceTimer.current) {
+            clearTimeout(debounceTimer.current);
+        }
+
+        debounceTimer.current = setTimeout(() => {
+            setState(prev => ({
+                ...prev,
+                debouncedSearchTerm: searchTerm,
+                currentPage: 1
+            }));
+        }, 500); // Aguarda 500ms após o usuário parar de digitar
+
+        return () => {
+            if (debounceTimer.current) {
+                clearTimeout(debounceTimer.current);
+            }
+        };
+    }, [searchTerm]);
+
     const handleSearchChange = (value: string) => {
-        setState(prev => ({ ...prev, searchTerm: value, currentPage: 1 }));
+        setSearchTerm(value);
     };
 
     const handlePageChange = (page: number) => {
@@ -181,18 +207,10 @@ export default function QuestoesPage() {
                         <div className="flex-1">
                             <Input
                                 placeholder="Buscar por título, fonte ou tags..."
-                                value={state.searchTerm}
+                                value={searchTerm}
                                 onChange={(e) => handleSearchChange(e.target.value)}
                                 className="w-full"
                             />
-                            {state.searchTerm.trim() && (
-                                <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
-                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                    Buscando por título, fonte ou tags nos resultados da página atual
-                                </p>
-                            )}
                         </div>
 
                         <div className="flex gap-2">
@@ -238,7 +256,7 @@ export default function QuestoesPage() {
                                 </div>
                                 <h3 className="text-lg font-medium text-gray-600">Nenhuma questão encontrada</h3>
                                 <p className="text-gray-500">
-                                    {state.searchTerm || state.sourceFilter !== "all"
+                                    {state.debouncedSearchTerm || state.sourceFilter !== "all"
                                         ? "Tente ajustar os filtros de busca."
                                         : "Crie sua primeira questão para começar!"}
                                 </p>
@@ -363,7 +381,7 @@ export default function QuestoesPage() {
 
                                 <div className="flex items-center justify-between pt-4 border-t border-gray-200">
                                     <div className="text-sm text-gray-600">
-                                        {state.searchTerm.trim() ? (
+                                        {state.debouncedSearchTerm.trim() ? (
                                             <>
                                                 Mostrando {displayedQuestions.length} resultado(s) filtrado(s) de {state.totalItems} questões
                                             </>

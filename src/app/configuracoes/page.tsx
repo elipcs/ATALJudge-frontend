@@ -113,7 +113,7 @@ export default function ConfiguracoesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-100 to-slate-50 p-6">
+    <div className="min-h-screen bg-slate-50 p-6">
       <PageHeader
         title="Configurações do Sistema"
         description="Gerencie configurações avançadas do AtalJudge"
