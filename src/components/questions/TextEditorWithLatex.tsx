@@ -165,55 +165,177 @@ export default function TextEditorWithLatex({
   }, []);
 
 
-  const transformPastedHTML = useCallback((html: string): string => {
-    let processed = html;
+  const cleanLatexDuplication = useCallback((text: string): string => {
+    // Remove duplicações típicas do ChatGPT onde o conteúdo aparece 3 vezes:
+    // "texto1 \comando texto2 texto1" -> "texto1 \comando texto2"
 
-    processed = processed.replace(/\s+style="[^"]*"/g, '');
+    // Padrão 1: "1≤T≤101 \le T \le 101≤T≤10" -> "1 \le T \le 10"
+    // Detecta quando temos: [símbolos][comandos LaTeX][símbolos novamente]
+    let cleaned = text;
 
-    processed = processed.replace(/<span[^>]*>\s*<\/span>/g, '');
-    processed = processed.replace(/<span[^>]*>/g, '');
-    processed = processed.replace(/<\/span>/g, '');
+    // Remove duplicações de expressões matemáticas completas
+    // Padrão: número+símbolo+variável+símbolo+número comandos_latex número+símbolo+variável+símbolo+número
+    const mathDuplicationPattern = /(\d+[≤≥<>]\w+[≤≥<>]\d+\^?\d*)\s*(\\[a-z]+\s+\w+\s+\\[a-z]+\s+\d+\^?\d*)\s*(\d+[≤≥<>]\w+[≤≥<>]\d+\^?\d*)/g;
 
-    if (!processed.includes('<li')) {
-      processed = processed.replace(/<div[^>]*>/g, '<p>');
-      processed = processed.replace(/<\/div>/g, '</p>');
-    }
+    cleaned = cleaned.replace(mathDuplicationPattern, (match, prefix, latexPart, suffix) => {
+      // Usa a parte LaTeX normalizada
+      return latexPart;
+    });
 
-    processed = processed.replace(/<br\s*\/?>/g, '\n');
+    // Normaliza comandos LaTeX para símbolos Unicode
+    const latexReplacements: { [key: string]: string } = {
+      '\\le': '≤',
+      '\\ge': '≥',
+      '\\leq': '≤',
+      '\\geq': '≥',
+      '\\lt': '<',
+      '\\gt': '>',
+      '\\ne': '≠',
+      '\\neq': '≠',
+      '\\times': '×',
+      '\\div': '÷',
+      '\\pm': '±',
+      '\\mp': '∓',
+      '\\cdot': '·',
+      '\\ldots': '…',
+      '\\infty': '∞',
+      '\\text': '',
+    };
 
-    processed = processed.replace(/\s{2,}/g, ' ');
+    // Substitui comandos LaTeX por símbolos
+    Object.entries(latexReplacements).forEach(([latex, symbol]) => {
+      const regex = new RegExp(latex.replace(/\\/g, '\\\\'), 'g');
+      cleaned = cleaned.replace(regex, symbol);
+    });
 
-    if (!processed.includes('<ul') && !processed.includes('<li')) {
-      if (processed.includes('\n- ') || processed.includes('\n* ')) {
-        const lines = processed.split('\n');
-        let result = '';
-        let inList = false;
+    // Normaliza expoentes: "10^4" ou "10^41" -> "10⁴" ou mantém "10^41"
+    const superscriptMap: { [key: string]: string } = {
+      '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴',
+      '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹'
+    };
 
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
-            if (!inList) {
-              result += '<ul>';
-              inList = true;
-            }
-            const content = trimmed.substring(2);
-            result += `<li><p>${content}</p></li>`;
-          } else if (trimmed) {
-            if (inList) {
-              result += '</ul>';
-              inList = false;
-            }
-            result += `<p>${trimmed}</p>`;
-          }
-        }
-
-        if (inList) result += '</ul>';
-        processed = result;
+    cleaned = cleaned.replace(/\^(\d+)/g, (match, digits) => {
+      // Apenas converte expoentes de 1 dígito para Unicode
+      if (digits.length === 1) {
+        return superscriptMap[digits] || match;
       }
+      // Para múltiplos dígitos, mantém a notação original ou converte cada dígito
+      return digits.split('').map((d: string) => superscriptMap[d] || d).join('');
+    });
+
+    // Normaliza subscritos: "a_i" -> "aᵢ"
+    const subscriptMap: { [key: string]: string } = {
+      '0': '₀', '1': '₁', '2': '₂', '3': '₃', '4': '₄',
+      '5': '₅', '6': '₆', '7': '₇', '8': '₈', '9': '₉',
+      'i': 'ᵢ', 'j': 'ⱼ', 'k': 'ₖ', 'n': 'ₙ', 'a': 'ₐ',
+      'e': 'ₑ', 'o': 'ₒ', 'x': 'ₓ'
+    };
+
+    cleaned = cleaned.replace(/_([a-z0-9])/gi, (match, char) => {
+      return subscriptMap[char.toLowerCase()] || match;
+    });
+
+    // Remove espaços múltiplos
+    cleaned = cleaned.replace(/\s+/g, ' ').trim();
+
+    // Remove padrões residuais de duplicação
+    // Ex: "1≤T≤10 1≤T≤10" -> "1≤T≤10"
+    const lines = cleaned.split('\n');
+    const uniqueLines: string[] = [];
+
+    lines.forEach(line => {
+      const trimmed = line.trim();
+      // Detecta se a linha tem repetição exata
+      const halfLength = Math.floor(trimmed.length / 2);
+      const firstHalf = trimmed.substring(0, halfLength);
+      const secondHalf = trimmed.substring(halfLength);
+
+      if (firstHalf === secondHalf && firstHalf.length > 0) {
+        uniqueLines.push(firstHalf);
+      } else {
+        uniqueLines.push(trimmed);
+      }
+    });
+
+    return uniqueLines.join('\n');
+  }, []);
+
+  const transformPastedText = useCallback((text: string): string => {
+    // Aplica limpeza de LaTeX no texto puro
+    const cleaned = cleanLatexDuplication(text);
+    console.log('[PASTE] Text before clean:', text.substring(0, 200));
+    console.log('[PASTE] Text after clean:', cleaned.substring(0, 200));
+    return cleaned;
+  }, [cleanLatexDuplication]);
+
+  const transformPastedHTML = useCallback((html: string): string => {
+    console.log('[PASTE] Original HTML:', html.substring(0, 500));
+
+    try {
+      // Usa DOMParser para processar o HTML corretamente
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+
+      // Primeiro, processa elementos KaTeX que o ChatGPT cola
+      const katexElements = doc.querySelectorAll('.katex');
+      // Função recursiva para limpar text nodes
+      const cleanTextNodes = (node: Node): void => {
+        if (node.nodeType === Node.TEXT_NODE) {
+          // É um text node - aplica limpeza de LaTeX
+          const originalText = node.textContent || '';
+          if (originalText.trim()) {
+            const cleanedText = cleanLatexDuplication(originalText);
+
+            if (originalText !== cleanedText) {
+              console.log('[PASTE] Cleaned text node:', originalText.trim().substring(0, 100), '->', cleanedText.substring(0, 100));
+              node.textContent = cleanedText;
+            }
+          }
+        } else if (node.nodeType === Node.ELEMENT_NODE) {
+          // É um elemento - remove atributos e processa filhos
+          const element = node as Element;
+
+          // Remove atributos indesejados do ChatGPT
+          element.removeAttribute('style');
+          element.removeAttribute('class');
+          element.removeAttribute('data-start');
+          element.removeAttribute('data-end');
+          element.removeAttribute('xmlns');
+          element.removeAttribute('aria-hidden');
+
+          // Remove spans desnecessários movendo seu conteúdo para o pai
+          if (element.tagName.toLowerCase() === 'span') {
+            const parent = element.parentNode;
+            if (parent) {
+              while (element.firstChild) {
+                parent.insertBefore(element.firstChild, element);
+              }
+              parent.removeChild(element);
+              return; // Não processa filhos pois o span foi removido
+            }
+          }
+
+          // Processa filhos recursivamente
+          const childNodes = Array.from(element.childNodes);
+          childNodes.forEach(cleanTextNodes);
+        }
+      };
+
+      // Processa o body do documento
+      if (doc.body) {
+        cleanTextNodes(doc.body);
+        const result = doc.body.innerHTML;
+        console.log('[PASTE] Processed HTML:', result.substring(0, 500));
+        return result;
+      }
+    } catch (error) {
+      console.error('[PASTE] Error processing HTML:', error);
     }
 
-    return processed;
-  }, []);
+    // Fallback: retorna HTML original se houver erro
+    console.log('[PASTE] Using fallback - returning original HTML');
+    return html;
+  }, [cleanLatexDuplication]);
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -271,9 +393,8 @@ export default function TextEditorWithLatex({
               <button
                 type="button"
                 onClick={() => editor.chain().focus().toggleBold().run()}
-                className={`px-2 py-1 text-xs rounded transition-colors ${
-                  editor.isActive('bold') ? 'bg-slate-200 text-slate-900' : 'text-slate-600 hover:bg-slate-100'
-                }`}
+                className={`px-2 py-1 text-xs rounded transition-colors ${editor.isActive('bold') ? 'bg-slate-200 text-slate-900' : 'text-slate-600 hover:bg-slate-100'
+                  }`}
                 title="Negrito (Ctrl+B)"
               >
                 <strong>B</strong>
@@ -281,9 +402,8 @@ export default function TextEditorWithLatex({
               <button
                 type="button"
                 onClick={() => editor.chain().focus().toggleItalic().run()}
-                className={`px-2 py-1 text-xs rounded transition-colors ${
-                  editor.isActive('italic') ? 'bg-slate-200 text-slate-900' : 'text-slate-600 hover:bg-slate-100'
-                }`}
+                className={`px-2 py-1 text-xs rounded transition-colors ${editor.isActive('italic') ? 'bg-slate-200 text-slate-900' : 'text-slate-600 hover:bg-slate-100'
+                  }`}
                 title="Itálico (Ctrl+I)"
               >
                 <em>I</em>
@@ -291,9 +411,8 @@ export default function TextEditorWithLatex({
               <button
                 type="button"
                 onClick={() => editor.chain().focus().toggleBulletList().run()}
-                className={`px-2 py-1 text-xs rounded transition-colors ${
-                  editor.isActive('bulletList') ? 'bg-slate-200 text-slate-900' : 'text-slate-600 hover:bg-slate-100'
-                }`}
+                className={`px-2 py-1 text-xs rounded transition-colors ${editor.isActive('bulletList') ? 'bg-slate-200 text-slate-900' : 'text-slate-600 hover:bg-slate-100'
+                  }`}
                 title="Lista com bullets"
               >
                 • Lista
@@ -301,9 +420,8 @@ export default function TextEditorWithLatex({
               <button
                 type="button"
                 onClick={() => editor.chain().focus().toggleCode().run()}
-                className={`px-2 py-1 text-xs rounded transition-colors ${
-                  editor.isActive('code') ? 'bg-slate-200 text-slate-900' : 'text-slate-600 hover:bg-slate-100'
-                }`}
+                className={`px-2 py-1 text-xs rounded transition-colors ${editor.isActive('code') ? 'bg-slate-200 text-slate-900' : 'text-slate-600 hover:bg-slate-100'
+                  }`}
                 title="Código inline"
               >
                 {'</>'}
@@ -312,9 +430,8 @@ export default function TextEditorWithLatex({
               <button
                 type="button"
                 onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-                className={`px-2 py-1 text-xs rounded transition-colors ${
-                  editor.isActive('heading', { level: 1 }) ? 'bg-slate-200 text-slate-900' : 'text-slate-600 hover:bg-slate-100'
-                }`}
+                className={`px-2 py-1 text-xs rounded transition-colors ${editor.isActive('heading', { level: 1 }) ? 'bg-slate-200 text-slate-900' : 'text-slate-600 hover:bg-slate-100'
+                  }`}
                 title="Título 1"
               >
                 H1
@@ -322,9 +439,8 @@ export default function TextEditorWithLatex({
               <button
                 type="button"
                 onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-                className={`px-2 py-1 text-xs rounded transition-colors ${
-                  editor.isActive('heading', { level: 2 }) ? 'bg-slate-200 text-slate-900' : 'text-slate-600 hover:bg-slate-100'
-                }`}
+                className={`px-2 py-1 text-xs rounded transition-colors ${editor.isActive('heading', { level: 2 }) ? 'bg-slate-200 text-slate-900' : 'text-slate-600 hover:bg-slate-100'
+                  }`}
                 title="Título 2"
               >
                 H2
@@ -332,9 +448,8 @@ export default function TextEditorWithLatex({
               <button
                 type="button"
                 onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-                className={`px-2 py-1 text-xs rounded transition-colors ${
-                  editor.isActive('heading', { level: 3 }) ? 'bg-slate-200 text-slate-900' : 'text-slate-600 hover:bg-slate-100'
-                }`}
+                className={`px-2 py-1 text-xs rounded transition-colors ${editor.isActive('heading', { level: 3 }) ? 'bg-slate-200 text-slate-900' : 'text-slate-600 hover:bg-slate-100'
+                  }`}
                 title="Título 3"
               >
                 H3
