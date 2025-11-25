@@ -22,12 +22,12 @@ export function useListPage() {
   const params = useParams();
   const router = useRouter();
   const questionListId = params.id as string;
-  
+
   const [list, setList] = useState<QuestionList | null>(null);
   const [submissions, setSubmissions] = useState<LocalSubmission[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { userRole } = useUserRole();
+  const { userRole, isLoading: isLoadingUserRole } = useUserRole();
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [code, setCode] = useState('');
@@ -44,14 +44,14 @@ export function useListPage() {
     try {
       setLoading(true);
       setError(null);
-      
+
       const listData = await listsApi.getById(questionListId);
-      
+
       if (!listData) {
         setError(`Lista não encontrada (ID: ${questionListId})`);
         return;
       }
-      
+
       setList(listData);
 
       if (userRole === 'student') {
@@ -65,7 +65,7 @@ export function useListPage() {
         }
         await loadSubmissions(listData);
       }
-      
+
     } catch (err) {
       setError(`Erro ao carregar dados da lista: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
     } finally {
@@ -75,26 +75,26 @@ export function useListPage() {
 
   const isListStarted = useCallback(() => {
     if (!list) return true;
-    
+
     if (!list.startDate) {
       // Se não tem data de início definida, considera como já iniciada
       return true;
     }
-    
+
     const now = new Date();
     const startDate = new Date(list.startDate);
-    
+
     return now >= startDate;
   }, [list]);
 
   const isListEnded = useCallback(() => {
     if (!list || userRole !== 'student') return false;
-    
+
     if (!list.endDate) return false;
-    
+
     const now = new Date();
     const endDate = new Date(list.endDate);
-    
+
     return now > endDate;
   }, [list, userRole]);
 
@@ -104,7 +104,7 @@ export function useListPage() {
 
   const loadSubmissions = useCallback(async (listData: QuestionList) => {
     try {
-      
+
       const submissionsPromises = listData.questions.map(question =>
         submissionsApi.getSubmissions({ questionId: question.id, questionListId })
           .then(response => ({
@@ -112,9 +112,9 @@ export function useListPage() {
             submissions: response.submissions
           }))
       );
-      
+
       const results = await Promise.all(submissionsPromises);
-      
+
       const allSubmissions: LocalSubmission[] = [];
       results.forEach(({ question, submissions: questionSubmissions }) => {
         const localSubmissions = questionSubmissions.map((sub, index) => ({
@@ -128,10 +128,10 @@ export function useListPage() {
           language: sub.language,
           feedback: sub.verdict
         }));
-        
+
         allSubmissions.push(...localSubmissions);
       });
-      
+
       setSubmissions(allSubmissions);
     } catch (err) {
     }
@@ -143,7 +143,7 @@ export function useListPage() {
     setViewMode('question');
     setCode('');
     setSubmissionResult(null);
-    
+
     router.push(`/listas/${questionListId}#questao-${question.id}`);
   }, [questionListId, router]);
 
@@ -160,7 +160,7 @@ export function useListPage() {
 
     setSubmitting(true);
     setSubmissionResult(null);
-    
+
     try {
       const submission = await submissionsApi.submitCode({
         questionId: selectedQuestion.id,
@@ -182,14 +182,14 @@ export function useListPage() {
       };
 
       setSubmissions(prev => [newSubmission, ...prev]);
-      
+
       const statusLower = submission.status.toLowerCase();
       setSubmissionResult({
         status: statusLower as 'pending' | 'accepted' | 'error' | 'timeout',
-        message: statusLower === 'accepted' ? 'Solução aceita!' : 
-                statusLower === 'error' ? 'Erro na solução' :
-                statusLower === 'timeout' ? 'Tempo limite excedido' :
-                'Submissão enviada com sucesso!',
+        message: statusLower === 'accepted' ? 'Solução aceita!' :
+          statusLower === 'error' ? 'Erro na solução' :
+            statusLower === 'timeout' ? 'Tempo limite excedido' :
+              'Submissão enviada com sucesso!',
         score: submission.score || 0
       });
 
@@ -222,13 +222,13 @@ export function useListPage() {
 
   const formatDateTime = useCallback((dateString: string) => {
     const date = new Date(dateString);
-    const formattedDate = date.toLocaleDateString('pt-BR', { 
-      day: '2-digit', 
-      month: '2-digit', 
-      year: 'numeric' 
+    const formattedDate = date.toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
     });
-    const formattedTime = date.toLocaleTimeString('pt-BR', { 
-      hour: '2-digit', 
+    const formattedTime = date.toLocaleTimeString('pt-BR', {
+      hour: '2-digit',
       minute: '2-digit',
       hour12: false
     });
@@ -279,12 +279,12 @@ export function useListPage() {
     viewMode,
     submitting,
     submissionResult,
-    selectedLanguage,    
+    selectedLanguage,
     navigateToQuestion,
     goBack,
     handleSubmit,
     setCode,
-    setSelectedLanguage,    
+    setSelectedLanguage,
     getQuestionSubmission,
     getStatusColor,
     formatDateTime,

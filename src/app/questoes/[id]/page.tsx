@@ -30,12 +30,12 @@ export default function QuestionDetailPage() {
 
     const loadQuestion = async () => {
         if (!questionId) return;
-        
+
         setLoading(true);
         try {
             const response = await api.get(`/questions/${questionId}`);
             const data = response.data as any;
-            
+
             // Mapear dados do backend para o formato frontend
             const questionData: Question = {
                 ...data,
@@ -44,7 +44,7 @@ export default function QuestionDetailPage() {
                 // Converter memoryLimitKb para memoryLimit em string  
                 memoryLimit: data.memoryLimitKb ? `${Math.round(data.memoryLimitKb / 1024)}MB` : '64MB',
             };
-            
+
             setQuestion(questionData);
         } catch (error: any) {
             toast({
@@ -94,9 +94,9 @@ export default function QuestionDetailPage() {
             <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-4">
                     <Link href="/questoes">
-                        <Button 
-                            variant="outline" 
-                            size="sm" 
+                        <Button
+                            variant="outline"
+                            size="sm"
                             className="border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold transition-all duration-200 rounded-xl"
                         >
                             ← Voltar
@@ -109,7 +109,7 @@ export default function QuestionDetailPage() {
                     </div>
                 </div>
                 <Link href={`/questoes/${questionId}/editar`}>
-                    <Button 
+                    <Button
                         variant="outline"
                         className="border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold"
                     >
@@ -213,6 +213,7 @@ export default function QuestionDetailPage() {
                 <CodeSubmission
                     questionId={questionId}
                     questionListId=""
+                    userRole="professor"
                     questionName={question.title}
                     onSubmit={(code, language) => {
                     }}

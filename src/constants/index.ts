@@ -9,25 +9,19 @@ export const LANGUAGE_OPTIONS = [
 ];
 
 export const JUDGE_TYPES = {
-  LOCAL: 'local',
-  CODEFORCES: 'codeforces'
+  LOCAL: 'local'
 } as const;
 
 export const JUDGE_TYPE_OPTIONS = [
-  { 
-    value: JUDGE_TYPES.LOCAL, 
-    label: 'Local (Judge0)', 
-    description: 'Executado localmente com casos de teste cadastrados' 
-  },
-  { 
-    value: JUDGE_TYPES.CODEFORCES, 
-    label: 'Codeforces', 
-    description: 'Vinculado a um problema do Codeforces' 
+  {
+    value: JUDGE_TYPES.LOCAL,
+    label: 'Local (Judge0)',
+    description: 'Executado localmente com casos de teste cadastrados'
   }
 ];
 
 export const SUBMISSION_STATUS = {
-  SUBMITTED: 'submitted',    
+  SUBMITTED: 'submitted',
   ACCEPTED: 'accepted',
   FAILED: 'failed',
   PENDING: 'pending',

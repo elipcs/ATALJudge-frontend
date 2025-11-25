@@ -19,7 +19,7 @@ export default function QuestionsPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const id = params.id as string;
-  
+
   const {
     list,
     loading,
@@ -105,8 +105,8 @@ export default function QuestionsPage() {
                   Voltar às Listas
                 </Button>
               </Link>
-              <Button 
-                onClick={() => window.location.reload()} 
+              <Button
+                onClick={() => window.location.reload()}
                 variant="outline"
                 className="border-slate-300 text-slate-700 hover:bg-slate-50 px-8 py-3 rounded-xl font-semibold transition-all duration-200"
               >
@@ -208,7 +208,7 @@ export default function QuestionsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white p-6">
-      {}
+      { }
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-4">
           <Link href={`/listas/${id}`}>
@@ -223,12 +223,12 @@ export default function QuestionsPage() {
             <p className="text-slate-600 mt-1">Questão {questionLabels[activeIndex]}</p>
           </div>
         </div>
-        
-        {}
+
+        { }
         <ListTabs id={id} activeTab="questoes" hasQuestions={!!hasQuestions()} userRole={userRole || 'student'} />
       </div>
 
-      {}
+      { }
       {error === 'ipRestricted' && (
         <Card className="bg-gradient-to-r from-red-50 to-pink-50 border-red-200 rounded-2xl shadow-lg p-6 mb-6">
           <div className="flex items-center gap-4">
@@ -247,7 +247,7 @@ export default function QuestionsPage() {
         </Card>
       )}
 
-      {}
+      { }
       {error !== 'ipRestricted' && (
         <QuestionTabs
           labels={questionLabels}
@@ -257,106 +257,106 @@ export default function QuestionsPage() {
         />
       )}
 
-      {}
+      { }
       {error !== 'ipRestricted' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {}
-        <Card className="bg-white border-slate-200 rounded-3xl shadow-lg p-6">
-          <div className="mb-6">
-            <div className="flex items-center gap-3 mb-4">
-              <h2 className="text-2xl font-bold text-slate-900">
-                {questionLabels[activeIndex]}. {activeQuestion.title}
-              </h2>
-              
-              {}
-              {list.scoringMode === 'groups' && list.questionGroups && (() => {
-                const group = list.questionGroups.find(g => {
-                  if (!g || !g.questionIds) return false;
-                  const qids = Array.isArray(g.questionIds) ? g.questionIds : [];
-                  return qids.includes(activeQuestion.id);
-                });
-                return group ? (
-                  <span className="px-3 py-1 bg-blue-100 text-blue-700 text-sm font-semibold rounded-full border border-blue-200">
-                    {group.name}
-                  </span>
-                ) : null;
-              })()}
-            </div>
-            
-            {}
-            {activeQuestion.text && (
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold text-slate-800 mb-2">Enunciado</h3>
-                <div className="bg-slate-50 rounded-xl p-4">
-                  <MarkdownRenderer content={activeQuestion.text} />
-                </div>
-              </div>
-            )}
-
-          {}
-          {activeQuestion.examples && activeQuestion.examples.length > 0 && (
+          { }
+          <Card className="bg-white border-slate-200 rounded-3xl shadow-lg p-6">
             <div className="mb-6">
-              <h3 className="text-lg font-semibold text-slate-800 mb-2">Exemplos</h3>
-              <div className="space-y-4">
-                {activeQuestion.examples.map((example: { input: string; output: string }, idx: number) => (
-                  <div key={idx} className="bg-slate-50 rounded-xl p-4">
-                    <p className="text-sm font-semibold text-slate-600 mb-3">Exemplo {idx + 1}:</p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-xs font-semibold text-slate-600 mb-2">Entrada:</p>
-                        <pre className="bg-white rounded-lg p-3 text-sm text-slate-800 font-mono border border-slate-200 overflow-x-auto">
-                          {example.input}
-                        </pre>
-                      </div>
-                      <div>
-                        <p className="text-xs font-semibold text-slate-600 mb-2">Saída:</p>
-                        <pre className="bg-white rounded-lg p-3 text-sm text-slate-800 font-mono border border-slate-200 overflow-x-auto">
-                          {example.output}
-                        </pre>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+              <div className="flex items-center gap-3 mb-4">
+                <h2 className="text-2xl font-bold text-slate-900">
+                  {questionLabels[activeIndex]}. {activeQuestion.title}
+                </h2>
+
+                { }
+                {list.scoringMode === 'groups' && list.questionGroups && (() => {
+                  const group = list.questionGroups.find(g => {
+                    if (!g || !g.questionIds) return false;
+                    const qids = Array.isArray(g.questionIds) ? g.questionIds : [];
+                    return qids.includes(activeQuestion.id);
+                  });
+                  return group ? (
+                    <span className="px-3 py-1 bg-blue-100 text-blue-700 text-sm font-semibold rounded-full border border-blue-200">
+                      {group.name}
+                    </span>
+                  ) : null;
+                })()}
               </div>
+
+              { }
+              {activeQuestion.text && (
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold text-slate-800 mb-2">Enunciado</h3>
+                  <div className="bg-slate-50 rounded-xl p-4">
+                    <MarkdownRenderer content={activeQuestion.text} />
+                  </div>
+                </div>
+              )}
+
+              { }
+              {activeQuestion.examples && activeQuestion.examples.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold text-slate-800 mb-2">Exemplos</h3>
+                  <div className="space-y-4">
+                    {activeQuestion.examples.map((example: { input: string; output: string }, idx: number) => (
+                      <div key={idx} className="bg-slate-50 rounded-xl p-4">
+                        <p className="text-sm font-semibold text-slate-600 mb-3">Exemplo {idx + 1}:</p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <p className="text-xs font-semibold text-slate-600 mb-2">Entrada:</p>
+                            <pre className="bg-white rounded-lg p-3 text-sm text-slate-800 font-mono border border-slate-200 overflow-x-auto">
+                              {example.input}
+                            </pre>
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-slate-600 mb-2">Saída:</p>
+                            <pre className="bg-white rounded-lg p-3 text-sm text-slate-800 font-mono border border-slate-200 overflow-x-auto">
+                              {example.output}
+                            </pre>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              { }
             </div>
+          </Card>
+
+          { }
+          {!(userRole === 'student' && !isListStarted()) && !(userRole === 'student' && isListEnded()) && (
+            <CodeSubmission
+              questionId={activeQuestion.id}
+              questionListId={id}
+              userRole="professor"
+              questionName={activeQuestion.title}
+              questionListTitle={list?.title}
+              onSubmit={(code, language) => {
+              }}
+            />
           )}
 
-          {}
+          { }
+          {userRole === 'student' && isListEnded() && (
+            <Card className="bg-gradient-to-r from-red-50 to-pink-50 border-red-200 rounded-3xl shadow-lg p-6">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-red-100 rounded-xl">
+                  <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-red-900">Prazo finalizado</h3>
+                  <p className="text-red-800 mt-1">
+                    O prazo para submeter soluções nesta lista já terminou em {list?.endDate ? formatDateTime(list.endDate) : 'data não definida'}. Você pode visualizar as questões mas não é possível enviar novas submissões.
+                  </p>
+                </div>
+              </div>
+            </Card>
+          )}
         </div>
-      </Card>
-
-      {}
-      {!(userRole === 'student' && !isListStarted()) && !(userRole === 'student' && isListEnded()) && (
-        <CodeSubmission
-          questionId={activeQuestion.id}
-          questionListId={id}
-          userRole={userRole}
-          questionName={activeQuestion.title}
-          questionListTitle={list?.title}
-          onSubmit={(code, language) => {
-          }}
-        />
-      )}
-
-      {}
-      {userRole === 'student' && isListEnded() && (
-        <Card className="bg-gradient-to-r from-red-50 to-pink-50 border-red-200 rounded-3xl shadow-lg p-6">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-red-100 rounded-xl">
-              <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <div className="flex-1">
-              <h3 className="text-lg font-semibold text-red-900">Prazo finalizado</h3>
-              <p className="text-red-800 mt-1">
-                O prazo para submeter soluções nesta lista já terminou em {list?.endDate ? formatDateTime(list.endDate) : 'data não definida'}. Você pode visualizar as questões mas não é possível enviar novas submissões.
-              </p>
-            </div>
-          </div>
-        </Card>
-      )}
-    </div>
       )}
     </div>
   );

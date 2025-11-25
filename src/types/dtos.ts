@@ -47,9 +47,7 @@ export interface QuestionResponseDTO {
   memoryLimitKb: number;
   examples: QuestionExampleDTO[];
   judgeType: JudgeType;
-  submissionType?: 'local' | 'codeforces';
-  contestId?: string;
-  problemIndex?: string;
+  submissionType?: 'local';
   referenceCode?: string;
   referenceLanguage?: string;
   oracleCode?: string;

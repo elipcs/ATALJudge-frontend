@@ -31,12 +31,45 @@ export default function TextEditorWithLatex({
     const formulas: { [key: string]: string } = {};
     let formulaIndex = 0;
 
-    html = html.replace(/\$([^\$]+)\$/g, (match: string, content: string) => {
+    // Extract both inline ($...$) and display ($$...$$) formulas
+    // Handle multiline display formulas first
+    html = html.replace(/\$\$([^\$]*?)\$\$/g, (match: string, content: string) => {
       const placeholder = `__FORMULA_${formulaIndex}__`;
-      formulas[placeholder] = content;
+      formulas[placeholder] = content.trim();
       formulaIndex++;
-      return placeholder;
+      return `\n${placeholder}\n`;
     });
+
+    // Then handle inline formulas with proper line break detection
+    let formulaMatches = [];
+    let match;
+    const formulaRegex = /\$([^\$]+?)\$/g;
+    while ((match = formulaRegex.exec(html)) !== null) {
+      formulaMatches.push({
+        index: match.index,
+        match: match[0],
+        content: match[1]
+      });
+    }
+
+    // Process formulas in reverse order to maintain correct indices
+    for (let i = formulaMatches.length - 1; i >= 0; i--) {
+      const fm = formulaMatches[i];
+      const placeholder = `__FORMULA_${formulaIndex}__`;
+      formulas[placeholder] = fm.content;
+      formulaIndex++;
+
+      // Check if formula is on its own line
+      const before = html.substring(Math.max(0, fm.index - 100), fm.index);
+      const after = html.substring(fm.index + fm.match.length, Math.min(html.length, fm.index + fm.match.length + 100));
+      const beforeTrimmed = before.trim();
+      const afterTrimmed = after.trim();
+      const isOnOwnLine = (beforeTrimmed === '' || beforeTrimmed.endsWith('\n')) &&
+        (afterTrimmed === '' || afterTrimmed.startsWith('\n'));
+
+      const replacement = isOnOwnLine ? `\n${placeholder}\n` : placeholder;
+      html = html.substring(0, fm.index) + replacement + html.substring(fm.index + fm.match.length);
+    }
 
     html = html.replace(/\*\*([^\*]+)\*\*/g, (match: string, content: string) => `<strong>${content}</strong>`);
     html = html.replace(/\*([^\*]+)\*/g, (match: string, content: string) => `<em>${content}</em>`);
@@ -99,8 +132,11 @@ export default function TextEditorWithLatex({
     if (inList) result += '</ul>';
 
     Object.entries(formulas).forEach(([placeholder, formula]) => {
-      const highlighted = `<mark style="background: #dbeafe; color: #1e40af; padding: 2px 6px; border-radius: 4px;">$${formula}$</mark>`;
-      result = result.replace(new RegExp(placeholder, 'g'), highlighted);
+      const isDisplay = formula.includes('\n') || formula.length > 50;
+      const highlighted = isDisplay
+        ? `<div style="background: #dbeafe; color: #1e40af; padding: 8px 12px; border-radius: 4px; margin: 12px 0; overflow-x: auto; font-family: monospace; white-space: pre-wrap; word-break: break-word;">$$${formula}$$</div>`
+        : `<mark style="background: #dbeafe; color: #1e40af; padding: 2px 6px; border-radius: 4px; font-family: monospace;">$${formula}$</mark>`;
+      result = result.replace(new RegExp(placeholder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), highlighted);
     });
 
     return result;
@@ -159,243 +195,105 @@ export default function TextEditorWithLatex({
     result = result.replace(/<[^>]+>/g, '');
 
     result = result.replace(/\n\n\n+/g, '\n\n');
+
+    // Remove duplicate subscript notations in the final result
+    result = result.replace(/[\u0301\u0300\u0302\u0303\u0304\u200B\u200C\u200D]/g, '');
+    result = result.replace(/([a-zA-Z])_([0-9]+)[₀-₉]/g, '$1_$2');
+    result = result.replace(/[₀-₉]/g, '');
+
     result = result.trim();
 
     return result;
   }, []);
 
 
-  const cleanLatexDuplication = useCallback((text: string): string => {
-    // Remove duplicações típicas do ChatGPT onde o conteúdo aparece 3 vezes:
-    // "texto1 \comando texto2 texto1" -> "texto1 \comando texto2"
+  const transformPastedHTML = useCallback((html: string): string => {
+    let processed = html;
 
-    // Padrão 1: "1≤T≤101 \le T \le 101≤T≤10" -> "1 \le T \le 10"
-    // Detecta quando temos: [símbolos][comandos LaTeX][símbolos novamente]
-    let cleaned = text;
+    // Remove Unicode subscript/superscript characters and zero-width characters
+    processed = processed.replace(/[\u0301\u0300\u0302\u0303\u0304\u200B\u200C\u200D\u2060\uFEFF]/g, '');
+    processed = processed.replace(/[₀₁₂₃₄₅₆₇₈₉]/g, '');
+    processed = processed.replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹]/g, '');
 
-    // Remove duplicações de expressões matemáticas completas
-    // Padrão: número+símbolo+variável+símbolo+número comandos_latex número+símbolo+variável+símbolo+número
-    const mathDuplicationPattern = /(\d+[≤≥<>]\w+[≤≥<>]\d+\^?\d*)\s*(\\[a-z]+\s+\w+\s+\\[a-z]+\s+\d+\^?\d*)\s*(\d+[≤≥<>]\w+[≤≥<>]\d+\^?\d*)/g;
+    processed = processed.replace(/\s+style="[^"]*"/g, '');
 
-    cleaned = cleaned.replace(mathDuplicationPattern, (match, prefix, latexPart, suffix) => {
-      // Usa a parte LaTeX normalizada
-      return latexPart;
-    });
+    // Clean up HTML tags
+    processed = processed.replace(/<span[^>]*>\s*<\/span>/g, '');
+    processed = processed.replace(/<span[^>]*>/g, '');
+    processed = processed.replace(/<\/span>/g, '');
+    if (!processed.includes('<li')) {
+      processed = processed.replace(/<div[^>]*>/g, '<p>');
+      processed = processed.replace(/<\/div>/g, '</p>');
+    }
+    processed = processed.replace(/<br\s*\/?>/g, '\n');
 
-    // Normaliza comandos LaTeX para símbolos Unicode
-    const latexReplacements: { [key: string]: string } = {
-      '\\le': '≤',
-      '\\ge': '≥',
-      '\\leq': '≤',
-      '\\geq': '≥',
-      '\\lt': '<',
-      '\\gt': '>',
-      '\\ne': '≠',
-      '\\neq': '≠',
-      '\\times': '×',
-      '\\div': '÷',
-      '\\pm': '±',
-      '\\mp': '∓',
-      '\\cdot': '·',
-      '\\ldots': '…',
-      '\\infty': '∞',
-      '\\text': '',
-    };
+    // Clean up multiple spaces
+    processed = processed.replace(/\s{3,}/g, ' ');
 
-    // Substitui comandos LaTeX por símbolos
-    Object.entries(latexReplacements).forEach(([latex, symbol]) => {
-      const regex = new RegExp(latex.replace(/\\/g, '\\\\'), 'g');
-      cleaned = cleaned.replace(regex, symbol);
-    });
-
-    // Normaliza expoentes: "10^4" ou "10^41" -> "10⁴" ou mantém "10^41"
-    const superscriptMap: { [key: string]: string } = {
-      '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴',
-      '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹'
-    };
-
-    cleaned = cleaned.replace(/\^(\d+)/g, (match, digits) => {
-      // Apenas converte expoentes de 1 dígito para Unicode
-      if (digits.length === 1) {
-        return superscriptMap[digits] || match;
-      }
-      // Para múltiplos dígitos, mantém a notação original ou converte cada dígito
-      return digits.split('').map((d: string) => superscriptMap[d] || d).join('');
-    });
-
-    // Normaliza subscritos: "a_i" -> "aᵢ"
-    const subscriptMap: { [key: string]: string } = {
-      '0': '₀', '1': '₁', '2': '₂', '3': '₃', '4': '₄',
-      '5': '₅', '6': '₆', '7': '₇', '8': '₈', '9': '₉',
-      'i': 'ᵢ', 'j': 'ⱼ', 'k': 'ₖ', 'n': 'ₙ', 'a': 'ₐ',
-      'e': 'ₑ', 'o': 'ₒ', 'x': 'ₓ'
-    };
-
-    cleaned = cleaned.replace(/_([a-z0-9])/gi, (match, char) => {
-      return subscriptMap[char.toLowerCase()] || match;
-    });
-
-    // Remove espaços múltiplos
-    cleaned = cleaned.replace(/\s+/g, ' ').trim();
-
-    // Remove padrões residuais de duplicação
-    // Ex: "1≤T≤10 1≤T≤10" -> "1≤T≤10"
-    const lines = cleaned.split('\n');
-    const uniqueLines: string[] = [];
-
-    lines.forEach(line => {
-      const trimmed = line.trim();
-      // Detecta se a linha tem repetição exata
-      const halfLength = Math.floor(trimmed.length / 2);
-      const firstHalf = trimmed.substring(0, halfLength);
-      const secondHalf = trimmed.substring(halfLength);
-
-      if (firstHalf === secondHalf && firstHalf.length > 0) {
-        uniqueLines.push(firstHalf);
-      } else {
-        uniqueLines.push(trimmed);
-      }
-    });
-
-    return uniqueLines.join('\n');
+    return processed;
   }, []);
 
-  const transformPastedText = useCallback((text: string): string => {
-    // Aplica limpeza de LaTeX no texto puro
-    const cleaned = cleanLatexDuplication(text);
-    console.log('[PASTE] Text before clean:', text.substring(0, 200));
-    console.log('[PASTE] Text after clean:', cleaned.substring(0, 200));
-    return cleaned;
-  }, [cleanLatexDuplication]);
-
-  const transformPastedHTML = useCallback((html: string): string => {
-    console.log('[PASTE] Original HTML:', html.substring(0, 500));
-
-    try {
-      // Usa DOMParser para processar o HTML corretamente
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(html, 'text/html');
-
-      // Primeiro, processa elementos KaTeX que o ChatGPT cola
-      const katexElements = doc.querySelectorAll('.katex');
-      // Função recursiva para limpar text nodes
-      const cleanTextNodes = (node: Node): void => {
-        if (node.nodeType === Node.TEXT_NODE) {
-          // É um text node - aplica limpeza de LaTeX
-          const originalText = node.textContent || '';
-          if (originalText.trim()) {
-            const cleanedText = cleanLatexDuplication(originalText);
-
-            if (originalText !== cleanedText) {
-              console.log('[PASTE] Cleaned text node:', originalText.trim().substring(0, 100), '->', cleanedText.substring(0, 100));
-              node.textContent = cleanedText;
-            }
-          }
-        } else if (node.nodeType === Node.ELEMENT_NODE) {
-          // É um elemento - remove atributos e processa filhos
-          const element = node as Element;
-
-          // Remove atributos indesejados do ChatGPT
-          element.removeAttribute('style');
-          element.removeAttribute('class');
-          element.removeAttribute('data-start');
-          element.removeAttribute('data-end');
-          element.removeAttribute('xmlns');
-          element.removeAttribute('aria-hidden');
-
-          // Remove spans desnecessários movendo seu conteúdo para o pai
-          if (element.tagName.toLowerCase() === 'span') {
-            const parent = element.parentNode;
-            if (parent) {
-              while (element.firstChild) {
-                parent.insertBefore(element.firstChild, element);
-              }
-              parent.removeChild(element);
-              return; // Não processa filhos pois o span foi removido
-            }
-          }
-
-          // Processa filhos recursivamente
-          const childNodes = Array.from(element.childNodes);
-          childNodes.forEach(cleanTextNodes);
-        }
-      };
-
-      // Processa o body do documento
-      if (doc.body) {
-        cleanTextNodes(doc.body);
-        const result = doc.body.innerHTML;
-        console.log('[PASTE] Processed HTML:', result.substring(0, 500));
-        return result;
-      }
-    } catch (error) {
-      console.error('[PASTE] Error processing HTML:', error);
-    }
-
-    // Fallback: retorna HTML original se houver erro
-    console.log('[PASTE] Using fallback - returning original HTML');
-    return html;
-  }, [cleanLatexDuplication]);
-
   const editor = useEditor({
-    immediatelyRender: false,
     extensions: [
-      StarterKit.configure({
-        bulletList: {
-          HTMLAttributes: {
-            class: 'list-disc list-outside ml-6 pl-2',
-          },
-        },
-        orderedList: {
-          HTMLAttributes: {
-            class: 'list-decimal list-outside ml-6 pl-2',
-          },
-        },
-        listItem: {
-          HTMLAttributes: {
-            class: 'mb-1',
-          },
-        },
-      }),
+      StarterKit,
       Placeholder.configure({
         placeholder,
       }),
     ],
     content: markdownToHtml(value),
-    editorProps: {
-      attributes: {
-        class: 'prose prose-sm max-w-none focus:outline-none min-h-[200px] px-4 py-3',
-      },
-      transformPastedHTML,
-    },
     onUpdate: ({ editor }) => {
       const html = editor.getHTML();
       const markdown = htmlToMarkdown(html);
       onChange(markdown);
     },
+    editorProps: {
+      handlePaste: (view, event) => {
+        const html = event.clipboardData?.getData('text/html');
+        if (html) {
+          const processed = transformPastedHTML(html);
+          const { state } = view;
+          const { $from } = state.selection;
+          const tr = state.tr;
+
+          const tempDiv = document.createElement('div');
+          tempDiv.innerHTML = processed;
+          const text = tempDiv.textContent || tempDiv.innerText || '';
+
+          tr.insertText(text, $from.pos);
+          view.dispatch(tr);
+          return true;
+        }
+        return false;
+      },
+    },
   });
 
   useEffect(() => {
-    if (editor && value) {
-      const currentMarkdown = htmlToMarkdown(editor.getHTML());
+    if (editor && !editor.isFocused) {
+      const currentHtml = editor.getHTML();
+      const currentMarkdown = htmlToMarkdown(currentHtml);
       if (currentMarkdown !== value) {
         editor.commands.setContent(markdownToHtml(value));
       }
     }
   }, [value, editor, htmlToMarkdown, markdownToHtml]);
 
+  if (!editor) {
+    return null;
+  }
+
   return (
-    <div className="space-y-2">
+    <div className="w-full">
       {!shouldShowPreview && (
-        <div>
+        <div className="mb-2 flex flex-wrap gap-1 p-2 bg-slate-50 rounded-lg border border-slate-200">
           {editor && (
-            <div className="flex gap-1 border border-slate-200 rounded-lg p-1 w-fit">
+            <div className="flex items-center gap-1">
               <button
                 type="button"
                 onClick={() => editor.chain().focus().toggleBold().run()}
                 className={`px-2 py-1 text-xs rounded transition-colors ${editor.isActive('bold') ? 'bg-slate-200 text-slate-900' : 'text-slate-600 hover:bg-slate-100'
                   }`}
-                title="Negrito (Ctrl+B)"
+                title="Negrito"
               >
                 <strong>B</strong>
               </button>
@@ -404,18 +302,9 @@ export default function TextEditorWithLatex({
                 onClick={() => editor.chain().focus().toggleItalic().run()}
                 className={`px-2 py-1 text-xs rounded transition-colors ${editor.isActive('italic') ? 'bg-slate-200 text-slate-900' : 'text-slate-600 hover:bg-slate-100'
                   }`}
-                title="Itálico (Ctrl+I)"
+                title="Itálico"
               >
                 <em>I</em>
-              </button>
-              <button
-                type="button"
-                onClick={() => editor.chain().focus().toggleBulletList().run()}
-                className={`px-2 py-1 text-xs rounded transition-colors ${editor.isActive('bulletList') ? 'bg-slate-200 text-slate-900' : 'text-slate-600 hover:bg-slate-100'
-                  }`}
-                title="Lista com bullets"
-              >
-                • Lista
               </button>
               <button
                 type="button"
@@ -482,6 +371,7 @@ export default function TextEditorWithLatex({
       <style jsx global>{`
         .ProseMirror {
           outline: none;
+          padding: 1rem;
         }
         .ProseMirror p.is-editor-empty:first-child::before {
           content: attr(data-placeholder);

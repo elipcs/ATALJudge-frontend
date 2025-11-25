@@ -8,7 +8,7 @@ export interface User {
 
 export type UserRole = 'student' | 'assistant' | 'professor';
 
-export type JudgeType = 'local' | 'codeforces';
+export type JudgeType = 'local';
 
 export interface Student {
   id: string;
@@ -64,9 +64,7 @@ export interface Question {
     isPublic: boolean;
   }>;
   judgeType?: JudgeType;
-  submissionType?: 'local' | 'codeforces';
-  contestId?: string;
-  problemIndex?: string;
+  submissionType?: 'local';
   group?: string;
   source?: string;
   tags?: string[];

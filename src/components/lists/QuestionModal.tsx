@@ -267,7 +267,7 @@ export default function QuestionModal({
                   value={formData.source || ''}
                   onChange={handleChange}
                   className="w-full h-12 px-4 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-slate-900 placeholder:text-slate-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                  placeholder="Ex: Codeforces, USACO, OBI"
+                  placeholder="Ex: Codeforces, AtCoder, etc."
                   disabled={isSaving}
                 />
               </div>

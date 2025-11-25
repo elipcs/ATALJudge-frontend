@@ -1,6 +1,6 @@
 import { ApiResult, ApiEnvelope } from '@/types/api';
 import { UserRole } from '@/types';
-import { 
+import {
   UserResponseDTO,
   ClassResponseDTO,
   QuestionResponseDTO,
@@ -54,8 +54,8 @@ async function apiClient<T>(
     }
   }
 
-  const url = endpoint.startsWith('http') 
-    ? endpoint 
+  const url = endpoint.startsWith('http')
+    ? endpoint
     : `${API_BASE_URL}${endpoint}`;
 
   const requestConfig: RequestInit = {
@@ -69,7 +69,7 @@ async function apiClient<T>(
   try {
     let controller: AbortController | null = null;
     let timeoutId: NodeJS.Timeout | null = null;
-    
+
     if (config.signal) {
     } else {
       controller = new AbortController();
@@ -77,7 +77,7 @@ async function apiClient<T>(
         if (controller) controller.abort();
       }, timeout);
     }
-    
+
     const signal = config.signal || controller?.signal;
 
     const response = await fetch(url, {
@@ -93,17 +93,17 @@ async function apiClient<T>(
 
     if (!response.ok) {
       let errMessage = `HTTP ${response.status}`;
-      
+
       if (typeof envelope === 'string') {
         errMessage = envelope;
       } else if (typeof envelope === 'object' && envelope !== null) {
-        
+
         const errorObj = envelope as any;
-        errMessage = errorObj.message || 
-                    errorObj.error || 
-                    errorObj.detail || 
-                    errorObj.msg || 
-                    (errorObj.data?.message || errorObj.data?.error || errorObj.data?.detail);
+        errMessage = errorObj.message ||
+          errorObj.error ||
+          errorObj.detail ||
+          errorObj.msg ||
+          (errorObj.data?.message || errorObj.data?.error || errorObj.data?.detail);
 
         if (!errMessage || errMessage === `HTTP ${response.status}`) {
           const values = Object.values(errorObj);
@@ -131,7 +131,7 @@ async function apiClient<T>(
             const refreshEnvelope = (refreshIsJson ? await refreshResp.json() : await refreshResp.text()) as any;
 
             if (refreshResp.ok) {
-              
+
               const refreshData = (typeof refreshEnvelope === 'object' && 'data' in refreshEnvelope) ? refreshEnvelope.data : refreshEnvelope;
               const newAccessToken = refreshData.accessToken || refreshData.access_token;
               const newRefreshToken = refreshData.refreshToken || refreshData.refresh_token;
@@ -188,18 +188,18 @@ async function apiClient<T>(
             }
           }
         } catch (_refreshErr) {
-          
+
         }
 
         try {
           localStorage.removeItem('token');
           localStorage.removeItem('refreshToken');
-        } catch {}
+        } catch { }
         if (typeof window !== 'undefined') {
           window.location.href = '/login';
         }
       }
-      
+
       throw new ApiError(errMessage, response.status);
     }
 
@@ -210,7 +210,7 @@ async function apiClient<T>(
 
     if (data && typeof data === 'object') {
       const dataObj = data as any;
-      
+
       if (dataObj.access_token || dataObj.refresh_token) {
         data = {
           ...dataObj,
@@ -269,19 +269,19 @@ export async function del<T>(endpoint: string, config?: RequestConfig): Promise<
 }
 
 export const API = {
-  
+
   auth: {
-    login: (email: string, password: string) => 
+    login: (email: string, password: string) =>
       post<{ user: UserResponseDTO; accessToken: string; refreshToken: string }>(
         '/auth/login', { email, password }, { skipAuth: true }
       ),
-    register: (data: { name: string; email: string; password: string; studentRegistration?: string; classId?: string }) => 
+    register: (data: { name: string; email: string; password: string; studentRegistration?: string; classId?: string }) =>
       post<{ user: UserResponseDTO; accessToken: string; refreshToken: string }>(
         '/auth/register', data, { skipAuth: true }
       ),
-    logout: (refreshToken: string) => 
+    logout: (refreshToken: string) =>
       post<null>('/auth/logout', { refresh_token: refreshToken }),
-    refresh: (refreshToken: string) => 
+    refresh: (refreshToken: string) =>
       post<{ accessToken: string; refreshToken: string }>(
         '/auth/refresh', { refreshToken }, { skipAuth: true }
       ),
@@ -319,7 +319,7 @@ export const API = {
     get: (id: string) => get<QuestionListResponseDTO>(`/lists/${id}`),
     create: (data: Partial<QuestionListResponseDTO>) => post<QuestionListResponseDTO>('/lists', data),
     update: (id: string, data: Partial<QuestionListResponseDTO>) => put<QuestionListResponseDTO>(`/lists/${id}`, data),
-    updateScoring: (id: string, data: { scoringMode?: string; maxScore?: number; minQuestionsForMaxScore?: number; questionGroups?: any[] }) => 
+    updateScoring: (id: string, data: { scoringMode?: string; maxScore?: number; minQuestionsForMaxScore?: number; questionGroups?: any[] }) =>
       apiClient<QuestionListResponseDTO>(`/lists/${id}/scoring`, { method: 'PATCH', body: JSON.stringify(data) }),
     delete: (id: string) => del<null>(`/lists/${id}`),
     publish: (id: string) => post<QuestionListResponseDTO>(`/lists/${id}/publish`),
@@ -333,8 +333,6 @@ export const API = {
     get: (id: string) => get<QuestionResponseDTO>(`/questions/${id}`),
     create: (data: Partial<QuestionResponseDTO>) => post<QuestionResponseDTO>('/questions', data),
     update: (id: string, data: Partial<QuestionResponseDTO>) => put<QuestionResponseDTO>(`/questions/${id}`, data),
-    updateCodeforces: (id: string, data: { contestId: string; problemIndex: string }) => 
-      put<QuestionResponseDTO>(`/questions/${id}/codeforces`, data),
     delete: (id: string) => del<null>(`/questions/${id}`),
   },
 
@@ -368,11 +366,11 @@ export const API = {
     list: (questionId: string, config?: RequestConfig) => get<TestCaseResponseDTO[]>(`/questions/${questionId}/testcases`, config),
     get: (testCaseId: string) => get<TestCaseResponseDTO>(`/testcases/${testCaseId}`),
     create: (questionId: string, data: Omit<TestCaseResponseDTO, 'id' | 'createdAt'>) => post<TestCaseResponseDTO>(`/questions/${questionId}/testcases`, data),
-    update: (questionId: string, testCaseId: string, data: Partial<TestCaseResponseDTO>) => 
+    update: (questionId: string, testCaseId: string, data: Partial<TestCaseResponseDTO>) =>
       post<TestCaseResponseDTO>(`/testcases/${testCaseId}`, data),
-    delete: (questionId: string, testCaseId: string) => 
+    delete: (questionId: string, testCaseId: string) =>
       del<null>(`/testcases/${testCaseId}`),
-    reorder: (questionId: string, testCaseIds: string[]) => 
+    reorder: (questionId: string, testCaseIds: string[]) =>
       post<null>(`/questions/${questionId}/testcases/reorder`, { testCaseIds }),
     bulkUpdate: (questionId: string, data: { testCases: Array<{ id?: string; input: string; expectedOutput: string; weight: number }> }) =>
       put<TestCaseResponseDTO[]>(`/questions/${questionId}/testcases/bulk`, data),
@@ -383,11 +381,11 @@ export const API = {
   },
 
   password: {
-    forgotPassword: (email: string) => 
+    forgotPassword: (email: string) =>
       post<{ message: string }>('/auth/forgot-password', { email }, { skipAuth: true }),
-    resetPassword: (token: string, password: string) => 
+    resetPassword: (token: string, password: string) =>
       post<{ message: string }>('/auth/reset-password', { token, newPassword: password }, { skipAuth: true, timeout: 10000 }),
-    verifyResetToken: (token: string) => 
+    verifyResetToken: (token: string) =>
       post<{ valid: boolean; message?: string }>('/auth/verify-reset-token', { token }, { skipAuth: true }),
   },
 
@@ -405,7 +403,7 @@ export const API = {
     getStudents: () => get<Array<{ id: string; name: string; email: string; studentRegistration?: string; classId?: string; className?: string; submissionsCount?: number; createdAt?: string }>>(
       '/users/role/student'
     ),
-    removeStudents: (studentIds: string[]) => 
+    removeStudents: (studentIds: string[]) =>
       post<null>('/config/remove-students', { studentIds }),
     systemReset: (resetOptions: {
       resetSubmissions: boolean;
@@ -435,7 +433,7 @@ export async function diagnoseBackendConnection(): Promise<{
   };
 
   try {
-    const response = await fetch(`${API_BASE_URL}/health`, { 
+    const response = await fetch(`${API_BASE_URL}/health`, {
       method: 'GET',
       cache: 'no-store',
     });

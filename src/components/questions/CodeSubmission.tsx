@@ -60,7 +60,7 @@ export default function CodeSubmission({
 
     try {
       const submission = await submissionsApi.submitCode({
-        questionId: questionId,  
+        questionId: questionId,
         questionListId: questionListId,
         language: language,
         code: code,
@@ -201,13 +201,13 @@ export default function CodeSubmission({
                   d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
                 />
               </svg>
-              Gerenciar Submissão
+              Configurar Casos de Teste
             </Button>
           )}
         </div>
       </div>
 
-      {}
+      { }
       <div className="mb-4">
         <label className="block text-sm font-semibold text-slate-700 mb-2">
           Linguagem de Programação
@@ -224,7 +224,7 @@ export default function CodeSubmission({
         />
       </div>
 
-      {}
+      { }
       <div className="mb-4 flex-1 flex flex-col">
         <label className="block text-sm font-semibold text-slate-700 mb-2">
           Seu Código
@@ -242,7 +242,7 @@ export default function CodeSubmission({
         />
       </div>
 
-      {}
+      { }
       {result && (
         <div
           className={`mb-4 p-4 rounded-xl border ${getResultColor()} transition-all duration-300`}
@@ -254,8 +254,8 @@ export default function CodeSubmission({
               {result.details && (
                 <p className="text-sm opacity-90">{result.details}</p>
               )}
-              
-              {}
+
+              { }
               {result.resultsData && (
                 <div className="mt-4 space-y-2">
                   <div className="text-xs font-semibold text-slate-700">
@@ -265,11 +265,10 @@ export default function CodeSubmission({
                     {result.resultsData.results.map((testResult, idx) => (
                       <div
                         key={testResult.id}
-                        className={`text-xs p-2 rounded ${
-                          testResult.passed
-                            ? "bg-green-50 text-green-800"
-                            : "bg-red-50 text-red-800"
-                        }`}
+                        className={`text-xs p-2 rounded ${testResult.passed
+                          ? "bg-green-50 text-green-800"
+                          : "bg-red-50 text-red-800"
+                          }`}
                       >
                         <div className="flex items-center justify-between">
                           <span className="font-medium">
@@ -281,7 +280,7 @@ export default function CodeSubmission({
                         </div>
                         {testResult.executionTimeMs && (
                           <div className="text-xs opacity-75 mt-1">
-                            Tempo: {testResult.executionTimeMs}ms | 
+                            Tempo: {testResult.executionTimeMs}ms |
                             Memória: {testResult.memoryKb ? `${Math.round(testResult.memoryKb / 1024)}MB` : "N/A"}
                           </div>
                         )}
@@ -301,7 +300,7 @@ export default function CodeSubmission({
         </div>
       )}
 
-      {}
+      { }
       <div className="flex gap-3">
         <Button
           onClick={handleSubmit}
@@ -319,7 +318,7 @@ export default function CodeSubmission({
         </Button>
       </div>
 
-      {}
+      { }
       <div className="mt-4 p-3 bg-blue-50 rounded-xl border border-blue-200">
         <p className="text-xs text-blue-800">
           <span className="font-semibold">Dica:</span> Seu código será
@@ -328,7 +327,7 @@ export default function CodeSubmission({
         </p>
       </div>
 
-      {}
+      { }
       {isTestCasesModalOpen && (
         <TestCasesModal
           isOpen={isTestCasesModalOpen}

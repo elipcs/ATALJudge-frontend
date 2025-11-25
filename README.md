@@ -15,7 +15,7 @@
 - 🏫 **Class Management** - Organize students and track submissions
 - 🔐 **Role-Based Access** - Student, Assistant, and Professor roles
 - 🌐 **IP Whitelisting** - Restrict access for in-class exams
-- 🔗 **Codeforces Integration** - Support for external judge problems
+
 
 ## 🚀 Tech Stack
 
