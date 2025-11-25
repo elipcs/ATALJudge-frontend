@@ -1,4 +1,4 @@
-import { UserRole, JudgeType } from './index';
+import { UserRole } from './index';
 
 export interface UserResponseDTO {
   id: string;
@@ -46,8 +46,6 @@ export interface QuestionResponseDTO {
   timeLimitMs: number;
   memoryLimitKb: number;
   examples: QuestionExampleDTO[];
-  judgeType: JudgeType;
-  submissionType?: 'local';
   referenceCode?: string;
   referenceLanguage?: string;
   oracleCode?: string;

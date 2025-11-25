@@ -424,10 +424,6 @@ export default function TestCasesModal({
     setSaveSuccess(false);
 
     try {
-      await API.questions.update(questionId, {
-        submissionType: 'local'
-      });
-
       const hasEmptyFields = testCases.some(
         (tc) => !tc.input.trim() || !tc.expectedOutput.trim()
       );

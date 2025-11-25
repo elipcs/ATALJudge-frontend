@@ -8,8 +8,6 @@ export interface User {
 
 export type UserRole = 'student' | 'assistant' | 'professor';
 
-export type JudgeType = 'local';
-
 export interface Student {
   id: string;
   name: string;
@@ -63,8 +61,6 @@ export interface Question {
     expectedOutput: string;
     isPublic: boolean;
   }>;
-  judgeType?: JudgeType;
-  submissionType?: 'local';
   group?: string;
   source?: string;
   tags?: string[];
