@@ -1,7 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  
+
+  // Enable standalone output for optimized Docker images
+  output: 'standalone',
+
   experimental: {
 
   },
@@ -16,7 +19,7 @@ const nextConfig: NextConfig = {
   },
 
   compiler: {
-    
+
     removeConsole: process.env.NODE_ENV === 'production',
   },
 
@@ -28,7 +31,7 @@ const nextConfig: NextConfig = {
 
   webpack: (config, { dev, isServer }) => {
     if (dev && !isServer) {
-      
+
       config.watchOptions = {
         poll: 1000,
         aggregateTimeout: 300,
@@ -42,23 +45,61 @@ const nextConfig: NextConfig = {
       };
     }
 
-    config.optimization = {
-      ...config.optimization,
-      splitChunks: {
-        chunks: 'all',
-        cacheGroups: {
-          vendor: {
-            test: /[\\/]node_modules[\\/]/,
-            name: 'vendors',
-            chunks: 'all',
+    // Production optimizations
+    if (!dev) {
+      // Disable source maps in production
+      config.devtool = false;
+
+      // Aggressive minification
+      config.optimization = {
+        ...config.optimization,
+        minimize: true,
+        splitChunks: {
+          chunks: 'all',
+          cacheGroups: {
+            default: false,
+            vendors: false,
+            // Vendor chunk
+            vendor: {
+              name: 'vendor',
+              chunks: 'all',
+              test: /node_modules/,
+              priority: 20,
+            },
+            // Common chunk
+            common: {
+              name: 'common',
+              minChunks: 2,
+              chunks: 'all',
+              priority: 10,
+              reuseExistingChunk: true,
+              enforce: true,
+            },
           },
         },
-      },
-    };
-    
+        usedExports: true,
+        sideEffects: true,
+      };
+    } else {
+      // Development optimizations
+      config.optimization = {
+        ...config.optimization,
+        splitChunks: {
+          chunks: 'all',
+          cacheGroups: {
+            vendor: {
+              test: /[\\/]node_modules[\\/]/,
+              name: 'vendors',
+              chunks: 'all',
+            },
+          },
+        },
+      };
+    }
+
     return config;
   },
-  
+
   async rewrites() {
     return [
       { source: '/login', destination: '/entrar' },
