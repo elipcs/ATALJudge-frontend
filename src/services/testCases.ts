@@ -24,7 +24,7 @@ export const getTestCases = async (questionId: string): Promise<TestCaseResponse
   try {
     const response = await API.testCases.list(questionId, { timeout: 60000 });
     const data = response?.data;
-    
+
     if (Array.isArray(data)) {
       return data;
     } else if (data && typeof data === 'object' && 'testCases' in data) {
@@ -34,7 +34,7 @@ export const getTestCases = async (questionId: string): Promise<TestCaseResponse
       const firstArray = Object.values(data).find(v => Array.isArray(v)) as TestCaseResponseDTO[] | undefined;
       return firstArray || [];
     }
-    
+
     return [];
   } catch (error: any) {
     console.error('Erro ao buscar casos de teste:', error);
@@ -108,7 +108,7 @@ export const generateTestCases = async (
   data: GenerateTestCasesRequest,
   abortSignal?: AbortSignal
 ): Promise<GenerateTestCasesResponse> => {
-  const config: any = { timeout: 120000 };
+  const config: any = { timeout: 600000 }; // 10 minutes
   if (abortSignal) {
     config.signal = abortSignal;
   }

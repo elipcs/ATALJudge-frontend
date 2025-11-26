@@ -37,7 +37,7 @@ export default function GenerateTestCasesModal({
       setGenerationSuccess(false);
       setGeneratedCount(0);
       setIsGenerating(false);
-      
+
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
         abortControllerRef.current = null;
@@ -59,7 +59,7 @@ export default function GenerateTestCasesModal({
           logger.error('Erro ao carregar código oráculo salvo:', error);
         }
       };
-      
+
       loadQuestion();
     }
   }, [isOpen, questionId]);
@@ -99,11 +99,11 @@ export default function GenerateTestCasesModal({
       };
 
       const result = await generateTestCases(questionId, request, abortController.signal);
-      
+
       if (abortController.signal.aborted) {
         return;
       }
-      
+
       if (result.totalGenerated === 0) {
         setGenerationError('Nenhum caso de teste foi gerado. Verifique o código oráculo.');
         setIsGenerating(false);
@@ -134,8 +134,8 @@ export default function GenerateTestCasesModal({
         );
       } else {
         setGenerationError(
-          error.response?.data?.message || 
-          error.message || 
+          error.response?.data?.message ||
+          error.message ||
           'Erro ao gerar casos de teste. Verifique o código oráculo.'
         );
       }
@@ -156,7 +156,7 @@ export default function GenerateTestCasesModal({
   if (!isOpen) return null;
 
   return (
-    <div 
+    <div
       className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4 animate-in fade-in duration-200"
       onClick={(e) => {
         if (e.target === e.currentTarget && !isGenerating) {
@@ -230,7 +230,7 @@ export default function GenerateTestCasesModal({
               value={oracleCode}
               onChange={(e) => setOracleCode(e.target.value)}
               disabled={isGenerating}
-              placeholder={oracleLanguage === 'python' 
+              placeholder={oracleLanguage === 'python'
                 ? 'n = int(input())\narr = list(map(int, input().split()))\n# Seu código aqui\nprint(result)'
                 : 'import java.util.*;\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // Seu código aqui\n    }\n}'
               }
@@ -252,10 +252,10 @@ export default function GenerateTestCasesModal({
                 </div>
                 <div className="flex-1">
                   <p className="text-sm font-semibold text-green-900">
-                    {generatedCount} caso{generatedCount !== 1 ? 's' : ''} de teste gerado{generatedCount !== 1 ? 's' : ''} com sucesso!
+                    Testes gerados!
                   </p>
                   <p className="text-xs text-green-700 mt-0.5">
-                    Os casos foram adicionados à lista. Fechando em instantes...
+                    {generatedCount} caso{generatedCount !== 1 ? 's' : ''} de teste gerado{generatedCount !== 1 ? 's' : ''} com sucesso! Fechando em instantes...
                   </p>
                 </div>
               </div>
@@ -286,7 +286,7 @@ export default function GenerateTestCasesModal({
                 </div>
                 <div className="text-center">
                   <p className="text-sm font-semibold text-purple-900">Gerando casos de teste...</p>
-                  <p className="text-xs text-purple-700 mt-1">Este processo pode demorar alguns minutos. Por favor, aguarde.</p>
+                  <p className="text-xs text-purple-700 mt-1">Este processo pode demorar até 10 minutos. Por favor, aguarde.</p>
                 </div>
               </div>
             </div>

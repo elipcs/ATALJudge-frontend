@@ -717,60 +717,99 @@ export default function TestCasesModal({
                     </div>
                   </div>
                 </div>
-              
+
                 {error && (
-              <div className="p-4 bg-red-50 border border-red-200 rounded-xl animate-in slide-in-from-top-2 duration-300">
-                <div className="flex items-start gap-2">
-                  <svg className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <div className="p-4 bg-red-50 border border-red-200 rounded-xl animate-in slide-in-from-top-2 duration-300">
+                    <div className="flex items-start gap-2">
+                      <svg className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <p className="text-sm text-red-800 flex-1">{error}</p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex gap-3 pt-6 border-t border-slate-200">
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    disabled={isSaving}
+                    className="flex-1 h-12 px-4 text-sm font-semibold text-slate-700 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSaving || saveSuccess}
+                    className={`flex-1 h-12 px-4 text-sm font-semibold text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all disabled:cursor-not-allowed ${saveSuccess
+                      ? "bg-green-500 hover:bg-green-600 focus:ring-green-500"
+                      : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:ring-blue-500 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 shadow-lg hover:shadow-xl"
+                      }`}
+                  >
+                    {saveSuccess ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        Salvos com sucesso!
+                      </span>
+                    ) : isSaving ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                        Salvando...
+                      </span>
+                    ) : (
+                      "Salvar"
+                    )}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      </div >
+
+      {
+        deleteConfirm.isOpen && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4 animate-in fade-in duration-200">
+            <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md mx-4 animate-in zoom-in-95 duration-200">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0 w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                  <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                   </svg>
-                  <p className="text-sm text-red-800 flex-1">{error}</p>
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-bold text-slate-900 mb-2">
+                    Confirmar Exclusão
+                  </h3>
+                  <p className="text-sm text-slate-600 mb-4">
+                    Tem certeza que deseja remover o <span className="font-semibold">{deleteConfirm.testCaseName}</span>?
+                    Esta ação não pode ser desfeita.
+                  </p>
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={cancelDelete}
+                      className="flex-1 px-4 py-2.5 text-sm font-semibold text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={confirmDelete}
+                      className="flex-1 px-4 py-2.5 text-sm font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
+                    >
+                      Sim, Remover
+                    </button>
+                  </div>
                 </div>
               </div>
-            )}
-
-            <div className="flex gap-3 pt-6 border-t border-slate-200">
-              <button
-                type="button"
-                onClick={onClose}
-                disabled={isSaving}
-                className="flex-1 h-12 px-4 text-sm font-semibold text-slate-700 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                disabled={isSaving || saveSuccess}
-                className={`flex-1 h-12 px-4 text-sm font-semibold text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all disabled:cursor-not-allowed ${saveSuccess
-                  ? "bg-green-500 hover:bg-green-600 focus:ring-green-500"
-                  : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:ring-blue-500 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 shadow-lg hover:shadow-xl"
-                  }`}
-              >
-                {saveSuccess ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    Salvos com sucesso!
-                  </span>
-                ) : isSaving ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                    Salvando...
-                  </span>
-                ) : (
-                  "Salvar"
-                )}
-              </button>
             </div>
-          </form>
-            )}
-        </div>
-      </div>
-    </div >
+          </div>
+        )}
 
-    {
-      deleteConfirm.isOpen && (
+      {deleteAllConfirm && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md mx-4 animate-in zoom-in-95 duration-200">
             <div className="flex items-start gap-4">
@@ -781,89 +820,50 @@ export default function TestCasesModal({
               </div>
               <div className="flex-1">
                 <h3 className="text-lg font-bold text-slate-900 mb-2">
-                  Confirmar Exclusão
+                  Confirmar Exclusão de Todos os Casos
                 </h3>
                 <p className="text-sm text-slate-600 mb-4">
-                  Tem certeza que deseja remover o <span className="font-semibold">{deleteConfirm.testCaseName}</span>?
-                  Esta ação não pode ser desfeita.
+                  Tem certeza que deseja remover <span className="font-semibold">todos os {testCases.length} casos de teste</span>?
+                  Esta ação não pode ser desfeita. Um novo caso vazio será criado automaticamente.
                 </p>
                 <div className="flex gap-3">
                   <button
                     type="button"
-                    onClick={cancelDelete}
-                    className="flex-1 px-4 py-2.5 text-sm font-semibold text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors"
+                    onClick={() => setDeleteAllConfirm(false)}
+                    disabled={isDeletingAll}
+                    className="flex-1 px-4 py-2.5 text-sm font-semibold text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Cancelar
                   </button>
                   <button
                     type="button"
-                    onClick={confirmDelete}
-                    className="flex-1 px-4 py-2.5 text-sm font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
+                    onClick={removeAllTestCases}
+                    disabled={isDeletingAll}
+                    className="flex-1 px-4 py-2.5 text-sm font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Sim, Remover
+                    {isDeletingAll ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                        Removendo...
+                      </span>
+                    ) : (
+                      "Sim, Remover Todos"
+                    )}
                   </button>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      )}
+      )
+      }
 
-    { deleteAllConfirm && (
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4 animate-in fade-in duration-200">
-        <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md mx-4 animate-in zoom-in-95 duration-200">
-          <div className="flex items-start gap-4">
-            <div className="flex-shrink-0 w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
-              <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-            </div>
-            <div className="flex-1">
-              <h3 className="text-lg font-bold text-slate-900 mb-2">
-                Confirmar Exclusão de Todos os Casos
-              </h3>
-              <p className="text-sm text-slate-600 mb-4">
-                Tem certeza que deseja remover <span className="font-semibold">todos os {testCases.length} casos de teste</span>?
-                Esta ação não pode ser desfeita. Um novo caso vazio será criado automaticamente.
-              </p>
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => setDeleteAllConfirm(false)}
-                  disabled={isDeletingAll}
-                  className="flex-1 px-4 py-2.5 text-sm font-semibold text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="button"
-                  onClick={removeAllTestCases}
-                  disabled={isDeletingAll}
-                  className="flex-1 px-4 py-2.5 text-sm font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isDeletingAll ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                      Removendo...
-                    </span>
-                  ) : (
-                    "Sim, Remover Todos"
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-}
-
-<GenerateTestCasesModal
-  isOpen={showGenerateModal}
-  onClose={() => setShowGenerateModal(false)}
-  questionId={questionId}
-  onSuccess={handleGenerateSuccess}
-/>
+      <GenerateTestCasesModal
+        isOpen={showGenerateModal}
+        onClose={() => setShowGenerateModal(false)}
+        questionId={questionId}
+        onSuccess={handleGenerateSuccess}
+      />
     </>
   );
 }

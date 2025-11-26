@@ -11,7 +11,7 @@ import { formatTimeLimit, formatMemoryLimit } from "@/utils/timeMemoryConverter"
 interface SelectQuestionModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSelect: (questionId: string) => void;
+    onSelect: (questionIds: string[]) => void;
     existingQuestionIds: string[];
 }
 
@@ -32,12 +32,14 @@ export default function SelectQuestionModal({
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
     const [sortBy, setSortBy] = useState<SortOption>("recent");
     const [currentPage, setCurrentPage] = useState(1);
+    const [selectedQuestions, setSelectedQuestions] = useState<string[]>([]);
     const { toast } = useToast();
 
     useEffect(() => {
         if (isOpen) {
             loadQuestions();
             setCurrentPage(1);
+            setSelectedQuestions([]);
         }
     }, [isOpen]);
 
@@ -121,6 +123,27 @@ export default function SelectQuestionModal({
         setCurrentPage(prev => Math.min(prev + 1, totalPages));
     };
 
+    const toggleQuestionSelection = (questionId: string) => {
+        setSelectedQuestions(prev => 
+            prev.includes(questionId) 
+                ? prev.filter(id => id !== questionId) 
+                : [...prev, questionId]
+        );
+    };
+
+    const handleSaveSelection = () => {
+        if (selectedQuestions.length === 0) {
+            toast({
+                title: "Atenção",
+                description: "Selecione pelo menos uma questão",
+                variant: "destructive",
+            });
+            return;
+        }
+        onSelect(selectedQuestions);
+        onClose();
+    };
+
     if (!isOpen) return null;
 
     return (
@@ -141,8 +164,10 @@ export default function SelectQuestionModal({
                             </svg>
                         </div>
                         <div>
-                            <h2 className="text-2xl font-bold text-slate-900">Selecionar Questão Existente</h2>
-                            <p className="text-sm text-slate-600 mt-0.5">Adicione uma questão à lista</p>
+                            <h2 className="text-2xl font-bold text-slate-900">Selecionar Questões</h2>
+                            <p className="text-sm text-slate-600 mt-0.5">
+                                Adicione questões à lista {selectedQuestions.length > 0 && `(${selectedQuestions.length} selecionada${selectedQuestions.length > 1 ? 's' : ''})`}
+                            </p>
                         </div>
                     </div>
                     <button
@@ -194,7 +219,7 @@ export default function SelectQuestionModal({
                                                     : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                                             }`}
                                         >
-                                            📚 {source}
+                                            {source}
                                         </button>
                                     ))}
                                 </div>
@@ -275,14 +300,19 @@ export default function SelectQuestionModal({
                             </div>
                             {paginatedQuestions.map((question) => {
                                 const isAlreadyAdded = existingQuestionIds.includes(question.id);
+                                const isSelected = selectedQuestions.includes(question.id);
 
                                 return (
                                     <div
                                         key={question.id}
-                                        className={`border-2 rounded-xl p-4 transition-all duration-200 ${isAlreadyAdded
-                                            ? "bg-slate-50 border-slate-200 opacity-60"
-                                            : "bg-white border-slate-200 hover:border-blue-400 hover:shadow-md hover:bg-blue-50/30"
-                                            }`}
+                                        onClick={() => !isAlreadyAdded && toggleQuestionSelection(question.id)}
+                                        className={`border-2 rounded-xl p-4 transition-all duration-200 ${
+                                            isAlreadyAdded
+                                                ? "bg-slate-50 border-slate-200 opacity-60 cursor-not-allowed"
+                                                : isSelected
+                                                ? "bg-blue-50 border-blue-500 shadow-md cursor-pointer"
+                                                : "bg-white border-slate-200 hover:border-blue-400 hover:shadow-md hover:bg-blue-50/30 cursor-pointer"
+                                        }`}
                                     >
                                         <div className="flex items-start justify-between gap-4">
                                             <div className="flex-1 min-w-0">
@@ -301,7 +331,7 @@ export default function SelectQuestionModal({
                                                 <div className="flex flex-wrap gap-2 mb-3">
                                                     {question.source && (
                                                         <span className="px-2.5 py-1 bg-slate-100 text-slate-700 text-xs font-semibold rounded-full border border-slate-200 hover:bg-slate-200 transition-colors">
-                                                            📚 {question.source}
+                                                            {question.source}
                                                         </span>
                                                     )}
                                                     {question.tags?.map((tag, index) => (
@@ -331,32 +361,28 @@ export default function SelectQuestionModal({
                                                 </div>
                                             </div>
                                             
-                                            <Button
-                                                onClick={() => onSelect(question.id)}
-                                                disabled={isAlreadyAdded}
-                                                className={`flex-shrink-0 ${
-                                                    isAlreadyAdded
-                                                        ? "bg-slate-300 cursor-not-allowed text-slate-600"
-                                                        : "bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-md hover:shadow-lg"
-                                                }`}
-                                                size="sm"
-                                            >
+                                            {/* Checkbox visual */}
+                                            <div className="flex-shrink-0">
                                                 {isAlreadyAdded ? (
-                                                    <span className="flex items-center gap-1">
-                                                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                                    <div className="w-6 h-6 rounded-md bg-green-100 border-2 border-green-500 flex items-center justify-center">
+                                                        <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
                                                             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                                                         </svg>
-                                                        Adicionada
-                                                    </span>
+                                                    </div>
                                                 ) : (
-                                                    <span className="flex items-center gap-1">
-                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                                                        </svg>
-                                                        Adicionar
-                                                    </span>
+                                                    <div className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all ${
+                                                        isSelected 
+                                                            ? "bg-blue-600 border-blue-600" 
+                                                            : "bg-white border-slate-300 hover:border-blue-400"
+                                                    }`}>
+                                                        {isSelected && (
+                                                            <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                                            </svg>
+                                                        )}
+                                                    </div>
                                                 )}
-                                            </Button>
+                                            </div>
                                         </div>
                                     </div>
                                 );
@@ -404,10 +430,29 @@ export default function SelectQuestionModal({
                 )}
 
                 {/* Botões de Ação */}
-                <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-slate-200">
-                    <Button onClick={onClose} variant="outline" className="rounded-xl font-semibold">
-                        Cancelar
-                    </Button>
+                <div className="flex justify-between items-center gap-3 mt-4 pt-4 border-t border-slate-200">
+                    <div className="text-sm text-slate-600">
+                        {selectedQuestions.length > 0 && (
+                            <span className="font-semibold text-blue-600">
+                                {selectedQuestions.length} questão{selectedQuestions.length > 1 ? 'ões' : ''} selecionada{selectedQuestions.length > 1 ? 's' : ''}
+                            </span>
+                        )}
+                    </div>
+                    <div className="flex gap-3">
+                        <Button onClick={onClose} variant="outline" className="rounded-xl font-semibold">
+                            Cancelar
+                        </Button>
+                        <Button 
+                            onClick={handleSaveSelection}
+                            className="rounded-xl font-semibold bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-md hover:shadow-lg"
+                            disabled={selectedQuestions.length === 0}
+                        >
+                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                            Adicionar {selectedQuestions.length > 0 && `(${selectedQuestions.length})`}
+                        </Button>
+                    </div>
                 </div>
                 </div>
             </div>

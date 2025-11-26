@@ -54,7 +54,7 @@ export default function ListPage() {
 
   const handleRemoveQuestion = async (questionId: string) => {
     if (!list || isListStarted()) return;
-    
+
     try {
       setRemovingQuestionId(questionId);
       await listsApi.removeQuestionFromList(id, questionId);
@@ -592,19 +592,22 @@ export default function ListPage() {
         <SelectQuestionModal
           isOpen={showAddQuestionModal}
           onClose={() => setShowAddQuestionModal(false)}
-          onSelect={async (questionId) => {
+          onSelect={async (questionIds) => {
             try {
-              await listsApi.addQuestionToList(id, questionId);
+              // Adicionar todas as questões selecionadas
+              for (const questionId of questionIds) {
+                await listsApi.addQuestionToList(id, questionId);
+              }
               toast({
                 title: "Sucesso",
-                description: "Questão adicionada à lista com sucesso.",
+                description: `${questionIds.length} questão${questionIds.length > 1 ? 'ões' : ''} adicionada${questionIds.length > 1 ? 's' : ''} à lista com sucesso.`,
               });
               setShowAddQuestionModal(false);
               window.location.reload();
             } catch (error) {
               toast({
                 title: "Erro",
-                description: "Erro ao adicionar questão. Por favor, tente novamente.",
+                description: "Erro ao adicionar questões. Por favor, tente novamente.",
                 variant: "destructive",
               });
             }

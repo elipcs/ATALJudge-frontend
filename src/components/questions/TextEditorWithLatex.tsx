@@ -33,7 +33,7 @@ export default function TextEditorWithLatex({
 
     // Extract both inline ($...$) and display ($$...$$) formulas
     // Handle multiline display formulas first
-    html = html.replace(/\$\$([^\$]*?)\$\$/g, (match: string, content: string) => {
+    html = html.replace(/\$\$([^\$]*?)\$\$/gs, (match: string, content: string) => {
       const placeholder = `__FORMULA_${formulaIndex}__`;
       formulas[placeholder] = content.trim();
       formulaIndex++;
@@ -210,117 +210,190 @@ export default function TextEditorWithLatex({
   const transformPastedHTML = useCallback((html: string): string => {
     let processed = html;
 
-    // Remove Unicode subscript/superscript characters and zero-width characters
+    // First: Remove ALL Unicode subscript/superscript characters and zero-width characters
     processed = processed.replace(/[\u0301\u0300\u0302\u0303\u0304\u200B\u200C\u200D\u2060\uFEFF]/g, '');
     processed = processed.replace(/[₀₁₂₃₄₅₆₇₈₉]/g, '');
     processed = processed.replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹]/g, '');
 
+    // Remove pattern: variable followed by underscore-number AND subscript (e.g., "a_1a₁" -> "a_1")
+    processed = processed.replace(/([a-zA-Z_]\d+)([a-zA-Z]+)/g, (match, latexPart, duplicatePart) => {
+      // Check if duplicate part looks like it's repeating the variable
+      if (duplicatePart.length <= 3 && /^[a-zA-Z]+$/.test(duplicatePart)) {
+        return latexPart;
+      }
+      return match;
+    });
+
+    // Pattern: "formula)text" where text is duplicate without $ (common in copy-paste)
+    processed = processed.replace(/(\([^)]+\))([a-zA-Z₀-₉_=\s.⋯\\]+)(?=:|\n|$)/g, '$1');
+
+    // Remove specific pattern: "a_1 = a_2 = ... = a_na1=a2=...=an" (duplicate after formula)
+    // This captures the LaTeX version and removes the plain text duplicate
+    processed = processed.replace(/([a-zA-Z]_\d+\s*=\s*[a-zA-Z]_\d+[^$\n]*?)([a-zA-Z]\d+=\s*[a-zA-Z]\d+[^\n$]*?)(?=\s|$)/g, '$1');
+
+    // More aggressive: remove any sequence of "letter+digit+=" that appears after LaTeX subscripts
+    processed = processed.replace(/([a-zA-Z]_[0-9n]+)([a-zA-Z][0-9n]+=)/g, '$1 ');
+
     processed = processed.replace(/\s+style="[^"]*"/g, '');
 
-    // Clean up HTML tags
-    processed = processed.replace(/<span[^>]*>\s*<\/span>/g, '');
-    processed = processed.replace(/<span[^>]*>/g, '');
-    processed = processed.replace(/<\/span>/g, '');
-    if (!processed.includes('<li')) {
-      processed = processed.replace(/<div[^>]*>/g, '<p>');
-      processed = processed.replace(/<\/div>/g, '</p>');
-    }
-    processed = processed.replace(/<br\s*\/?>/g, '\n');
+    // Preserve mathematical notation with special handling
+    const mathSymbols: { [key: string]: string } = {
+      '≤': '≤',
+      '≥': '≥',
+      '≠': '≠',
+      '·': '·',
+      '→': '→',
+      '←': '←',
+      '⇒': '⇒',
+      '⟺': '⟺',
+      'α': 'α',
+      'β': 'β',
+      'γ': 'γ',
+      'δ': 'δ',
+      'ε': 'ε',
+      'λ': 'λ',
+      'μ': 'μ',
+      'ν': 'ν',
+      'π': 'π',
+      'σ': 'σ',
+      'τ': 'τ',
+      'Σ': 'Σ',
+      'Π': 'Π',
+    };
+
+    // Clean up duplicate subscript/superscript notations from copy-pasted content
+    // Remove zero-width spaces and combining marks first
+    processed = processed.replace(/[\u0301\u0300\u0302\u0303\u0304\u200B\u200C\u200D]/g, '');
+
+    // Remove Unicode subscript numbers (₀-₉) that appear after LaTeX-style subscripts
+    // Pattern: "a_1a₁" becomes "a_1"
+    processed = processed.replace(/([a-zA-Z])_([0-9]+)[₀-₉]/g, '$1_$2');
+    processed = processed.replace(/[a-zA-Z][₀-₉](?=[a-zA-Z]|=|\s|$)/g, (match) => match[0]); // Remove standalone subscript notation
+    processed = processed.replace(/[₀-₉]/g, ''); // Final cleanup of any remaining subscript digits
+
+    // Fix escaped LaTeX sequences
+    processed = processed.replace(/\\le(?!\w)/g, '≤');
+    processed = processed.replace(/\\ge(?!\w)/g, '≥');
+    processed = processed.replace(/\\ne(?!\w)/g, '≠');
+    processed = processed.replace(/\\cdot(?!\w)/g, '·');
+    processed = processed.replace(/\\cdots(?!\w)/g, '⋯');
+    processed = processed.replace(/\\alpha(?!\w)/g, 'α');
+    processed = processed.replace(/\\beta(?!\w)/g, 'β');
+    processed = processed.replace(/\\gamma(?!\w)/g, 'γ');
+    processed = processed.replace(/\\pi(?!\w)/g, 'π');
+    processed = processed.replace(/\\sigma(?!\w)/g, 'σ');
+    processed = processed.replace(/\\Sigma(?!\w)/g, 'Σ');
+    processed = processed.replace(/\\Pi(?!\w)/g, 'Π');
+
+    // Remove duplicate formula lines (when same formula appears twice)
+    // Pattern: "$a_1 = a_2 = \cdots = a_n$a_1 = a_2 = ... = a_n" becomes just "$a_1 = a_2 = \cdots = a_n$"
+    processed = processed.replace(/(\$[^\$]+\$)\s*[a-zA-Z₀-₉_=⋯\\.\s]+(?=\n|$)/g, '$1');
+
+    // Even more aggressive cleanup for the exact pattern you're seeing
+    // Remove text like "a1=a2=⋯=an" that appears after properly formatted formulas
+    processed = processed.replace(/([a-zA-Z]\d+\s*=\s*[a-zA-Z]\d+[^<\n]*?)(?=\s*<|\s*\n|\s*$)/g, '');
 
     // Clean up multiple spaces
     processed = processed.replace(/\s{3,}/g, ' ');
 
-    return processed;
-  }, []);
+    Object.entries(mathSymbols).forEach(([symbol, latex]) => {
+      let processed = html;
 
-  const editor = useEditor({
-    extensions: [
-      StarterKit,
-      Placeholder.configure({
-        placeholder,
-      }),
-    ],
-    content: markdownToHtml(value),
-    onUpdate: ({ editor }) => {
-      const html = editor.getHTML();
-      const markdown = htmlToMarkdown(html);
-      onChange(markdown);
-    },
-    editorProps: {
-      handlePaste: (view, event) => {
-        const html = event.clipboardData?.getData('text/html');
-        if (html) {
-          const processed = transformPastedHTML(html);
-          const { state } = view;
-          const { $from } = state.selection;
-          const tr = state.tr;
+      // 1. Remover caracteres Unicode de sub/superscrito e caracteres invisíveis
+      processed = processed.replace(/[\u0301-\u0304\u200B\u200C\u200D\u2060\uFEFF]/g, '');
+      processed = processed.replace(/[₀₁₂₃₄₅₆₇₈₉]/g, '');
+      processed = processed.replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹]/g, '');
 
-          const tempDiv = document.createElement('div');
-          tempDiv.innerHTML = processed;
-          const text = tempDiv.textContent || tempDiv.innerText || '';
+      // 2. Remover padrões duplicados de variáveis: "a1,a2,...,ana_1, a_2, \dots, a_na1,a2,...,an" etc
+      // Remove listas duplicadas após LaTeX (ex: a_1, a_2, \ldots, a_n a1, a2, ..., an)
+      processed = processed.replace(/(a_\d+,\s*a_\d+,\s*\\ldots,\s*a_\w+)[^$\n]*?(a\d+,\s*a\d+,\s*\.\.\.,\s*a\w+)/g, '$1');
+      // Remove listas duplicadas após LaTeX (ex: a_1 = a_2 = ... = a_n a1=a2=...=an)
+      processed = processed.replace(/([a-zA-Z]_\d+\s*=\s*[a-zA-Z]_\d+[^$\n]*?)([a-zA-Z]\d+=\s*[a-zA-Z]\d+[^
+                title = "Código inline"
+      // Remove qualquer lista de variáveis simples após LaTeX
+      processed = processed.replace(/(\$[^\$]+\$)\s*[a-zA-Z0-9_,=\.\s…⋯]+(?=\n|$)/g, '$1');
 
-          tr.insertText(text, $from.pos);
-          view.dispatch(tr);
-          return true;
-        }
-        return false;
-      },
-    },
-  });
+      // 3. Remover subescritos Unicode após LaTeX
+      processed = processed.replace(/([a-zA-Z])_([0-9]+)[₀-₉]/g, '$1_$2');
+      processed = processed.replace(/[a-zA-Z][₀-₉](?=[a-zA-Z]|=|\s|$)/g, (match) => match[0]);
+      processed = processed.replace(/[₀-₉]/g, '');
 
-  useEffect(() => {
-    if (editor && !editor.isFocused) {
-      const currentHtml = editor.getHTML();
-      const currentMarkdown = htmlToMarkdown(currentHtml);
-      if (currentMarkdown !== value) {
-        editor.commands.setContent(markdownToHtml(value));
+      // 4. Corrigir LaTeX escapado para símbolos
+      const mathSymbols: { [key: string]: string } = {
+        '≤': '≤', '≥': '≥', '≠': '≠', '·': '·', '⋯': '⋯', '→': '→', '←': '←', '⇒': '⇒', '⟺': '⟺',
+        'α': 'α', 'β': 'β', 'γ': 'γ', 'δ': 'δ', 'ε': 'ε', 'λ': 'λ', 'μ': 'μ', 'ν': 'ν', 'π': 'π',
+        'σ': 'σ', 'τ': 'τ', 'Σ': 'Σ', 'Π': 'Π',
+      };
+      processed = processed.replace(/\\le(?!\w)/g, '≤');
+      processed = processed.replace(/\\ge(?!\w)/g, '≥');
+      processed = processed.replace(/\\ne(?!\w)/g, '≠');
+      processed = processed.replace(/\\cdot(?!\w)/g, '·');
+      processed = processed.replace(/\\cdots(?!\w)/g, '⋯');
+      processed = processed.replace(/\\alpha(?!\w)/g, 'α');
+      processed = processed.replace(/\\beta(?!\w)/g, 'β');
+      processed = processed.replace(/\\gamma(?!\w)/g, 'γ');
+      processed = processed.replace(/\\pi(?!\w)/g, 'π');
+      processed = processed.replace(/\\sigma(?!\w)/g, 'σ');
+      processed = processed.replace(/\\Sigma(?!\w)/g, 'Σ');
+      processed = processed.replace(/\\Pi(?!\w)/g, 'Π');
+      Object.entries(mathSymbols).forEach(([symbol, latex]) => {
+        processed = processed.replace(new RegExp(symbol, 'g'), latex);
+      });
+
+      // 5. Limpeza de HTML e listas
+      processed = processed.replace(/\s+style="[^"]*"/g, '');
+      processed = processed.replace(/<span[^>]*>\s*<\/span>/g, '');
+      processed = processed.replace(/<span[^>]*>/g, '');
+      processed = processed.replace(/<\/span>/g, '');
+      if (!processed.includes('<li')) {
+        processed = processed.replace(/<div[^>]*>/g, '<p>');
+        processed = processed.replace(/<\/div>/g, '</p>');
       }
-    }
-  }, [value, editor, htmlToMarkdown, markdownToHtml]);
+      processed = processed.replace(/<br\s*\/?>(?!\n)/g, '\n');
 
-  if (!editor) {
-    return null;
-  }
+      // 6. Listas Markdown para HTML
+      if (!processed.includes('<ul') && !processed.includes('<li')) {
+        if (processed.includes('\n- ') || processed.includes('\n* ')) {
+          const lines = processed.split('\n');
+          let result = '';
+          let inList = false;
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+              if (!inList) {
+                result += '<ul>';
+                inList = true;
+              }
+              const content = trimmed.substring(2);
+              result += `<li><p>${content}</p></li>`;
+            } else if (trimmed) {
+              if (inList) {
+                result += '</ul>';
+                inList = false;
+              }
+              result += `<p>${trimmed}</p>`;
+            }
+          }
+          if (inList) result += '</ul>';
+          processed = result;
+        }
+      }
 
-  return (
-    <div className="w-full">
-      {!shouldShowPreview && (
-        <div className="mb-2 flex flex-wrap gap-1 p-2 bg-slate-50 rounded-lg border border-slate-200">
-          {editor && (
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={() => editor.chain().focus().toggleBold().run()}
-                className={`px-2 py-1 text-xs rounded transition-colors ${editor.isActive('bold') ? 'bg-slate-200 text-slate-900' : 'text-slate-600 hover:bg-slate-100'
-                  }`}
-                title="Negrito"
+      // 7. Espaços múltiplos
+      processed = processed.replace(/\s{3,}/g, ' ');
+
+      return processed;
+    }, []);
               >
-                <strong>B</strong>
-              </button>
-              <button
-                type="button"
-                onClick={() => editor.chain().focus().toggleItalic().run()}
-                className={`px-2 py-1 text-xs rounded transition-colors ${editor.isActive('italic') ? 'bg-slate-200 text-slate-900' : 'text-slate-600 hover:bg-slate-100'
-                  }`}
-                title="Itálico"
-              >
-                <em>I</em>
-              </button>
-              <button
-                type="button"
-                onClick={() => editor.chain().focus().toggleCode().run()}
-                className={`px-2 py-1 text-xs rounded transition-colors ${editor.isActive('code') ? 'bg-slate-200 text-slate-900' : 'text-slate-600 hover:bg-slate-100'
-                  }`}
-                title="Código inline"
-              >
-                {'</>'}
-              </button>
+      { '</>'}
+              </button >
               <div className="w-px h-6 bg-slate-300 mx-1" />
               <button
                 type="button"
                 onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-                className={`px-2 py-1 text-xs rounded transition-colors ${editor.isActive('heading', { level: 1 }) ? 'bg-slate-200 text-slate-900' : 'text-slate-600 hover:bg-slate-100'
-                  }`}
+                className={`px-2 py-1 text-xs rounded transition-colors ${
+                  editor.isActive('heading', { level: 1 }) ? 'bg-slate-200 text-slate-900' : 'text-slate-600 hover:bg-slate-100'
+                }`}
                 title="Título 1"
               >
                 H1
@@ -328,8 +401,9 @@ export default function TextEditorWithLatex({
               <button
                 type="button"
                 onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-                className={`px-2 py-1 text-xs rounded transition-colors ${editor.isActive('heading', { level: 2 }) ? 'bg-slate-200 text-slate-900' : 'text-slate-600 hover:bg-slate-100'
-                  }`}
+                className={`px-2 py-1 text-xs rounded transition-colors ${
+                  editor.isActive('heading', { level: 2 }) ? 'bg-slate-200 text-slate-900' : 'text-slate-600 hover:bg-slate-100'
+                }`}
                 title="Título 2"
               >
                 H2
@@ -337,41 +411,44 @@ export default function TextEditorWithLatex({
               <button
                 type="button"
                 onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-                className={`px-2 py-1 text-xs rounded transition-colors ${editor.isActive('heading', { level: 3 }) ? 'bg-slate-200 text-slate-900' : 'text-slate-600 hover:bg-slate-100'
-                  }`}
+                className={`px-2 py-1 text-xs rounded transition-colors ${
+                  editor.isActive('heading', { level: 3 }) ? 'bg-slate-200 text-slate-900' : 'text-slate-600 hover:bg-slate-100'
+                }`}
                 title="Título 3"
               >
                 H3
               </button>
-            </div>
-          )}
-        </div>
+            </div >
+          )
+}
+        </div >
       )}
 
-      {shouldShowPreview ? (
-        <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl p-5 border border-slate-200 overflow-auto min-h-[200px] shadow-sm">
-          <div className="prose prose-sm max-w-none">
-            {value ? (
-              <MarkdownRenderer content={value} />
-            ) : (
-              <p className="text-slate-400 italic text-sm">
-                Nada a visualizar ainda...
-              </p>
-            )}
-          </div>
-        </div>
-      ) : (
-        <div
-          className={`border border-slate-200 rounded-xl focus-within:ring-2 focus-within:ring-blue-400 focus-within:border-blue-400 bg-white text-slate-900 overflow-y-auto ${className}`}
-        >
-          <EditorContent editor={editor} />
-        </div>
-      )}
+{
+  shouldShowPreview ? (
+    <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl p-5 border border-slate-200 overflow-auto min-h-[200px] shadow-sm">
+      <div className="prose prose-sm max-w-none">
+        {value ? (
+          <MarkdownRenderer content={value} />
+        ) : (
+          <p className="text-slate-400 italic text-sm">
+            Nada a visualizar ainda...
+          </p>
+        )}
+      </div>
+    </div>
+  ) : (
+    <div
+      className={`border border-slate-200 rounded-xl focus-within:ring-2 focus-within:ring-blue-400 focus-within:border-blue-400 bg-white text-slate-900 overflow-y-auto ${className}`}
+    >
+      <EditorContent editor={editor} />
+    </div>
+  )
+}
 
-      <style jsx global>{`
+<style jsx global>{`
         .ProseMirror {
           outline: none;
-          padding: 1rem;
         }
         .ProseMirror p.is-editor-empty:first-child::before {
           content: attr(data-placeholder);
@@ -444,6 +521,6 @@ export default function TextEditorWithLatex({
           line-height: 1.5;
         }
       `}</style>
-    </div>
+    </div >
   );
 }
