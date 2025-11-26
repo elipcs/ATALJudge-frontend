@@ -89,7 +89,7 @@ export default function QuestoesPage() {
                 if (state.sourceFilter !== "all") searchParams.append('source', state.sourceFilter);
                 if (state.tagFilter.length > 0) searchParams.append('tags', state.tagFilter.join(','));
 
-                const response = await api.get<any>(`/questions/my-questions?${searchParams.toString()}`);
+                const response = await api.get<any>(`/questions?${searchParams.toString()}`);
 
                 const { questions = [], pagination = {} } = response.data || {};
 
@@ -292,7 +292,7 @@ export default function QuestoesPage() {
                                                     className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
                                                 >
                                                     <td className="py-3 px-4">
-                                                        <div 
+                                                        <div
                                                             className="font-medium text-gray-900 cursor-pointer hover:text-blue-600 transition-colors"
                                                             onClick={() => router.push(`/questoes/${question.id}`)}
                                                         >
@@ -448,11 +448,11 @@ export default function QuestoesPage() {
                     onSave={async (questionData) => {
                         try {
                             // Converter timeLimit e memoryLimit para o formato esperado pelo backend
-                            const timeLimitMs = questionData.timeLimit 
+                            const timeLimitMs = questionData.timeLimit
                                 ? Math.round(parseFloat(questionData.timeLimit.toString().replace(/s$/i, '')) * 1000)
                                 : 1000;
-                            
-                            const memoryLimitKb = questionData.memoryLimit 
+
+                            const memoryLimitKb = questionData.memoryLimit
                                 ? Math.round(parseFloat(questionData.memoryLimit.toString().replace(/mb$/i, '')) * 1024)
                                 : 64000;
 

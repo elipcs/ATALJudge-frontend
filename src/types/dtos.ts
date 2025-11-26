@@ -50,7 +50,6 @@ export interface QuestionResponseDTO {
   referenceLanguage?: string;
   oracleCode?: string;
   oracleLanguage?: string;
-  authorId?: string;
   createdAt: string | Date;
   updatedAt: string | Date;
 }
@@ -59,7 +58,6 @@ export interface QuestionListResponseDTO {
   id: string;
   title: string;
   description?: string;
-  authorId?: string;
   startDate?: string;
   endDate?: string;
   scoringMode: 'simple' | 'groups';
