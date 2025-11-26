@@ -96,7 +96,7 @@ export function useProfile() {
         error.message.includes('NetworkError') ||
         error.message.includes('fetch')
       )) {
-        setError('Erro de conexão: Não foi possível conectar ao servidor. Verifique se o backend está rodando em http://localhost:5000');
+        setError('Erro de conexão: Não foi possível conectar ao servidor. Verifique se o backend está rodando em http://localhost:3333');
       } else {
         setError(error instanceof Error ? error.message : 'Erro ao salvar perfil. Tente novamente.');
       }

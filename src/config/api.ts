@@ -29,7 +29,7 @@ interface RequestConfig extends RequestInit {
   signal?: AbortSignal;
 }
 
-export const API_BASE_URL = (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_API_BASE_URL) || 'http://localhost:5000/api';
+export const API_BASE_URL = (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_API_BASE_URL) || 'http://localhost:3333/api';
 
 async function apiClient<T>(
   endpoint: string,

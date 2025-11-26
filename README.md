@@ -62,7 +62,7 @@ Pages → Hooks → Services → Backend API
 
 ### Prerequisites
 - Node.js 20+
-- Backend API running at `http://localhost:5000/api`
+- Backend API running at `http://localhost:3333/api`
 
 ### Setup
 

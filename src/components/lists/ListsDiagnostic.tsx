@@ -137,7 +137,7 @@ export default function ListsDiagnostic() {
       <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-xl">
         <h4 className="text-sm font-semibold text-blue-800 mb-2">Informações do Sistema:</h4>
         <div className="text-sm text-blue-700 space-y-1">
-          <div>• URL Base: {((typeof process !== 'undefined' && process.env.NEXT_PUBLIC_API_BASE_URL) || 'http://localhost:5000/api').replace(/\/api$/, '')}</div>
+          <div>• URL Base: {((typeof process !== 'undefined' && process.env.NEXT_PUBLIC_API_BASE_URL) || 'http://localhost:3333/api').replace(/\/api$/, '')}</div>
           <div>• Token: {localStorage.getItem('token') ? 'Presente' : 'Ausente'}</div>
           <div>• Ambiente: {(typeof process !== 'undefined' && process.env.NODE_ENV) || 'development'}</div>
         </div>

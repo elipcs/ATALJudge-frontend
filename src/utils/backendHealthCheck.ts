@@ -17,7 +17,7 @@ interface HealthCheckResult {
 
 export async function checkBackendHealth(): Promise<HealthCheckResult> {
   
-  const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api';
+  const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3333/api';
   const apiUrl = apiBaseUrl.replace(/\/api$/, '');
   
   try {
