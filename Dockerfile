@@ -1,57 +1,24 @@
-# Stage 1: Install production dependencies only
-FROM node:18-alpine AS dependencies
-
+# ---------- Builder ----------
+FROM node:20-slim AS builder
 WORKDIR /app
-
 COPY package*.json ./
-RUN npm ci --only=production && npm cache clean --force
-
-# Stage 2: Build the application
-FROM node:18-alpine AS builder
-
-WORKDIR /app
-
-COPY package*.json ./
-RUN npm install && npm cache clean --force
-
+# Install dependencies
+RUN npm ci
 COPY . .
-
-# Accept build arguments for Next.js public environment variables
-ARG NEXT_PUBLIC_API_URL
-ARG NEXT_PUBLIC_API_BASE_URL
-
-# Set them as environment variables for the build
-ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
-ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
-
-# Build Next.js application with standalone output
-ENV NEXT_TELEMETRY_DISABLED=1
+# Build Next.js app
 RUN npm run build
 
-# Stage 3: Production image with standalone output
-FROM node:18-alpine AS runner
-
+# ---------- Runtime ----------
+FROM node:20-alpine
 WORKDIR /app
 
+# Set NODE_ENV to production
 ENV NODE_ENV=production
-ENV NEXT_TELEMETRY_DISABLED=1
 
-# Create non-root user for security
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nextjs -u 1001
-
-# Copy only necessary files from standalone build
+# Copy necessary files for standalone mode
 COPY --from=builder /app/public ./public
-
-# Copy standalone server files
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-
-USER nextjs
+COPY --from=builder /app/.next/static ./.next/static
+COPY --from=builder /app/.next/standalone ./
 
 EXPOSE 3000
-
-ENV PORT=3000
-ENV HOSTNAME="0.0.0.0"
-
 CMD ["node", "server.js"]
