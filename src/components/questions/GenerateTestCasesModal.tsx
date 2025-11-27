@@ -212,13 +212,13 @@ export default function GenerateTestCasesModal({
               <input
                 type="number"
                 min="1"
-                max="200"
+                max="100"
                 value={testCaseCount}
-                onChange={(e) => setTestCaseCount(Math.max(1, Math.min(200, parseInt(e.target.value) || 10)))}
+                onChange={(e) => setTestCaseCount(Math.max(1, Math.min(100, parseInt(e.target.value) || 10)))}
                 disabled={isGenerating}
                 className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white text-slate-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               />
-              <p className="text-xs text-slate-500 mt-1.5">Entre 1 e 200 casos</p>
+              <p className="text-xs text-slate-500 mt-1.5">Entre 1 e 100 casos</p>
             </div>
           </div>
 

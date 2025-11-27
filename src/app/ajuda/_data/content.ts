@@ -201,28 +201,11 @@ Listas de exercícios são coleções de questões que você propõe aos alunos.
 
 ## Adicionar Questões à Lista:
 
-### Opção 1: Questões Locais (Criadas por Você)
-
 1. Na lista, clique em "Adicionar Questão"
-2. Escolha "Questão Local"
-3. Preencha:
-   - **Título**: Nome do exercício
-   - **Descrição/Enunciado**: Detalhamento completo
-   - **Exemplos de Entrada/Saída**
-   - **Casos de Teste**: Adicione múltiplos casos para validação
-   - **Limite de Tempo**: Em segundos (ex: 1 segundo)
-   - **Limite de Memória**: Em MB (ex: 256 MB)
-   - **Pontuação**: Quantos pontos vale a questão
+2. Escolha as questões que deseja adicionar
+3. Clique em "Salvar"
 
-4. Clique em "Salvar"
 
-### Opção 2: Questões do Codeforces
-
-1. Na lista, clique em "Adicionar Questão"
-2. Escolha "Codeforces"
-3. Insira o ID ou URL do problema do Codeforces
-4. Configure a pontuação para essa questão
-5. A plataforma importa automaticamente
 
 ## Editar e Remover Questões:
 
@@ -709,11 +692,6 @@ FAQ para monitores - será exibida em componente de accordion
           "Como garantir que alunos resolvem exercícios apenas no campus?",
         answer:
           "Configure Restrições de IP nas Configurações da Turma. Adicione os IPs ou faixas de IP do campus. Alunos tentando acessar fora dessa faixa receberão erro de acesso.",
-      },
-      {
-        question: "Posso importar questões de outras plataformas?",
-        answer:
-          "Sim! A plataforma suporta integração com Codeforces. Ao criar uma lista, escolha 'Questão do Codeforces' e insira o ID do problema. A descrição e testes são importados automaticamente.",
       },
       {
         question: "Como faço backup das minhas turmas?",
